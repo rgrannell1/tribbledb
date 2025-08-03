@@ -1,6 +1,5 @@
-
 import { Pattern, Triple, TripleObject } from "./types.ts";
-import { Truth } from "./predicates.ts";
+import { truth } from "./predicates.ts";
 
 export class Triples {
   static source(triple: Triple): string {
@@ -48,9 +47,9 @@ export class TribbleDB {
   }
 
   #matches(pattern: Pattern, value: string): boolean {
-    if (typeof pattern === 'string') {
+    if (typeof pattern === "string") {
       return pattern === value;
-    } else if (typeof pattern === 'function') {
+    } else if (typeof pattern === "function") {
       return pattern(value);
     }
     return false;
@@ -65,48 +64,79 @@ export class TribbleDB {
    *
    * @returns A new TribbleDB instance containing matching triples.
    */
-  find(source: Pattern, relation: Pattern, target: Pattern) {
-    return new TribbleDB(this.#triples.filter(triple => {
+  filter(
+    source: Pattern = truth,
+    relation: Pattern = truth,
+    target: Pattern = truth,
+  ) {
+    return new TribbleDB(this.#triples.filter((triple) => {
       return this.#matches(source, Triples.source(triple)) &&
-              this.#matches(relation, Triples.relation(triple)) &&
-              this.#matches(target, Triples.target(triple));
+        this.#matches(relation, Triples.relation(triple)) &&
+        this.#matches(target, Triples.target(triple));
     }));
   }
 
-  exists(source: Pattern = Truth, relation: Pattern = Truth, target: Pattern = Truth): boolean {
-    return this.#triples.some(triple => {
+  find(
+    source: Pattern = truth,
+    relation: Pattern = truth,
+    target: Pattern = truth,
+  ): TribbleDB {
+    const result = this.#triples.find((triple) => {
       return this.#matches(source, Triples.source(triple)) &&
-             this.#matches(relation, Triples.relation(triple)) &&
-             this.#matches(target, Triples.target(triple));
+        this.#matches(relation, Triples.relation(triple)) &&
+        this.#matches(target, Triples.target(triple));
+    });
+
+    if (result) {
+      return new TribbleDB([result]);
+    }
+
+    return new TribbleDB([]);
+  }
+
+  exists(
+    source: Pattern = truth,
+    relation: Pattern = truth,
+    target: Pattern = truth,
+  ): boolean {
+    return this.#triples.some((triple) => {
+      return this.#matches(source, Triples.source(triple)) &&
+        this.#matches(relation, Triples.relation(triple)) &&
+        this.#matches(target, Triples.target(triple));
     });
   }
 
-
   hasSource(source: Pattern): boolean {
-    return this.#triples.some(triple => this.#matches(source, Triples.source(triple)));
+    return this.#triples.some((triple) =>
+      this.#matches(source, Triples.source(triple))
+    );
   }
 
   hasRelation(relation: Pattern): boolean {
-    return this.#triples.some(triple => this.#matches(relation, Triples.relation(triple)));
+    return this.#triples.some((triple) =>
+      this.#matches(relation, Triples.relation(triple))
+    );
   }
 
   hasTarget(target: Pattern): boolean {
-    return this.#triples.some(triple => this.#matches(target, Triples.target(triple)));
+    return this.#triples.some((triple) =>
+      this.#matches(target, Triples.target(triple))
+    );
   }
 
   triples(): Triple[] {
     return this.#triples;
   }
   sources(): Set<string> {
-    return new Set(this.#triples.map(triple => Triples.source(triple)));
+    return new Set(this.#triples.map((triple) => Triples.source(triple)));
   }
 
   relations(): Set<string> {
-    return new Set(this.#triples.map(triple => Triples.relation(triple)));
+    return new Set(this.#triples.map((triple) => Triples.relation(triple)));
   }
 
   targets(): Set<string> {
-    return new Set(this.#triples.map(triple => Triples.target(triple)));
+    return new Set(this.#triples.map((triple) => Triples.target(triple)));
   }
 
   objects(): TripleObject[] {
@@ -118,9 +148,7 @@ export class TribbleDB {
       }
       if (!objs[source][relation]) {
         objs[source][relation] = target;
-      }
-
-      else if (Array.isArray(objs[source][relation])) {
+      } else if (Array.isArray(objs[source][relation])) {
         (objs[source][relation] as string[]).push(target);
       } else {
         objs[source][relation] = [objs[source][relation] as string, target];
