@@ -1,6 +1,9 @@
 import { Pattern, Triple, TripleObject } from "./types.ts";
 import { truth } from "./predicates.ts";
 
+/*
+ * Static methods for interacting with triples.
+ */
 export class Triples {
   static source(triple: Triple): string {
     return triple[0];
@@ -138,6 +141,10 @@ export class TribbleDB {
     return this.#triples.some((triple) =>
       this.#matches(target, Triples.target(triple))
     );
+  }
+
+  first(): Triple | undefined {
+    return this.#triples.length > 0 ? this.#triples[0] : undefined;
   }
 
   triples(): Triple[] {

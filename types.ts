@@ -3,8 +3,8 @@ export type Thing = string | URN;
 export type Relation = string;
 export type Triple = [Thing, Relation, Thing];
 
-export function isURN(thing: Thing): thing is URN {
-  return typeof thing === "string" && thing.startsWith("urn:ró:");
+export function isURN(thing: Thing, namespace: string = 'urn:ró'): thing is URN {
+  return typeof thing === "string" && thing.startsWith(`urn:${namespace}:`);
 }
 
 export type Pattern =
