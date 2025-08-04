@@ -63,8 +63,13 @@ export class TribbleDB {
     fn: (triple: Triple) => Triple[],
   ): TribbleDB {
     return new TribbleDB(this.#triples.flatMap(fn) as Triple[]);
-  })
+  }
 
+  /*
+   * Test if a pattern matches a source/relation/target value.
+   *
+   *
+   */
   #matches(pattern: Pattern, value: string): boolean {
     if (typeof pattern === "string") {
       return pattern === value;
