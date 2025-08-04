@@ -84,3 +84,22 @@ export function sameType(candidate: string) {
     return parsedValue.type === parsedCandidate.type;
   };
 }
+
+export function hasParameter(name: string, paramValue?: string) {
+  return (value: string) => {
+    if (!isUrn()(value)) {
+      return false;
+    }
+
+    const parsed = parseUrn(value);
+    if (!Object.prototype.hasOwnProperty.call(parsed.qs, name)) {
+      return false;
+    }
+
+    if (typeof paramValue === 'undefined') {
+      return true;
+    }
+
+    return parsed.qs[name] === paramValue;
+  }
+}

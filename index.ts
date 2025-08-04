@@ -22,6 +22,10 @@ export class TribbleDB {
     this.#triples = triples;
   }
 
+  static of(triples: Triple[]): TribbleDB {
+    return new TribbleDB(triples);
+  }
+
   static from(objects: TripleObject[]): TribbleDB {
     const triples: Triple[] = [];
 
@@ -45,6 +49,18 @@ export class TribbleDB {
   add(triples: Triple[]): void {
     this.#triples.push(...triples);
   }
+
+  map(
+    fn: (triple: Triple) => Triple,
+  ): TribbleDB {
+    return new TribbleDB(this.#triples.map(fn));
+  }
+
+  flatMap(
+    fn: (triple: Triple) => Triple[],
+  ): TribbleDB {
+    return new TribbleDB(this.#triples.flatMap(fn) as Triple[]);
+  })
 
   #matches(pattern: Pattern, value: string): boolean {
     if (typeof pattern === "string") {
