@@ -20,27 +20,6 @@ export function not(predicate: Predicate) {
   return (value: string) => !predicate(value);
 }
 
-/*
- * URN specifics
- */
-function parseUrn(urn: string) {
-  if (!isUrn(urn)) {
-    throw new Error(`Invalid URN: ${urn}`);
-  }
-
-  const type = urn.split(":")[2];
-  const [urnPart, queryString] = urn.split("?");
-  const id = urnPart.split(":")[3];
-  const qs = queryString
-    ? Object.fromEntries(new URLSearchParams(queryString))
-    : {};
-
-  return {
-    type,
-    id,
-    qs,
-  };
-}
 
 export function isUrn(namespace: string = "ró") {
   return (value: string) => {

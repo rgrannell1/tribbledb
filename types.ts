@@ -15,3 +15,20 @@ export type Pattern =
 
 export type TripleObject = Record<string, string | string[]>;
 export type Predicate = (val: string) => boolean;
+
+export type ParsedUrn = {
+  type: string;
+  id: string;
+  qs: Record<string, string>;
+}
+
+/*
+ * Queries against sources and targets can specify these parameters.
+ *
+ */
+export type Dsl = {
+  type: string | undefined;
+  id: string | undefined,
+  predicate: Predicate | undefined,
+  qs: Record<string, string> | undefined,
+}
