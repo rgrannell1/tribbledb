@@ -147,7 +147,7 @@ export class TribbleDB {
 
     if (source) {
       if (source.type) {
-        const sourceTypeSet = this.index.sourceType.get(source.type);
+        const sourceTypeSet = this.index.getSourceTypeSet(source.type);
         if (sourceTypeSet) {
           indexes.push(sourceTypeSet);
         } else {
@@ -156,7 +156,7 @@ export class TribbleDB {
       }
 
       if (source.id) {
-        const sourceIdSet = this.index.sourceId.get(source.id);
+        const sourceIdSet = this.index.getSourceIdSet(source.id);
         if (sourceIdSet) {
           indexes.push(sourceIdSet);
         } else {
@@ -166,7 +166,7 @@ export class TribbleDB {
 
       if (source.qs) {
         for (const [key, val] of Object.entries(source.qs)) {
-          const sourceQsSet = this.index.sourceQs.get(`${key}=${val}`);
+          const sourceQsSet = this.index.getSourceQsSet(key, val);
           if (sourceQsSet) {
             indexes.push(sourceQsSet);
           } else {
@@ -178,7 +178,7 @@ export class TribbleDB {
 
     if (target) {
       if (target.type) {
-        const targetTypeSet = this.index.targetType.get(target.type);
+        const targetTypeSet = this.index.getTargetTypeSet(target.type);
         if (targetTypeSet) {
           indexes.push(targetTypeSet);
         } else {
@@ -187,7 +187,7 @@ export class TribbleDB {
       }
 
       if (target.id) {
-        const targetIdSet = this.index.targetId.get(target.id);
+        const targetIdSet = this.index.getTargetIdSet(target.id);
         if (targetIdSet) {
           indexes.push(targetIdSet);
         } else {
@@ -197,7 +197,7 @@ export class TribbleDB {
 
       if (target.qs) {
         for (const [key, val] of Object.entries(target.qs)) {
-          const targetQsSet = this.index.targetQs.get(`${key}=${val}`);
+          const targetQsSet = this.index.getTargetQsSet(key, val);
           if (targetQsSet) {
             indexes.push(targetQsSet);
           } else {
@@ -208,7 +208,7 @@ export class TribbleDB {
     }
 
     if (relation) {
-      const relationSet = this.index.relations.get(relation);
+      const relationSet = this.index.getRelationSet(relation);
       if (relationSet) {
         indexes.push(relationSet);
       } else {
