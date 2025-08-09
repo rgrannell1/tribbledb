@@ -1,4 +1,4 @@
-import { Dsl, Triple, TripleObject } from "./types.ts";
+import type { Dsl, Triple, TripleObject } from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { Sets } from "./indices/sets.ts";
 

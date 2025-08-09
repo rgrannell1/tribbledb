@@ -1,1 +1,3 @@
 test-triples.ts
+coverage/
+*.lcov

@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import { TribbleDB } from "../index.ts";
-import { Triple } from "../types.ts";
+import type { Triple } from "../types.ts";
 import { Triples } from "../index.ts";
 import { asUrn } from "../urn.ts";
 
@@ -53,7 +53,10 @@ Deno.test("search by source query string returns matching triples", () => {
   });
 
   assertEquals(results.triplesCount, 1);
-  assertEquals(Triples.source(results.first()!), "urn:ró:animal:cat?breed=persian");
+  assertEquals(
+    Triples.source(results.first()!),
+    "urn:ró:animal:cat?breed=persian",
+  );
 });
 
 Deno.test("search by relation returns all matching triples", () => {
@@ -62,7 +65,9 @@ Deno.test("search by relation returns all matching triples", () => {
 
   assertEquals(results.triplesCount, 4);
   assertEquals(
-    results.triples().every((triple: Triple) => Triples.relation(triple) === "name"),
+    results.triples().every((triple: Triple) =>
+      Triples.relation(triple) === "name"
+    ),
     true,
   );
 });

@@ -22,7 +22,7 @@
  * matches all swifts, regardless of query parameters.
  */
 
-import { ParsedUrn } from "./types.ts";
+import type { ParsedUrn } from "./types.ts";
 
 /*
  * Parses a URN string into its components.

@@ -1,5 +1,5 @@
 import { Triples } from "../index.ts";
-import { Triple } from "../types.ts";
+import type { Triple } from "../types.ts";
 import { asUrn } from "../urn.ts";
 
 /*
