@@ -19,6 +19,11 @@ export class Triples {
   }
 }
 
+/*
+ * A searchable triple database
+ *
+ * Provides methods for adding, searching, and manipulating triples.
+ */
 export class TribbleDB {
   index: Index;
   triplesCount: number;
@@ -53,7 +58,6 @@ export class TribbleDB {
   }
 
   add(triples: Triple[]): void {
-    // Use the index's efficient add method instead of rebuilding
     this.index.add(triples);
     this.triplesCount += triples.length;
   }
@@ -89,6 +93,11 @@ export class TribbleDB {
     return new Set(this.index.triples.map((triple) => Triples.target(triple)));
   }
 
+  /*
+   * Get all unique objects represented by the triples.
+   *
+   * @returns An array of unique TripleObject instances.
+   */
   objects(): TripleObject[] {
     const objs: Record<string, TripleObject> = {};
 
@@ -115,6 +124,12 @@ export class TribbleDB {
     return output;
   }
 
+  /*
+   * Search all triples in the database.
+   *
+   * @param params - The search parameters.
+   * @returns A new TribbleDB instance containing the matching triples.
+   */
   search(
     params: { source?: Dsl; relation?: string; target?: Dsl },
   ): TribbleDB {
