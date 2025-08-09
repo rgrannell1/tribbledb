@@ -115,9 +115,9 @@ export class TribbleDB {
     return output;
   }
 
-  *search(
+  search(
     params: { source?: Dsl; relation?: string; target?: Dsl },
-  ): Generator<Triple> {
+  ): TribbleDB {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too
     const indexes: Set<number>[] = [
@@ -136,7 +136,7 @@ export class TribbleDB {
         if (sourceTypeSet) {
           indexes.push(sourceTypeSet);
         } else {
-          return;
+          return new TribbleDB([]);
         }
       }
 
@@ -145,7 +145,7 @@ export class TribbleDB {
         if (sourceIdSet) {
           indexes.push(sourceIdSet);
         } else {
-          return;
+          return new TribbleDB([]);
         }
       }
 
@@ -155,7 +155,7 @@ export class TribbleDB {
           if (sourceQsSet) {
             indexes.push(sourceQsSet);
           } else {
-            return;
+            return new TribbleDB([]);
           }
         }
       }
@@ -167,7 +167,7 @@ export class TribbleDB {
         if (targetTypeSet) {
           indexes.push(targetTypeSet);
         } else {
-          return;
+          return new TribbleDB([]);
         }
       }
 
@@ -176,7 +176,7 @@ export class TribbleDB {
         if (targetIdSet) {
           indexes.push(targetIdSet);
         } else {
-          return;
+          return new TribbleDB([]);
         }
       }
 
@@ -186,7 +186,7 @@ export class TribbleDB {
           if (targetQsSet) {
             indexes.push(targetQsSet);
           } else {
-            return;
+            return new TribbleDB([]);
           }
         }
       }
@@ -197,13 +197,14 @@ export class TribbleDB {
       if (relationSet) {
         indexes.push(relationSet);
       } else {
-        return;
+        return new TribbleDB([]);
       }
     }
 
     const intersection = Sets.intersection(indexes);
+    const matchingTriples: Triple[] = [];
 
-    // Yield triples one by one, applying predicate filters as we go
+    // Collect matching triples, applying predicate filters as we go
     for (const index of intersection) {
       const triple = this.index.triples[index];
 
@@ -217,17 +218,19 @@ export class TribbleDB {
           : true;
 
         if (sourceMatches && targetMatches) {
-          yield triple;
+          matchingTriples.push(triple);
         }
       } else {
-        yield triple;
+        matchingTriples.push(triple);
       }
     }
+
+    return new TribbleDB(matchingTriples);
   }
 
   searchArray(
     params: { source?: Dsl; relation?: string; target?: Dsl },
   ): Triple[] {
-    return Array.from(this.search(params));
+    return this.search(params).triples();
   }
 }
