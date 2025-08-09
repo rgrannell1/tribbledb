@@ -19,10 +19,7 @@ type IndexedTriple = [number, number, number];
  * internally for better memory efficiency with long strings.
  */
 export class Index {
-  // Original triples for external API compatibility
-  triples: Triple[];
-
-  // Internal indexed representation
+  // Internal indexed representation for memory efficiency
   private indexedTriples: IndexedTriple[];
 
   // String indexing sets for memory efficiency
@@ -40,7 +37,6 @@ export class Index {
   targetQs: Map<number, Set<number>>;
 
   constructor(triples: Triple[]) {
-    this.triples = triples;
     this.indexedTriples = [];
     this.stringIndex = new IndexedSet();
 
@@ -51,15 +47,15 @@ export class Index {
     this.targetType = new Map();
     this.targetId = new Map();
     this.targetQs = new Map();
-    this.indexTriples();
+    this.indexTriples(triples);
   }
 
   /*
    * Associate each triple onto an appropriate map `Term := <id>: <value>`
    */
-  indexTriples() {
-    for (let idx = 0; idx < this.triples.length; idx++) {
-      this.indexTriple(this.triples[idx], idx);
+  indexTriples(triples: Triple[]) {
+    for (let idx = 0; idx < triples.length; idx++) {
+      this.indexTriple(triples[idx], idx);
     }
   }
 
@@ -140,13 +136,46 @@ export class Index {
    * Add new triples to the index incrementally
    */
   add(newTriples: Triple[]) {
-    const startIdx = this.triples.length;
-    this.triples.push(...newTriples);
+    const startIdx = this.indexedTriples.length;
 
-    // Index only the new triples
+    // Index the new triples
     for (let idx = 0; idx < newTriples.length; idx++) {
       this.indexTriple(newTriples[idx], startIdx + idx);
     }
+  }
+
+  /*
+   * Get the number of triples in the index
+   */
+  get length(): number {
+    return this.indexedTriples.length;
+  }
+
+  /*
+   * Reconstruct the original triples from the indexed representation
+   */
+  triples(): Triple[] {
+    return this.indexedTriples.map(([sourceIdx, relationIdx, targetIdx]) => [
+      this.stringIndex.getValue(sourceIdx)!,
+      this.stringIndex.getValue(relationIdx)!,
+      this.stringIndex.getValue(targetIdx)!,
+    ]);
+  }
+
+  /*
+   * Get a specific triple by index
+   */
+  getTriple(index: number): Triple | undefined {
+    if (index < 0 || index >= this.indexedTriples.length) {
+      return undefined;
+    }
+
+    const [sourceIdx, relationIdx, targetIdx] = this.indexedTriples[index];
+    return [
+      this.stringIndex.getValue(sourceIdx)!,
+      this.stringIndex.getValue(relationIdx)!,
+      this.stringIndex.getValue(targetIdx)!,
+    ];
   }
 
   /*

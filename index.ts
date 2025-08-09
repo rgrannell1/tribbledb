@@ -30,7 +30,7 @@ export class TribbleDB {
 
   constructor(triples: Triple[]) {
     this.index = new Index(triples);
-    this.triplesCount = triples.length;
+    this.triplesCount = this.index.length;
   }
 
   static of(triples: Triple[]): TribbleDB {
@@ -59,38 +59,42 @@ export class TribbleDB {
 
   add(triples: Triple[]): void {
     this.index.add(triples);
-    this.triplesCount += triples.length;
+    this.triplesCount = this.index.length;
   }
 
   map(fn: (triple: Triple) => Triple): TribbleDB {
-    return new TribbleDB(this.index.triples.map(fn));
+    return new TribbleDB(this.index.triples().map(fn));
   }
 
   flatMap(fn: (triple: Triple) => Triple[]): TribbleDB {
-    const flatMappedTriples = this.index.triples.flatMap(fn) as Triple[];
+    const flatMappedTriples = this.index.triples().flatMap(fn) as Triple[];
     return new TribbleDB(flatMappedTriples);
   }
 
   first(): Triple | undefined {
-    return this.index.triples.length > 0 ? this.index.triples[0] : undefined;
+    return this.index.length > 0 ? this.index.getTriple(0) : undefined;
   }
 
   triples(): Triple[] {
-    return this.index.triples;
+    return this.index.triples();
   }
 
   sources(): Set<string> {
-    return new Set(this.index.triples.map((triple) => Triples.source(triple)));
+    return new Set(
+      this.index.triples().map((triple) => Triples.source(triple)),
+    );
   }
 
   relations(): Set<string> {
     return new Set(
-      this.index.triples.map((triple) => Triples.relation(triple)),
+      this.index.triples().map((triple) => Triples.relation(triple)),
     );
   }
 
   targets(): Set<string> {
-    return new Set(this.index.triples.map((triple) => Triples.target(triple)));
+    return new Set(
+      this.index.triples().map((triple) => Triples.target(triple)),
+    );
   }
 
   /*
@@ -101,7 +105,7 @@ export class TribbleDB {
   objects(): TripleObject[] {
     const objs: Record<string, TripleObject> = {};
 
-    for (const [source, relation, target] of this.index.triples) {
+    for (const [source, relation, target] of this.index.triples()) {
       if (!objs[source]) {
         objs[source] = {};
       }
@@ -221,7 +225,7 @@ export class TribbleDB {
 
     // Collect matching triples, applying predicate filters as we go
     for (const index of intersection) {
-      const triple = this.index.triples[index];
+      const triple = this.index.getTriple(index)!;
 
       // Apply predicate filters if present
       if (source?.predicate || target?.predicate) {
