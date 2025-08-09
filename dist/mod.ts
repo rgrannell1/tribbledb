@@ -1,2 +1,176 @@
-function h(r,t="urn:r\xF3"){return typeof r=="string"&&r.startsWith(`urn:${t}:`)}function a(r){return!0}function b(r){return!1}function d(...r){return t=>r.every(e=>e(t))}function y(...r){return t=>r.some(e=>e(t))}function m(r){return t=>!r(t)}function u(r){if(!p(r))throw new Error(`Invalid URN: ${r}`);let t=r.split(":")[2],[e,n]=r.split("?"),i=e.split(":")[3],o=n?Object.fromEntries(new URLSearchParams(n)):{};return{type:t,id:i,qs:o}}function p(r="r\xF3"){return t=>t.startsWith(`urn:${r}:`)}function x(r){return t=>p()(t)?u(t).type===r:!1}function P(r){return t=>{if(!p()(t)||!p()(r))return!1;let e=u(t),n=u(r);return e.id===n.id&&e.type===n.type}}function j(r){return t=>{if(!p()(t)||!p()(r))return!1;let e=u(t),n=u(r);return e.type===n.type}}function w(r,t){return e=>{if(!p()(e))return!1;let n=u(e);return Object.prototype.hasOwnProperty.call(n.qs,r)?typeof t>"u"?!0:n.qs[r]===t:!1}}var s=class{static source(t){return t[0]}static relation(t){return t[1]}static target(t){return t[2]}},f=class r{#t=[];constructor(t=[]){this.#t=t}static of(t){return new r(t)}static from(t){let e=[];for(let n of t){let{id:i,...o}=n;for(let[c,l]of Object.entries(o))if(Array.isArray(l))for(let g of l)e.push([i,c,g]);else e.push([i,c,l])}return new r(e)}add(t){this.#t.push(...t)}map(t){return new r(this.#t.map(t))}flatMap(t){return new r(this.#t.flatMap(t))}#r(t,e){return typeof t=="string"?t===e:typeof t=="function"?t(e):!1}filter(t=a,e=a,n=a){return new r(this.#t.filter(i=>this.#r(t,s.source(i))&&this.#r(e,s.relation(i))&&this.#r(n,s.target(i))))}find(t=a,e=a,n=a){let i=this.#t.find(o=>this.#r(t,s.source(o))&&this.#r(e,s.relation(o))&&this.#r(n,s.target(o)));return i?new r([i]):new r([])}exists(t=a,e=a,n=a){return this.#t.some(i=>this.#r(t,s.source(i))&&this.#r(e,s.relation(i))&&this.#r(n,s.target(i)))}hasSource(t){return this.#t.some(e=>this.#r(t,s.source(e)))}hasRelation(t){return this.#t.some(e=>this.#r(t,s.relation(e)))}hasTarget(t){return this.#t.some(e=>this.#r(t,s.target(e)))}first(){return this.#t.length>0?this.#t[0]:void 0}triples(){return this.#t}sources(){return new Set(this.#t.map(t=>s.source(t)))}relations(){return new Set(this.#t.map(t=>s.relation(t)))}targets(){return new Set(this.#t.map(t=>s.target(t)))}objects(){let t={};for(let[n,i,o]of this.#t)t[n]||(t[n]={}),t[n][i]?Array.isArray(t[n][i])?t[n][i].push(o):t[n][i]=[t[n][i],o]:t[n][i]=o;let e=[];for(let[n,i]of Object.entries(t))i.id=n,e.push(i);return e}};export{f as TribbleDB,s as Triples,d as all,y as any,b as falsity,w as hasParameter,x as isType,h as isURN,p as isUrn,m as not,j as sameType,P as sameUrn,a as truth};
+function h(r, t = "urn:r\xF3") {
+  return typeof r == "string" && r.startsWith(`urn:${t}:`);
+}
+function a(r) {
+  return !0;
+}
+function b(r) {
+  return !1;
+}
+function d(...r) {
+  return (t) => r.every((e) => e(t));
+}
+function y(...r) {
+  return (t) => r.some((e) => e(t));
+}
+function m(r) {
+  return (t) => !r(t);
+}
+function u(r) {
+  if (!p(r)) throw new Error(`Invalid URN: ${r}`);
+  let t = r.split(":")[2],
+    [e, n] = r.split("?"),
+    i = e.split(":")[3],
+    o = n ? Object.fromEntries(new URLSearchParams(n)) : {};
+  return { type: t, id: i, qs: o };
+}
+function p(r = "r\xF3") {
+  return (t) => t.startsWith(`urn:${r}:`);
+}
+function x(r) {
+  return (t) => p()(t) ? u(t).type === r : !1;
+}
+function P(r) {
+  return (t) => {
+    if (!p()(t) || !p()(r)) return !1;
+    let e = u(t), n = u(r);
+    return e.id === n.id && e.type === n.type;
+  };
+}
+function j(r) {
+  return (t) => {
+    if (!p()(t) || !p()(r)) return !1;
+    let e = u(t), n = u(r);
+    return e.type === n.type;
+  };
+}
+function w(r, t) {
+  return (e) => {
+    if (!p()(e)) return !1;
+    let n = u(e);
+    return Object.prototype.hasOwnProperty.call(n.qs, r)
+      ? typeof t > "u" ? !0 : n.qs[r] === t
+      : !1;
+  };
+}
+var s = class {
+    static source(t) {
+      return t[0];
+    }
+    static relation(t) {
+      return t[1];
+    }
+    static target(t) {
+      return t[2];
+    }
+  },
+  f = class r {
+    #t = [];
+    constructor(t = []) {
+      this.#t = t;
+    }
+    static of(t) {
+      return new r(t);
+    }
+    static from(t) {
+      let e = [];
+      for (let n of t) {
+        let { id: i, ...o } = n;
+        for (let [c, l] of Object.entries(o)) {
+          if (Array.isArray(l)) {
+            for (let g of l) e.push([i, c, g]);
+          } else e.push([i, c, l]);
+        }
+      }
+      return new r(e);
+    }
+    add(t) {
+      this.#t.push(...t);
+    }
+    map(t) {
+      return new r(this.#t.map(t));
+    }
+    flatMap(t) {
+      return new r(this.#t.flatMap(t));
+    }
+    #r(t, e) {
+      return typeof t == "string"
+        ? t === e
+        : typeof t == "function"
+        ? t(e)
+        : !1;
+    }
+    filter(t = a, e = a, n = a) {
+      return new r(
+        this.#t.filter((i) =>
+          this.#r(t, s.source(i)) && this.#r(e, s.relation(i)) &&
+          this.#r(n, s.target(i))
+        ),
+      );
+    }
+    find(t = a, e = a, n = a) {
+      let i = this.#t.find((o) =>
+        this.#r(t, s.source(o)) && this.#r(e, s.relation(o)) &&
+        this.#r(n, s.target(o))
+      );
+      return i ? new r([i]) : new r([]);
+    }
+    exists(t = a, e = a, n = a) {
+      return this.#t.some((i) =>
+        this.#r(t, s.source(i)) && this.#r(e, s.relation(i)) &&
+        this.#r(n, s.target(i))
+      );
+    }
+    hasSource(t) {
+      return this.#t.some((e) => this.#r(t, s.source(e)));
+    }
+    hasRelation(t) {
+      return this.#t.some((e) => this.#r(t, s.relation(e)));
+    }
+    hasTarget(t) {
+      return this.#t.some((e) => this.#r(t, s.target(e)));
+    }
+    first() {
+      return this.#t.length > 0 ? this.#t[0] : void 0;
+    }
+    triples() {
+      return this.#t;
+    }
+    sources() {
+      return new Set(this.#t.map((t) => s.source(t)));
+    }
+    relations() {
+      return new Set(this.#t.map((t) => s.relation(t)));
+    }
+    targets() {
+      return new Set(this.#t.map((t) => s.target(t)));
+    }
+    objects() {
+      let t = {};
+      for (let [n, i, o] of this.#t) {
+        t[n] || (t[n] = {}),
+          t[n][i]
+            ? Array.isArray(t[n][i]) ? t[n][i].push(o) : t[n][i] = [t[n][i], o]
+            : t[n][i] = o;
+      }
+      let e = [];
+      for (let [n, i] of Object.entries(t)) i.id = n, e.push(i);
+      return e;
+    }
+  };
+export {
+  a as truth,
+  b as falsity,
+  d as all,
+  f as TribbleDB,
+  h as isURN,
+  j as sameType,
+  m as not,
+  P as sameUrn,
+  p as isUrn,
+  s as Triples,
+  w as hasParameter,
+  x as isType,
+  y as any,
+};
 //# sourceMappingURL=mod.ts.map

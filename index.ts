@@ -1,5 +1,6 @@
 import { Pattern, Triple, TripleObject } from "./types.ts";
 import { truth } from "./predicates.ts";
+import { Index } from "./indices/index.ts";
 
 /*
  * Static methods for interacting with triples.
@@ -67,8 +68,6 @@ export class TribbleDB {
 
   /*
    * Test if a pattern matches a source/relation/target value.
-   *
-   *
    */
   #matches(pattern: Pattern, value: string): boolean {
     if (typeof pattern === "string") {
@@ -191,5 +190,114 @@ export class TribbleDB {
     }
 
     return output;
+  }
+}
+
+
+export class NewIndexBasedTribbleDB {
+  index: Index;
+  triplesCount: number;
+
+  constructor(triples: Triple[]) {
+    this.index = new Index(triples);
+    this.triplesCount = triples.length;
+  }
+
+  search(params: { source?: Dsl; relation?: string; target?: Dsl }): Triple[] {
+    // by default, all triples are in the intersection set. Then, we
+    // only keep the triple rows that meet the other criteria too
+    const indexes: Set<number>[] = [
+      new Set<number>(Array.from({ length: this.triplesCount }, (_, index) => index))
+    ];
+
+    const source = params.source;
+    const relation = params.relation;
+    const target = params.target;
+
+    if (source) {
+      if (source.type) {
+        const sourceTypeSet = this.index.sourceType.get(source.type);
+        if (sourceTypeSet) {
+          indexes.push(sourceTypeSet);
+        } else {
+          return [];
+        }
+      }
+
+      if (source.id) {
+        const sourceIdSet = this.index.sourceId.get(source.id);
+        if (sourceIdSet) {
+          indexes.push(sourceIdSet);
+        } else {
+          return [];
+        }
+      }
+
+      if (source.qs) {
+        for (const [key, val] of Object.entries(source.qs)) {
+          const sourceQsSet = this.index.sourceQs.get(`${key}=${val}`);
+          if (sourceQsSet) {
+            indexes.push(sourceQsSet);
+          } else {
+            return [];
+          }
+        }
+      }
+    }
+
+    if (target) {
+      if (target.type) {
+        const targetTypeSet = this.index.targetType.get(target.type);
+        if (targetTypeSet) {
+          indexes.push(targetTypeSet);
+        } else {
+          return [];
+        }
+      }
+
+      if (target.id) {
+        const targetIdSet = this.index.targetId.get(target.id);
+        if (targetIdSet) {
+          indexes.push(targetIdSet);
+        } else {
+          return [];
+        }
+      }
+
+      if (target.qs) {
+        for (const [key, val] of Object.entries(target.qs)) {
+          const targetQsSet = this.index.targetQs.get(`${key}=${val}`);
+          if (targetQsSet) {
+            indexes.push(targetQsSet);
+          } else {
+            return [];
+          }
+        }
+      }
+    }
+
+    if (relation) {
+      const relationSet = this.index.relations.get(relation);
+      if (relationSet) {
+        indexes.push(relationSet);
+      } else {
+        return [];
+      }
+    }
+
+    const intersection = Set.intersection(indexes);
+    let matchingTriples = Array.from(intersection).map(index => this.index.triples[index]);
+
+    // Apply predicate filters if present
+    if (source?.predicate || target?.predicate) {
+      matchingTriples = matchingTriples.filter(triple => {
+        const sourceMatches = source?.predicate ? source.predicate(Triples.source(triple)) : true;
+        const targetMatches = target?.predicate ? target.predicate(Triples.target(triple)) : true;
+
+        return sourceMatches && targetMatches;
+      });
+    }
+
+    return matchingTriples;
   }
 }

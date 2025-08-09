@@ -3,7 +3,10 @@ export type Thing = string | URN;
 export type Relation = string;
 export type Triple = [Thing, Relation, Thing];
 
-export function isURN(thing: Thing, namespace: string = 'urn:ró'): thing is URN {
+export function isURN(
+  thing: Thing,
+  namespace: string = "urn:ró",
+): thing is URN {
   return typeof thing === "string" && thing.startsWith(`urn:${namespace}:`);
 }
 
@@ -20,15 +23,14 @@ export type ParsedUrn = {
   type: string;
   id: string;
   qs: Record<string, string>;
-}
+};
 
 /*
  * Queries against sources and targets can specify these parameters.
- *
  */
 export type Dsl = {
-  type: string | undefined;
-  id: string | undefined,
-  predicate: Predicate | undefined,
-  qs: Record<string, string> | undefined,
-}
+  type?: string;
+  id?: string;
+  predicate?: Predicate;
+  qs?: Record<string, string>;
+};
