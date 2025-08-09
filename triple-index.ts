@@ -1,6 +1,6 @@
-import { Triples } from "../index.ts";
-import type { IndexedTriple, Triple } from "../types.ts";
-import { asUrn } from "../urn.ts";
+import { Triples } from "./tribble-db.ts";
+import type { IndexedTriple, Triple } from "./types.ts";
+import { asUrn } from "./urn.ts";
 import { IndexedSet } from "./sets.ts";
 
 

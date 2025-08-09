@@ -1,6 +1,6 @@
 import type { Dsl, Triple, TripleObject } from "./types.ts";
-import { Index } from "./indices/index.ts";
-import { Sets } from "./indices/sets.ts";
+import { Index } from "./triple-index.ts";
+import { Sets } from "./sets.ts";
 
 /*
  * Static methods for interacting with triples.
