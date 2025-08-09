@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { TribbleDB } from "./index.ts";
+import { TribbleDB } from "../index.ts";
 import { Triple } from "../types.ts";
 import { Triples } from "../index.ts";
 import { asUrn } from "../urn.ts";
@@ -20,29 +20,37 @@ const testTriples: Triple[] = [
 
 Deno.test("search by source type returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ source: { type: "person" } });
+  const results = database.searchArray({ source: { type: "person" } });
 
   assertEquals(results.length, 6);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.source(triple));
-    return parsed.type === "person";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.type === "person";
+    }),
+    true,
+  );
 });
 
 Deno.test("search by source id returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ source: { id: "alice" } });
+  const results = database.searchArray({ source: { id: "alice" } });
 
   assertEquals(results.length, 3);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.source(triple));
-    return parsed.id === "alice";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.id === "alice";
+    }),
+    true,
+  );
 });
 
 Deno.test("search by source query string returns matching triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ source: { qs: { breed: "persian" } } });
+  const results = database.searchArray({
+    source: { qs: { breed: "persian" } },
+  });
 
   assertEquals(results.length, 1);
   assertEquals(Triples.source(results[0]), "urn:ró:animal:cat?breed=persian");
@@ -50,26 +58,32 @@ Deno.test("search by source query string returns matching triples", () => {
 
 Deno.test("search by relation returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ relation: "name" });
+  const results = database.searchArray({ relation: "name" });
 
   assertEquals(results.length, 4);
-  assertEquals(results.every(triple => Triples.relation(triple) === "name"), true);
+  assertEquals(
+    results.every((triple: Triple) => Triples.relation(triple) === "name"),
+    true,
+  );
 });
 
 Deno.test("search by target type returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ target: { type: "company" } });
+  const results = database.searchArray({ target: { type: "company" } });
 
   assertEquals(results.length, 2);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.target(triple));
-    return parsed.type === "company";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.target(triple));
+      return parsed.type === "company";
+    }),
+    true,
+  );
 });
 
 Deno.test("search by target id returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ target: { id: "acme" } });
+  const results = database.searchArray({ target: { id: "acme" } });
 
   assertEquals(results.length, 1);
   assertEquals(Triples.target(results[0]), "urn:ró:company:acme");
@@ -77,41 +91,51 @@ Deno.test("search by target id returns all matching triples", () => {
 
 Deno.test("search with multiple source constraints returns intersection", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
-    source: { type: "person", id: "alice" }
+  const results = database.searchArray({
+    source: { type: "person", id: "alice" },
   });
 
   assertEquals(results.length, 3);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.source(triple));
-    return parsed.type === "person" && parsed.id === "alice";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.type === "person" && parsed.id === "alice";
+    }),
+    true,
+  );
 });
 
 Deno.test("search with source and relation constraints returns intersection", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: { type: "person" },
-    relation: "name"
+    relation: "name",
   });
 
   assertEquals(results.length, 2);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.source(triple));
-    return parsed.type === "person" && Triples.relation(triple) === "name";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.type === "person" && Triples.relation(triple) === "name";
+    }),
+    true,
+  );
 });
 
 Deno.test("search with all constraint types returns precise intersection", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: { type: "person", id: "alice" },
     relation: "works_at",
-    target: { type: "company" }
+    target: { type: "company" },
   });
 
   assertEquals(results.length, 1);
-  assertEquals(results[0], ["urn:ró:person:alice", "works_at", "urn:ró:company:acme"]);
+  assertEquals(results[0], [
+    "urn:ró:person:alice",
+    "works_at",
+    "urn:ró:company:acme",
+  ]);
 });
 
 Deno.test("search with multiple query string constraints returns intersection", () => {
@@ -121,54 +145,57 @@ Deno.test("search with multiple query string constraints returns intersection", 
     ["urn:ró:animal:cat?breed=siamese&color=white", "species", "felis_catus"],
   ]);
 
-  const results = database.search({
-    source: { qs: { breed: "persian", color: "white" } }
+  const results = database.searchArray({
+    source: { qs: { breed: "persian", color: "white" } },
   });
 
   assertEquals(results.length, 1);
-  assertEquals(Triples.source(results[0]), "urn:ró:animal:cat?breed=persian&color=white");
+  assertEquals(
+    Triples.source(results[0]),
+    "urn:ró:animal:cat?breed=persian&color=white",
+  );
 });
 
 Deno.test("search with non-existent source type returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ source: { type: "vehicle" } });
+  const results = database.searchArray({ source: { type: "vehicle" } });
 
   assertEquals(results.length, 0);
 });
 
 Deno.test("search with non-existent source id returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ source: { id: "charlie" } });
+  const results = database.searchArray({ source: { id: "charlie" } });
 
   assertEquals(results.length, 0);
 });
 
 Deno.test("search with non-existent relation returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ relation: "drives" });
+  const results = database.searchArray({ relation: "drives" });
 
   assertEquals(results.length, 0);
 });
 
 Deno.test("search with non-existent target type returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ target: { type: "building" } });
+  const results = database.searchArray({ target: { type: "building" } });
 
   assertEquals(results.length, 0);
 });
 
 Deno.test("search with non-existent query string returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({ source: { qs: { color: "purple" } } });
+  const results = database.searchArray({ source: { qs: { color: "purple" } } });
 
   assertEquals(results.length, 0);
 });
 
 Deno.test("search with conflicting constraints returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: { type: "person" },
-    target: { type: "person" }
+    target: { type: "person" },
   });
 
   assertEquals(results.length, 0);
@@ -176,9 +203,9 @@ Deno.test("search with conflicting constraints returns empty array", () => {
 
 Deno.test("search with partial constraint match returns empty when other constraints fail", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: { type: "person", id: "alice" },
-    relation: "drives"
+    relation: "drives",
   });
 
   assertEquals(results.length, 0);
@@ -186,7 +213,7 @@ Deno.test("search with partial constraint match returns empty when other constra
 
 Deno.test("search with empty parameters returns all triples", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({});
+  const results = database.searchArray({});
 
   assertEquals(results.length, testTriples.length);
   assertEquals(results, testTriples);
@@ -198,7 +225,7 @@ Deno.test("search handles non-URN source strings correctly", () => {
     ["another_string", "relation", "target2"],
   ];
   const database = new TribbleDB(nonUrnTriples);
-  const results = database.search({ source: { type: "unknown" } });
+  const results = database.searchArray({ source: { type: "unknown" } });
 
   assertEquals(results.length, 2);
 });
@@ -210,86 +237,99 @@ Deno.test("search with target query string constraints works correctly", () => {
     ["source3", "points_to", "urn:ró:location:museum?city=boston"],
   ];
   const database = new TribbleDB(targetQsTriples);
-  const results = database.search({
-    target: { type: "location", qs: { city: "boston" } }
+  const results = database.searchArray({
+    target: { type: "location", qs: { city: "boston" } },
   });
 
   assertEquals(results.length, 2);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.target(triple));
-    return parsed.type === "location" && parsed.qs.city === "boston";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.target(triple));
+      return parsed.type === "location" && parsed.qs.city === "boston";
+    }),
+    true,
+  );
 });
 
 Deno.test("search with source predicate filters results correctly", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: {
       type: "person",
       predicate: (source: string) => {
         const parsed = asUrn(source);
         return parsed.id === "alice";
-      }
-    }
+      },
+    },
   });
 
   assertEquals(results.length, 3);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.source(triple));
-    return parsed.id === "alice";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.id === "alice";
+    }),
+    true,
+  );
 });
 
 Deno.test("search with target predicate filters results correctly", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     target: {
       predicate: (target: string) => {
         const parsed = asUrn(target);
         return parsed.type === "company";
-      }
-    }
+      },
+    },
   });
 
   assertEquals(results.length, 2);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.target(triple));
-    return parsed.type === "company";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.target(triple));
+      return parsed.type === "company";
+    }),
+    true,
+  );
 });
 
 Deno.test("search with both source and target predicates applies both filters", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: {
       type: "person",
       predicate: (source: string) => {
         const parsed = asUrn(source);
         return parsed.id === "alice";
-      }
+      },
     },
     target: {
       predicate: (target: string) => {
         const parsed = asUrn(target);
         return parsed.type === "company";
-      }
-    }
+      },
+    },
   });
 
   assertEquals(results.length, 1);
-  assertEquals(results[0], ["urn:ró:person:alice", "works_at", "urn:ró:company:acme"]);
+  assertEquals(results[0], [
+    "urn:ró:person:alice",
+    "works_at",
+    "urn:ró:company:acme",
+  ]);
 });
 
 Deno.test("search with predicate that matches nothing returns empty array", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: {
       type: "person",
       predicate: (source: string) => {
         const parsed = asUrn(source);
         return parsed.id === "charlie";
-      }
-    }
+      },
+    },
   });
 
   assertEquals(results.length, 0);
@@ -297,35 +337,39 @@ Deno.test("search with predicate that matches nothing returns empty array", () =
 
 Deno.test("search with complex predicate logic works correctly", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: {
       predicate: (source: string) => {
-        const hasAge30 = testTriples.some(triple =>
-          Triples.source(triple) === source && Triples.relation(triple) === "age" && Triples.target(triple) === "30"
+        const hasAge30 = testTriples.some((triple) =>
+          Triples.source(triple) === source &&
+          Triples.relation(triple) === "age" && Triples.target(triple) === "30"
         );
         return hasAge30;
-      }
-    }
+      },
+    },
   });
 
   assertEquals(results.length, 3);
-  assertEquals(results.every(triple => {
-    const parsed = asUrn(Triples.source(triple));
-    return parsed.id === "alice";
-  }), true);
+  assertEquals(
+    results.every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.id === "alice";
+    }),
+    true,
+  );
 });
 
 Deno.test("search with predicate combined with index constraints works correctly", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search({
+  const results = database.searchArray({
     source: {
       type: "person",
       predicate: (source: string) => {
         const parsed = asUrn(source);
         return parsed.id === "bob";
-      }
+      },
     },
-    relation: "name"
+    relation: "name",
   });
 
   assertEquals(results.length, 1);

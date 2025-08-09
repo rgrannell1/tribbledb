@@ -56,15 +56,14 @@ export class Sets {
    * query parameters to these URNs) so first sort the
    * sets in ascending size. This could be done much, much more
    * efficiently with a dataset that allows cheap intersections though...TODO
-   *
    */
   static intersection<T>(sets: Set<T>[]): Set<T> {
     if (sets.length === 0) {
-      return new Set<T>()
-    };
+      return new Set<T>();
+    }
 
     sets.sort((setA, setB) => {
-      return setA.size - setB.size
+      return setA.size - setB.size;
     });
     const acc = new Set<T>(sets[0]);
 
@@ -77,8 +76,8 @@ export class Sets {
       }
 
       if (acc.size === 0) {
-        break
-      };
+        break;
+      }
     }
 
     return acc;

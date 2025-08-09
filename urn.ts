@@ -52,7 +52,6 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
 
 /*
  * Converts a string value to a URN.
- *
  */
 export function asUrn(value: string, namespace: string = "ró"): ParsedUrn {
   try {

@@ -1,6 +1,6 @@
-import { Pattern, Triple, TripleObject } from "./types.ts";
-import { truth } from "./predicates.ts";
+import { Dsl, Triple, TripleObject } from "./types.ts";
 import { Index } from "./indices/index.ts";
+import { Sets } from "./indices/sets.ts";
 
 /*
  * Static methods for interacting with triples.
@@ -20,10 +20,12 @@ export class Triples {
 }
 
 export class TribbleDB {
-  #triples: Triple[] = [];
+  index: Index;
+  triplesCount: number;
 
-  constructor(triples: Triple[] = []) {
-    this.#triples = triples;
+  constructor(triples: Triple[]) {
+    this.index = new Index(triples);
+    this.triplesCount = triples.length;
   }
 
   static of(triples: Triple[]): TribbleDB {
@@ -51,125 +53,46 @@ export class TribbleDB {
   }
 
   add(triples: Triple[]): void {
-    this.#triples.push(...triples);
+    // Use the index's efficient add method instead of rebuilding
+    this.index.add(triples);
+    this.triplesCount += triples.length;
   }
 
-  map(
-    fn: (triple: Triple) => Triple,
-  ): TribbleDB {
-    return new TribbleDB(this.#triples.map(fn));
+  map(fn: (triple: Triple) => Triple): TribbleDB {
+    return new TribbleDB(this.index.triples.map(fn));
   }
 
-  flatMap(
-    fn: (triple: Triple) => Triple[],
-  ): TribbleDB {
-    return new TribbleDB(this.#triples.flatMap(fn) as Triple[]);
-  }
-
-  /*
-   * Test if a pattern matches a source/relation/target value.
-   */
-  #matches(pattern: Pattern, value: string): boolean {
-    if (typeof pattern === "string") {
-      return pattern === value;
-    } else if (typeof pattern === "function") {
-      return pattern(value);
-    }
-    return false;
-  }
-
-  /**
-   * Finds triples in the database that match the given patterns.
-   *
-   * @param source   - The pattern for the source of the triple.
-   * @param relation - The pattern for the relation of the triple.
-   * @param target   - The pattern for the target of the triple.
-   *
-   * @returns A new TribbleDB instance containing matching triples.
-   */
-  filter(
-    source: Pattern = truth,
-    relation: Pattern = truth,
-    target: Pattern = truth,
-  ) {
-    return new TribbleDB(this.#triples.filter((triple) => {
-      return this.#matches(source, Triples.source(triple)) &&
-        this.#matches(relation, Triples.relation(triple)) &&
-        this.#matches(target, Triples.target(triple));
-    }));
-  }
-
-  find(
-    source: Pattern = truth,
-    relation: Pattern = truth,
-    target: Pattern = truth,
-  ): TribbleDB {
-    const result = this.#triples.find((triple) => {
-      return this.#matches(source, Triples.source(triple)) &&
-        this.#matches(relation, Triples.relation(triple)) &&
-        this.#matches(target, Triples.target(triple));
-    });
-
-    if (result) {
-      return new TribbleDB([result]);
-    }
-
-    return new TribbleDB([]);
-  }
-
-  exists(
-    source: Pattern = truth,
-    relation: Pattern = truth,
-    target: Pattern = truth,
-  ): boolean {
-    return this.#triples.some((triple) => {
-      return this.#matches(source, Triples.source(triple)) &&
-        this.#matches(relation, Triples.relation(triple)) &&
-        this.#matches(target, Triples.target(triple));
-    });
-  }
-
-  hasSource(source: Pattern): boolean {
-    return this.#triples.some((triple) =>
-      this.#matches(source, Triples.source(triple))
-    );
-  }
-
-  hasRelation(relation: Pattern): boolean {
-    return this.#triples.some((triple) =>
-      this.#matches(relation, Triples.relation(triple))
-    );
-  }
-
-  hasTarget(target: Pattern): boolean {
-    return this.#triples.some((triple) =>
-      this.#matches(target, Triples.target(triple))
-    );
+  flatMap(fn: (triple: Triple) => Triple[]): TribbleDB {
+    const flatMappedTriples = this.index.triples.flatMap(fn) as Triple[];
+    return new TribbleDB(flatMappedTriples);
   }
 
   first(): Triple | undefined {
-    return this.#triples.length > 0 ? this.#triples[0] : undefined;
+    return this.index.triples.length > 0 ? this.index.triples[0] : undefined;
   }
 
   triples(): Triple[] {
-    return this.#triples;
+    return this.index.triples;
   }
+
   sources(): Set<string> {
-    return new Set(this.#triples.map((triple) => Triples.source(triple)));
+    return new Set(this.index.triples.map((triple) => Triples.source(triple)));
   }
 
   relations(): Set<string> {
-    return new Set(this.#triples.map((triple) => Triples.relation(triple)));
+    return new Set(
+      this.index.triples.map((triple) => Triples.relation(triple)),
+    );
   }
 
   targets(): Set<string> {
-    return new Set(this.#triples.map((triple) => Triples.target(triple)));
+    return new Set(this.index.triples.map((triple) => Triples.target(triple)));
   }
 
   objects(): TripleObject[] {
     const objs: Record<string, TripleObject> = {};
 
-    for (const [source, relation, target] of this.#triples) {
+    for (const [source, relation, target] of this.index.triples) {
       if (!objs[source]) {
         objs[source] = {};
       }
@@ -191,23 +114,16 @@ export class TribbleDB {
 
     return output;
   }
-}
 
-
-export class NewIndexBasedTribbleDB {
-  index: Index;
-  triplesCount: number;
-
-  constructor(triples: Triple[]) {
-    this.index = new Index(triples);
-    this.triplesCount = triples.length;
-  }
-
-  search(params: { source?: Dsl; relation?: string; target?: Dsl }): Triple[] {
+  *search(
+    params: { source?: Dsl; relation?: string; target?: Dsl },
+  ): Generator<Triple> {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too
     const indexes: Set<number>[] = [
-      new Set<number>(Array.from({ length: this.triplesCount }, (_, index) => index))
+      new Set<number>(
+        Array.from({ length: this.triplesCount }, (_, index) => index),
+      ),
     ];
 
     const source = params.source;
@@ -220,7 +136,7 @@ export class NewIndexBasedTribbleDB {
         if (sourceTypeSet) {
           indexes.push(sourceTypeSet);
         } else {
-          return [];
+          return;
         }
       }
 
@@ -229,7 +145,7 @@ export class NewIndexBasedTribbleDB {
         if (sourceIdSet) {
           indexes.push(sourceIdSet);
         } else {
-          return [];
+          return;
         }
       }
 
@@ -239,7 +155,7 @@ export class NewIndexBasedTribbleDB {
           if (sourceQsSet) {
             indexes.push(sourceQsSet);
           } else {
-            return [];
+            return;
           }
         }
       }
@@ -251,7 +167,7 @@ export class NewIndexBasedTribbleDB {
         if (targetTypeSet) {
           indexes.push(targetTypeSet);
         } else {
-          return [];
+          return;
         }
       }
 
@@ -260,7 +176,7 @@ export class NewIndexBasedTribbleDB {
         if (targetIdSet) {
           indexes.push(targetIdSet);
         } else {
-          return [];
+          return;
         }
       }
 
@@ -270,7 +186,7 @@ export class NewIndexBasedTribbleDB {
           if (targetQsSet) {
             indexes.push(targetQsSet);
           } else {
-            return [];
+            return;
           }
         }
       }
@@ -281,23 +197,37 @@ export class NewIndexBasedTribbleDB {
       if (relationSet) {
         indexes.push(relationSet);
       } else {
-        return [];
+        return;
       }
     }
 
-    const intersection = Set.intersection(indexes);
-    let matchingTriples = Array.from(intersection).map(index => this.index.triples[index]);
+    const intersection = Sets.intersection(indexes);
 
-    // Apply predicate filters if present
-    if (source?.predicate || target?.predicate) {
-      matchingTriples = matchingTriples.filter(triple => {
-        const sourceMatches = source?.predicate ? source.predicate(Triples.source(triple)) : true;
-        const targetMatches = target?.predicate ? target.predicate(Triples.target(triple)) : true;
+    // Yield triples one by one, applying predicate filters as we go
+    for (const index of intersection) {
+      const triple = this.index.triples[index];
 
-        return sourceMatches && targetMatches;
-      });
+      // Apply predicate filters if present
+      if (source?.predicate || target?.predicate) {
+        const sourceMatches = source?.predicate
+          ? source.predicate(Triples.source(triple))
+          : true;
+        const targetMatches = target?.predicate
+          ? target.predicate(Triples.target(triple))
+          : true;
+
+        if (sourceMatches && targetMatches) {
+          yield triple;
+        }
+      } else {
+        yield triple;
+      }
     }
+  }
 
-    return matchingTriples;
+  searchArray(
+    params: { source?: Dsl; relation?: string; target?: Dsl },
+  ): Triple[] {
+    return Array.from(this.search(params));
   }
 }
