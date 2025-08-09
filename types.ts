@@ -21,3 +21,10 @@ export type Dsl = {
   predicate?: Predicate;
   qs?: Record<string, string>;
 };
+
+
+/*
+ * Internal indexed triple representation using numeric indices
+ * instead of strings for memory efficiency
+ */
+export type IndexedTriple = [number, number, number];

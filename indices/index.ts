@@ -1,13 +1,8 @@
 import { Triples } from "../index.ts";
-import type { Triple } from "../types.ts";
+import type { IndexedTriple, Triple } from "../types.ts";
 import { asUrn } from "../urn.ts";
 import { IndexedSet } from "./sets.ts";
 
-/*
- * Internal indexed triple representation using numeric indices
- * instead of strings for memory efficiency
- */
-type IndexedTriple = [number, number, number];
 
 /*
  * Construct an index to accelerate triple searches. Normally
