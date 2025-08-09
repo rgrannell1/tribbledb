@@ -75,6 +75,21 @@ export class TribbleDB {
     return this.index.length > 0 ? this.index.getTriple(0) : undefined;
   }
 
+  firstSource(): string | undefined {
+    const first = this.first();
+    return first ? Triples.source(first) : undefined;
+  }
+
+  firstRelation(): string | undefined {
+    const first = this.first();
+    return first ? Triples.relation(first) : undefined;
+  }
+
+  firstTarget(): string | undefined {
+    const first = this.first();
+    return first ? Triples.target(first) : undefined;
+  }
+
   triples(): Triple[] {
     return this.index.triples();
   }
