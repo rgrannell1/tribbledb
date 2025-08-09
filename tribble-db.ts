@@ -71,23 +71,31 @@ export class TribbleDB {
     return new TribbleDB(flatMappedTriples);
   }
 
-  first(): Triple | undefined {
+  firstTriple(): Triple | undefined {
     return this.index.length > 0 ? this.index.getTriple(0) : undefined;
   }
 
+  first(): Triple | undefined {
+    return this.firstTriple();
+  }
+
   firstSource(): string | undefined {
-    const first = this.first();
+    const first = this.firstTriple();
     return first ? Triples.source(first) : undefined;
   }
 
   firstRelation(): string | undefined {
-    const first = this.first();
+    const first = this.firstTriple();
     return first ? Triples.relation(first) : undefined;
   }
 
   firstTarget(): string | undefined {
-    const first = this.first();
+    const first = this.firstTriple();
     return first ? Triples.target(first) : undefined;
+  }
+
+  firstObject(): TripleObject | undefined {
+    return this.objects()[0];
   }
 
   triples(): Triple[] {
@@ -260,11 +268,5 @@ export class TribbleDB {
     }
 
     return new TribbleDB(matchingTriples);
-  }
-
-  searchArray(
-    params: { source?: Dsl; relation?: string; target?: Dsl },
-  ): Triple[] {
-    return this.search(params).triples();
   }
 }
