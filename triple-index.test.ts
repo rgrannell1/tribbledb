@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import { TribbleDB } from "./tribble-db.ts";
 import type { Triple } from "./types.ts";
-import { Triples } from "./tribble-db.ts";
+import { Triples } from "./triples.ts"
 import { asUrn } from "./urn.ts";
 
 const testTriples: Triple[] = [
@@ -54,7 +54,7 @@ Deno.test("search by source query string returns matching triples", () => {
 
   assertEquals(results.triplesCount, 1);
   assertEquals(
-    Triples.source(results.first()!),
+    Triples.source(results.firstTriple()!),
     "urn:ró:animal:cat?breed=persian",
   );
 });
@@ -91,7 +91,7 @@ Deno.test("search by target id returns all matching triples", () => {
   const results = database.search({ target: { id: "acme" } });
 
   assertEquals(results.triplesCount, 1);
-  assertEquals(Triples.target(results.first()!), "urn:ró:company:acme");
+  assertEquals(Triples.target(results.firstTriple()!), "urn:ró:company:acme");
 });
 
 Deno.test("search with multiple source constraints returns intersection", () => {
@@ -136,7 +136,7 @@ Deno.test("search with all constraint types returns precise intersection", () =>
   });
 
   assertEquals(results.triplesCount, 1);
-  assertEquals(results.first()!, [
+  assertEquals(results.firstTriple()!, [
     "urn:ró:person:alice",
     "works_at",
     "urn:ró:company:acme",
@@ -156,7 +156,7 @@ Deno.test("search with multiple query string constraints returns intersection", 
 
   assertEquals(results.triplesCount, 1);
   assertEquals(
-    Triples.source(results.first()!),
+    Triples.source(results.firstTriple()!),
     "urn:ró:animal:cat?breed=persian&color=white",
   );
 });
@@ -318,7 +318,7 @@ Deno.test("search with both source and target predicates applies both filters", 
   });
 
   assertEquals(results.triplesCount, 1);
-  assertEquals(results.first()!, [
+  assertEquals(results.firstTriple()!, [
     "urn:ró:person:alice",
     "works_at",
     "urn:ró:company:acme",
@@ -378,5 +378,5 @@ Deno.test("search with predicate combined with index constraints works correctly
   });
 
   assertEquals(results.triplesCount, 1);
-  assertEquals(results.first()!, ["urn:ró:person:bob", "name", "Bob Jones"]);
+  assertEquals(results.firstTriple()!, ["urn:ró:person:bob", "name", "Bob Jones"]);
 });

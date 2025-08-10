@@ -1,4 +1,4 @@
-import { Triples } from "./tribble-db.ts";
+import { Triples } from "./triples.ts"
 import type { IndexedTriple, Triple } from "./types.ts";
 import { asUrn } from "./urn.ts";
 import { IndexedSet } from "./sets.ts";
@@ -148,6 +148,7 @@ export class Index {
 
   /*
    * Reconstruct the original triples from the indexed representation
+   *
    */
   triples(): Triple[] {
     return this.indexedTriples.map(([sourceIdx, relationIdx, targetIdx]) => [
