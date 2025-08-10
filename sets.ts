@@ -1,3 +1,5 @@
+import { TribbleDBPerformanceMetrics } from "./metrics.ts";
+
 /*
  * Indexed set class
  *
@@ -57,7 +59,7 @@ export class Sets {
    * sets in ascending size. This could be done much, much more
    * efficiently with a dataset that allows cheap intersections though...TODO
    */
-  static intersection<T>(sets: Set<T>[]): Set<T> {
+  static intersection<T>(metrics: TribbleDBPerformanceMetrics, sets: Set<T>[]): Set<T> {
     if (sets.length === 0) {
       return new Set<T>();
     }
@@ -70,6 +72,7 @@ export class Sets {
     for (let idx = 1; idx < sets.length; idx++) {
       const currentSet = sets[idx];
       for (const value of acc) {
+        metrics.setCheck();
         if (!currentSet.has(value)) {
           acc.delete(value);
         }

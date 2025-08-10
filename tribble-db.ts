@@ -2,6 +2,7 @@ import type { Dsl, Triple, TripleObject } from "./types.ts";
 import { Index } from "./triple-index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
+import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 
 /*
  * A searchable triple database
@@ -11,12 +12,14 @@ import { Triples } from "./triples.ts";
 export class TribbleDB {
   index: Index;
   triplesCount: number;
-  tripleRows: Set<number>
+  tripleRows: Set<number>;
+  metrics: TribbleDBPerformanceMetrics;
 
   constructor(triples: Triple[]) {
     this.index = new Index(triples);
     this.triplesCount = this.index.length;
     this.tripleRows = new Set<number>();
+    this.metrics = new TribbleDBPerformanceMetrics();
 
     for (let idx = 0; idx < this.triplesCount; idx++) {
       this.tripleRows.add(idx);
@@ -220,10 +223,10 @@ export class TribbleDB {
     // only keep the triple rows that meet the other criteria too, by
     // insecting all row sets.
     const matchingRowSets: Set<number>[] = [
-      this.tripleRows
+      this.tripleRows,
     ];
 
-    const {source, relation, target} = params;
+    const { source, relation, target } = params;
 
     if (source) {
       if (source.type) {
@@ -296,7 +299,7 @@ export class TribbleDB {
       }
     }
 
-    const intersection = Sets.intersection(matchingRowSets);
+    const intersection = Sets.intersection(this.metrics, matchingRowSets);
     const matchingTriples: Triple[] = [];
 
     // Collect matching triples, applying predicate filters as we go
@@ -311,11 +314,11 @@ export class TribbleDB {
       let isValid = true;
 
       if (source?.predicate) {
-        isValid = isValid && source.predicate(Triples.source(triple))
+        isValid = isValid && source.predicate(Triples.source(triple));
       }
 
       if (target?.predicate) {
-        isValid = isValid && target.predicate(Triples.target(triple))
+        isValid = isValid && target.predicate(Triples.target(triple));
       }
 
       if (isValid) {
@@ -324,5 +327,12 @@ export class TribbleDB {
     }
 
     return new TribbleDB(matchingTriples);
+  }
+
+  getMetrics() {
+    return {
+      index: this.index.metrics,
+      db: this.metrics
+    }
   }
 }

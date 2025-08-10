@@ -1,8 +1,8 @@
-import { Triples } from "./triples.ts"
+import { Triples } from "./triples.ts";
 import type { IndexedTriple, Triple } from "./types.ts";
 import { asUrn } from "./urn.ts";
 import { IndexedSet } from "./sets.ts";
-
+import { IndexPerformanceMetrics } from "./metrics.ts";
 
 /*
  * Construct an index to accelerate triple searches. Normally
@@ -31,6 +31,8 @@ export class Index {
   targetId: Map<number, Set<number>>;
   targetQs: Map<number, Set<number>>;
 
+  metrics: IndexPerformanceMetrics;
+
   constructor(triples: Triple[]) {
     this.indexedTriples = [];
     this.stringIndex = new IndexedSet();
@@ -43,6 +45,7 @@ export class Index {
     this.targetId = new Map();
     this.targetQs = new Map();
     this.indexTriples(triples);
+    this.metrics = new IndexPerformanceMetrics();
   }
 
   /*
@@ -148,7 +151,6 @@ export class Index {
 
   /*
    * Reconstruct the original triples from the indexed representation
-   *
    */
   triples(): Triple[] {
     return this.indexedTriples.map(([sourceIdx, relationIdx, targetIdx]) => [
@@ -180,38 +182,74 @@ export class Index {
 
   getSourceTypeSet(type: string): Set<number> | undefined {
     const typeIdx = this.stringIndex.getIndex(type);
-    return typeIdx !== undefined ? this.sourceType.get(typeIdx) : undefined;
+
+    if (typeIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+
+    return this.sourceType.get(typeIdx);
   }
 
   getSourceIdSet(id: string): Set<number> | undefined {
     const idIdx = this.stringIndex.getIndex(id);
-    return idIdx !== undefined ? this.sourceId.get(idIdx) : undefined;
+
+    if (idIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+
+    return this.sourceId.get(idIdx);
   }
 
   getSourceQsSet(key: string, val: string): Set<number> | undefined {
     const qsIdx = this.stringIndex.getIndex(`${key}=${val}`);
-    return qsIdx !== undefined ? this.sourceQs.get(qsIdx) : undefined;
+
+    if (qsIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+
+    return this.sourceQs.get(qsIdx);
   }
 
   getRelationSet(relation: string): Set<number> | undefined {
     const relationIdx = this.stringIndex.getIndex(relation);
-    return relationIdx !== undefined
-      ? this.relations.get(relationIdx)
-      : undefined;
+
+    if (relationIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+
+    return this.relations.get(relationIdx);
   }
 
   getTargetTypeSet(type: string): Set<number> | undefined {
     const typeIdx = this.stringIndex.getIndex(type);
-    return typeIdx !== undefined ? this.targetType.get(typeIdx) : undefined;
+
+    if (typeIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+
+    return this.targetType.get(typeIdx);
   }
 
   getTargetIdSet(id: string): Set<number> | undefined {
     const idIdx = this.stringIndex.getIndex(id);
-    return idIdx !== undefined ? this.targetId.get(idIdx) : undefined;
+    if (idIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+    return this.targetId.get(idIdx);
   }
 
   getTargetQsSet(key: string, val: string): Set<number> | undefined {
     const qsIdx = this.stringIndex.getIndex(`${key}=${val}`);
-    return qsIdx !== undefined ? this.targetQs.get(qsIdx) : undefined;
+    if (qsIdx === undefined) {
+      return undefined;
+    }
+    this.metrics.mapRead();
+    return this.targetQs.get(qsIdx);
   }
 }

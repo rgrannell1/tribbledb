@@ -3,7 +3,6 @@ import type { IndexedTriple, Triple } from "../types.ts";
 import { asUrn } from "../urn.ts";
 import { IndexedSet } from "./sets.ts";
 
-
 /*
  * Construct an index to accelerate triple searches. Normally
  * search would be done through a linear table scan, but it can

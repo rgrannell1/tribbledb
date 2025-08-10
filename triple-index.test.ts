@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert";
 import { TribbleDB } from "./tribble-db.ts";
 import type { Triple } from "./types.ts";
-import { Triples } from "./triples.ts"
+import { Triples } from "./triples.ts";
 import { asUrn } from "./urn.ts";
 
 const testTriples: Triple[] = [
@@ -378,5 +378,9 @@ Deno.test("search with predicate combined with index constraints works correctly
   });
 
   assertEquals(results.triplesCount, 1);
-  assertEquals(results.firstTriple()!, ["urn:ró:person:bob", "name", "Bob Jones"]);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:person:bob",
+    "name",
+    "Bob Jones",
+  ]);
 });

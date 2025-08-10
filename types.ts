@@ -22,7 +22,6 @@ export type Dsl = {
   qs?: Record<string, string>;
 };
 
-
 /*
  * Internal indexed triple representation using numeric indices
  * instead of strings for memory efficiency
