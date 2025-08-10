@@ -133,8 +133,8 @@ export class TribbleDB {
   /*
    * Get the first object in the database.
    */
-  firstObject(): TripleObject | undefined {
-    return this.objects()[0];
+  firstObject(listOnly: boolean = false): TripleObject | undefined {
+    return this.objects(listOnly)[0];
   }
 
   /*
@@ -184,7 +184,7 @@ export class TribbleDB {
    *
    * @returns An array of unique TripleObject instances.
    */
-  objects(): TripleObject[] {
+  objects(listOnly: boolean = false): TripleObject[] {
     const objs: Record<string, TripleObject> = {};
 
     for (const [source, relation, target] of this.index.triples()) {
@@ -192,7 +192,7 @@ export class TribbleDB {
         objs[source] = {};
       }
       if (!objs[source][relation]) {
-        objs[source][relation] = target;
+        objs[source][relation] = listOnly ? [target] : target;
       } else if (Array.isArray(objs[source][relation])) {
         (objs[source][relation] as string[]).push(target);
       } else {
