@@ -4,5 +4,3 @@ npx esbuild mod.ts      \
   --bundle              \
   --outfile=dist/mod.ts \
   --format=esm          \
-  --minify              \
-  --sourcemap

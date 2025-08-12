@@ -59,7 +59,10 @@ export class Sets {
    * sets in ascending size. This could be done much, much more
    * efficiently with a dataset that allows cheap intersections though...TODO
    */
-  static intersection<T>(metrics: TribbleDBPerformanceMetrics, sets: Set<T>[]): Set<T> {
+  static intersection<T>(
+    metrics: TribbleDBPerformanceMetrics,
+    sets: Set<T>[],
+  ): Set<T> {
     if (sets.length === 0) {
       return new Set<T>();
     }

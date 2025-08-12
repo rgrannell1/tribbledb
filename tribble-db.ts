@@ -1,4 +1,4 @@
-import type { Dsl, Triple, TripleObject } from "./types.ts";
+import type { Dsl, DslRelation, Triple, TripleObject } from "./types.ts";
 import { Index } from "./triple-index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
@@ -217,7 +217,7 @@ export class TribbleDB {
    * @returns A new TribbleDB instance containing the matching triples.
    */
   search(
-    params: { source?: Dsl; relation?: string; target?: Dsl },
+    params: { source?: Dsl; relation?: string | DslRelation; target?: Dsl },
   ): TribbleDB {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too, by
@@ -227,6 +227,18 @@ export class TribbleDB {
     ];
 
     const { source, relation, target } = params;
+    if (typeof source === 'undefined' && typeof target === 'undefined' && typeof relation === 'undefined') {
+      // yes, we could just return everything instead
+      throw new Error("At least one search parameter must be defined");
+    }
+
+    const allowedKeys = ["source", "relation", "target"];
+    for (const key of Object.keys(params)) {
+      if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
+      if (!allowedKeys.includes(key)) {
+        throw new Error(`Unexpected search parameter: ${key}`);
+      }
+    }
 
     if (source) {
       if (source.type) {
@@ -291,9 +303,24 @@ export class TribbleDB {
     }
 
     if (relation) {
-      const relationSet = this.index.getRelationSet(relation);
-      if (relationSet) {
-        matchingRowSets.push(relationSet);
+      const relationDsl: DslRelation = typeof relation === "string"
+        ? { relation: [relation] }
+        : relation;
+
+      // in this case, ANY relation in the `relation` list is good enough, so we
+      // union rather than intersection (which would always be the null set)
+      const unionedRelations = new Set<number>();
+      for (const rel of relationDsl.relation) {
+        const relationSet = this.index.getRelationSet(rel);
+        if (relationSet) {
+          for (const elem of relationSet) {
+            unionedRelations.add(elem);
+          }
+        }
+      }
+
+      if (unionedRelations.size > 0) {
+        matchingRowSets.push(unionedRelations);
       } else {
         return new TribbleDB([]);
       }
@@ -306,7 +333,10 @@ export class TribbleDB {
     for (const index of intersection) {
       const triple = this.index.getTriple(index)!;
 
-      if (!source?.predicate && !target?.predicate) {
+      if (
+        !source?.predicate && !target?.predicate &&
+        !(typeof relation === "object" && relation.predicate)
+      ) {
         matchingTriples.push(triple);
         continue;
       }
@@ -321,6 +351,10 @@ export class TribbleDB {
         isValid = isValid && target.predicate(Triples.target(triple));
       }
 
+      if (typeof relation === "object" && relation.predicate) {
+        isValid = isValid && relation.predicate(Triples.relation(triple));
+      }
+
       if (isValid) {
         matchingTriples.push(triple);
       }
@@ -332,7 +366,7 @@ export class TribbleDB {
   getMetrics() {
     return {
       index: this.index.metrics,
-      db: this.metrics
-    }
+      db: this.metrics,
+    };
   }
 }

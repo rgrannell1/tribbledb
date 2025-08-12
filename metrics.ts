@@ -1,4 +1,3 @@
-
 export class IndexPerformanceMetrics {
   mapReadCount: number;
 
@@ -15,7 +14,7 @@ export class TribbleDBPerformanceMetrics {
   setCheckCount: number;
 
   constructor() {
-    this.setCheckCount = 0
+    this.setCheckCount = 0;
   }
 
   setCheck() {

@@ -384,3 +384,129 @@ Deno.test("search with predicate combined with index constraints works correctly
     "Bob Jones",
   ]);
 });
+
+Deno.test("search with DslRelation containing multiple relations returns union", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: { relation: ["name", "age"] },
+  });
+
+  assertEquals(results.triplesCount, 6);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      return rel === "name" || rel === "age";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with DslRelation containing single relation works like string", () => {
+  const database = new TribbleDB(testTriples);
+  const resultsWithDsl = database.search({
+    relation: { relation: ["name"] },
+  });
+  const resultsWithString = database.search({
+    relation: "name",
+  });
+
+  assertEquals(resultsWithDsl.triplesCount, resultsWithString.triplesCount);
+  assertEquals(resultsWithDsl.triples(), resultsWithString.triples());
+});
+
+Deno.test("search with DslRelation containing non-existent relations returns empty", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: { relation: ["non_existent", "also_missing"] },
+  });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with DslRelation mixed existing and non-existent relations returns partial", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: { relation: ["name", "non_existent", "age"] },
+  });
+
+  assertEquals(results.triplesCount, 6);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      return rel === "name" || rel === "age";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with DslRelation and relation predicate filters correctly", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: {
+      relation: ["name", "age", "works_at"],
+      predicate: (rel: string) => rel.length <= 4, // "name", "age" have 4 or fewer chars
+    },
+  });
+
+  assertEquals(results.triplesCount, 6);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      return rel === "name" || rel === "age";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with DslRelation predicate only (no relation array)", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: {
+      relation: [], // Empty array means all relations initially
+      predicate: (rel: string) => rel.startsWith("w"), // Relations starting with "w"
+    },
+  });
+
+  // Since relation array is empty, no relations will match initially
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with DslRelation and other constraints works correctly", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    source: { type: "person" },
+    relation: { relation: ["name", "age"] },
+    target: { predicate: (target: string) => target.includes("3") }, // "30" contains "3"
+  });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:person:alice",
+    "age",
+    "30",
+  ]);
+});
+
+Deno.test("search with complex DslRelation predicate based on triple context", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    source: { type: "person" },
+    relation: {
+      relation: ["name", "age", "works_at"],
+      predicate: (rel: string) => {
+        // Only include relations that are either "name" or start with "w"
+        return rel === "name" || rel.startsWith("w");
+      },
+    },
+  });
+
+  assertEquals(results.triplesCount, 4); // 2 names + 2 works_at
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.type === "person" && (rel === "name" || rel === "works_at");
+    }),
+    true,
+  );
+});

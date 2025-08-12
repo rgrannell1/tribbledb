@@ -23,6 +23,15 @@ export type Dsl = {
 };
 
 /*
+ * Queries against relations can specify multiple relations to match
+ * or include a predicate for custom filtering.
+ */
+export type DslRelation = {
+  relation: string[];
+  predicate?: Predicate;
+};
+
+/*
  * Internal indexed triple representation using numeric indices
  * instead of strings for memory efficiency
  */
