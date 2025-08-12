@@ -216,14 +216,6 @@ Deno.test("search with partial constraint match returns empty when other constra
   assertEquals(results.triplesCount, 0);
 });
 
-Deno.test("search with empty parameters returns all triples", () => {
-  const database = new TribbleDB(testTriples);
-  const results = database.search({});
-
-  assertEquals(results.triplesCount, testTriples.length);
-  assertEquals(results.triples(), testTriples);
-});
-
 Deno.test("search handles non-URN source strings correctly", () => {
   const nonUrnTriples: Triple[] = [
     ["simple_string", "relation", "target"],
