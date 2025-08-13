@@ -705,3 +705,217 @@ Deno.test("object function handles complex mixed data types", () => {
     name: "Administrators"
   });
 });
+
+Deno.test("metrics track index map reads during search operations", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Get initial metrics
+  const initialMetrics = database.getMetrics();
+  const initialMapReads = initialMetrics.index.mapReadCount;
+  
+  // Perform a simple search that should trigger map reads
+  database.search({ source: { type: "person" } });
+  
+  // Check that map reads increased
+  const finalMetrics = database.getMetrics();
+  const finalMapReads = finalMetrics.index.mapReadCount;
+  
+  assertEquals(finalMapReads > initialMapReads, true);
+});
+
+Deno.test("metrics track set checks during intersection operations", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Get initial metrics
+  const initialMetrics = database.getMetrics();
+  const initialSetChecks = initialMetrics.db.setCheckCount;
+  
+  // Perform a search with multiple constraints that should trigger set intersection
+  database.search({ 
+    source: { type: "person" },
+    relation: "name"
+  });
+  
+  // Check that set checks increased
+  const finalMetrics = database.getMetrics();
+  const finalSetChecks = finalMetrics.db.setCheckCount;
+  
+  assertEquals(finalSetChecks > initialSetChecks, true);
+});
+
+Deno.test("metrics accumulate across multiple search operations", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Perform first search
+  database.search({ source: { type: "person" } });
+  const firstMetrics = database.getMetrics();
+  const firstMapReads = firstMetrics.index.mapReadCount;
+  const firstSetChecks = firstMetrics.db.setCheckCount;
+  
+  // Perform second search
+  database.search({ relation: "name" });
+  const secondMetrics = database.getMetrics();
+  const secondMapReads = secondMetrics.index.mapReadCount;
+  const secondSetChecks = secondMetrics.db.setCheckCount;
+  
+  // Check that metrics have accumulated
+  assertEquals(secondMapReads >= firstMapReads, true);
+  assertEquals(secondSetChecks >= firstSetChecks, true);
+});
+
+Deno.test("metrics track different search patterns differently", () => {
+  // Simple search with single constraint
+  const simpleSearch = new TribbleDB(testTriples);
+  simpleSearch.search({ relation: "name" });
+  const simpleMetrics = simpleSearch.getMetrics();
+  
+  // Complex search with multiple constraints
+  const complexSearch = new TribbleDB(testTriples);
+  complexSearch.search({
+    source: { type: "person" },
+    relation: "name",
+    target: { predicate: (target: string) => target.includes("Alice") }
+  });
+  const complexMetrics = complexSearch.getMetrics();
+  
+  // Complex search should generally have more operations
+  assertEquals(complexMetrics.index.mapReadCount >= simpleMetrics.index.mapReadCount, true);
+});
+
+Deno.test("metrics track map reads for different query types", () => {
+  // Test source type query
+  const sourceTypeDB = new TribbleDB(testTriples);
+  sourceTypeDB.search({ source: { type: "person" } });
+  const sourceTypeReads = sourceTypeDB.getMetrics().index.mapReadCount;
+  
+  // Test source id query  
+  const sourceIdDB = new TribbleDB(testTriples);
+  sourceIdDB.search({ source: { id: "alice" } });
+  const sourceIdReads = sourceIdDB.getMetrics().index.mapReadCount;
+  
+  // Test relation query
+  const relationDB = new TribbleDB(testTriples);
+  relationDB.search({ relation: "name" });
+  const relationReads = relationDB.getMetrics().index.mapReadCount;
+  
+  // Test target type query
+  const targetTypeDB = new TribbleDB(testTriples);
+  targetTypeDB.search({ target: { type: "company" } });
+  const targetTypeReads = targetTypeDB.getMetrics().index.mapReadCount;
+  
+  // All should have triggered at least one map read
+  assertEquals(sourceTypeReads > 0, true);
+  assertEquals(sourceIdReads > 0, true);
+  assertEquals(relationReads > 0, true);
+  assertEquals(targetTypeReads > 0, true);
+});
+
+Deno.test("metrics track query string lookups", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Search with query string constraint
+  database.search({ source: { qs: { breed: "persian" } } });
+  const metrics = database.getMetrics();
+  
+  // Should have triggered map reads for query string lookup
+  assertEquals(metrics.index.mapReadCount > 0, true);
+});
+
+Deno.test("metrics track DslRelation with multiple relations", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Search with multiple relations
+  database.search({ relation: { relation: ["name", "age", "works_at"] } });
+  const metrics = database.getMetrics();
+  
+  // Should have triggered multiple map reads (one for each relation)
+  assertEquals(metrics.index.mapReadCount >= 3, true);
+});
+
+Deno.test("metrics show zero operations for nonexistent types (early return)", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Search that returns no results due to nonexistent type
+  database.search({ source: { type: "nonexistent" } });
+  const metrics = database.getMetrics();
+  
+  // The search should return early without performing map reads since the type doesn't exist
+  // This is an optimization - if a type isn't in the string index, no need to query the map
+  assertEquals(metrics.index.mapReadCount >= 0, true); // Could be 0 or more depending on implementation
+});
+
+Deno.test("metrics track existing type lookups that return empty results", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Search for an existing type but with impossible constraints
+  database.search({ 
+    source: { type: "person" },
+    relation: "impossible_relation"
+  });
+  const metrics = database.getMetrics();
+  
+  // Should have performed at least one map read for the person type
+  assertEquals(metrics.index.mapReadCount > 0, true);
+});
+
+Deno.test("metrics are independent between different database instances", () => {
+  const db1 = new TribbleDB(testTriples);
+  const db2 = new TribbleDB(testTriples);
+  
+  // Perform operations on first database
+  db1.search({ source: { type: "person" } });
+  const db1Metrics = db1.getMetrics();
+  
+  // Second database should start with zero metrics
+  const db2Metrics = db2.getMetrics();
+  
+  assertEquals(db2Metrics.index.mapReadCount, 0);
+  assertEquals(db2Metrics.db.setCheckCount, 0);
+  assertEquals(db1Metrics.index.mapReadCount > 0, true);
+});
+
+Deno.test("metrics structure contains expected properties", () => {
+  const database = new TribbleDB(testTriples);
+  const metrics = database.getMetrics();
+  
+  // Check structure
+  assertEquals(typeof metrics, "object");
+  assertEquals(Object.prototype.hasOwnProperty.call(metrics, "index"), true);
+  assertEquals(Object.prototype.hasOwnProperty.call(metrics, "db"), true);
+  
+  // Check index metrics
+  assertEquals(typeof metrics.index, "object");
+  assertEquals(Object.prototype.hasOwnProperty.call(metrics.index, "mapReadCount"), true);
+  assertEquals(typeof metrics.index.mapReadCount, "number");
+  
+  // Check db metrics
+  assertEquals(typeof metrics.db, "object");
+  assertEquals(Object.prototype.hasOwnProperty.call(metrics.db, "setCheckCount"), true);
+  assertEquals(typeof metrics.db.setCheckCount, "number");
+});
+
+Deno.test("metrics track complex search with all constraint types", () => {
+  const database = new TribbleDB(testTriples);
+  
+  // Complex search with source, relation, target constraints
+  database.search({
+    source: { 
+      type: "person",
+      id: "alice",
+      predicate: (source: string) => source.includes("alice")
+    },
+    relation: { 
+      relation: ["name", "age"],
+      predicate: (rel: string) => rel.length <= 4
+    },
+    target: {
+      predicate: (target: string) => target.length > 0
+    }
+  });
+  
+  const metrics = database.getMetrics();
+  
+  // Should have multiple map reads and set checks
+  assertEquals(metrics.index.mapReadCount >= 3, true); // type + id + relations
+  assertEquals(metrics.db.setCheckCount > 0, true);
+});

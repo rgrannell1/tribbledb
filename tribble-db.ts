@@ -12,17 +12,17 @@ import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 export class TribbleDB {
   index: Index;
   triplesCount: number;
-  tripleRows: Set<number>;
+  cursorIndices: Set<number>;
   metrics: TribbleDBPerformanceMetrics;
 
   constructor(triples: Triple[]) {
     this.index = new Index(triples);
     this.triplesCount = this.index.length;
-    this.tripleRows = new Set<number>();
+    this.cursorIndices = new Set<number>();
     this.metrics = new TribbleDBPerformanceMetrics();
 
     for (let idx = 0; idx < this.triplesCount; idx++) {
-      this.tripleRows.add(idx);
+      this.cursorIndices.add(idx);
     }
   }
 
@@ -72,7 +72,7 @@ export class TribbleDB {
     this.triplesCount = this.index.length;
 
     for (let idx = oldLength; idx < this.triplesCount; idx++) {
-      this.tripleRows.add(idx);
+      this.cursorIndices.add(idx);
     }
   }
 
@@ -229,7 +229,7 @@ export class TribbleDB {
     // only keep the triple rows that meet the other criteria too, by
     // insecting all row sets.
     const matchingRowSets: Set<number>[] = [
-      this.tripleRows,
+      this.cursorIndices,
     ];
 
     const { source, relation, target } = params;
