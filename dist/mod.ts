@@ -468,10 +468,21 @@ var TribbleDB = class _TribbleDB {
    * @returns An array of unique TripleObject instances.
    */
   objects(listOnly = false) {
+    const output = [];
+    for (const [id, obj] of Object.entries(this.object(listOnly))) {
+      obj.id = id;
+      output.push(obj);
+    }
+    return output;
+  }
+  /*
+   * yes, this is a bad name given firstObject.
+   */
+  object(listOnly = false) {
     const objs = {};
     for (const [source, relation, target] of this.index.triples()) {
       if (!objs[source]) {
-        objs[source] = {};
+        objs[source] = { id: source };
       }
       if (!objs[source][relation]) {
         objs[source][relation] = listOnly ? [target] : target;
@@ -481,12 +492,7 @@ var TribbleDB = class _TribbleDB {
         objs[source][relation] = [objs[source][relation], target];
       }
     }
-    const output = [];
-    for (const [id, obj] of Object.entries(objs)) {
-      obj.id = id;
-      output.push(obj);
-    }
-    return output;
+    return objs;
   }
   /*
    * Search all triples in the database.

@@ -502,3 +502,206 @@ Deno.test("search with complex DslRelation predicate based on triple context", (
     true,
   );
 });
+
+Deno.test("object function returns correct record structure for simple case", () => {
+  const simpleTriples: Triple[] = [
+    ["user1", "name", "Alice"],
+    ["user1", "age", "30"],
+    ["user2", "name", "Bob"],
+  ];
+  const database = new TribbleDB(simpleTriples);
+  const result = database.object();
+
+  assertEquals(Object.keys(result).length, 2);
+  assertEquals(result["user1"], {
+    id: "user1",
+    name: "Alice",
+    age: "30"
+  });
+  assertEquals(result["user2"], {
+    id: "user2",
+    name: "Bob"
+  });
+});
+
+Deno.test("object function handles duplicate relations by creating arrays", () => {
+  const triplesWithDuplicates: Triple[] = [
+    ["user1", "hobby", "reading"],
+    ["user1", "hobby", "swimming"],
+    ["user1", "name", "Alice"],
+    ["user2", "hobby", "coding"],
+  ];
+  const database = new TribbleDB(triplesWithDuplicates);
+  const result = database.object();
+
+  assertEquals(result["user1"], {
+    id: "user1",
+    hobby: ["reading", "swimming"],
+    name: "Alice"
+  });
+  assertEquals(result["user2"], {
+    id: "user2",
+    hobby: "coding"
+  });
+});
+
+Deno.test("object function with listOnly=true always creates arrays", () => {
+  const simpleTriples: Triple[] = [
+    ["user1", "name", "Alice"],
+    ["user1", "hobby", "reading"],
+    ["user1", "hobby", "swimming"],
+    ["user2", "name", "Bob"],
+  ];
+  const database = new TribbleDB(simpleTriples);
+  const result = database.object(true);
+
+  assertEquals(result["user1"], {
+    id: "user1",
+    name: ["Alice"],
+    hobby: ["reading", "swimming"]
+  });
+  assertEquals(result["user2"], {
+    id: "user2",
+    name: ["Bob"]
+  });
+});
+
+Deno.test("object function handles URNs correctly", () => {
+  const database = new TribbleDB(testTriples);
+  const result = database.object();
+
+  assertEquals(Object.keys(result).length, 7); // 2 persons + 2 companies + 3 animals (1 dog + 2 cats)
+
+  // Check person object structure
+  assertEquals(result["urn:ró:person:alice"], {
+    id: "urn:ró:person:alice",
+    name: "Alice Smith",
+    age: "30",
+    works_at: "urn:ró:company:acme"
+  });
+
+  // Check company object structure
+  assertEquals(result["urn:ró:company:acme"], {
+    id: "urn:ró:company:acme",
+    name: "Acme Corp"
+  });
+});
+
+Deno.test("object function handles URNs with query strings", () => {
+  const database = new TribbleDB(testTriples);
+  const result = database.object();
+
+  // Check that URNs with query strings are treated as separate entities
+  assertEquals(result["urn:ró:animal:cat?breed=persian"], {
+    id: "urn:ró:animal:cat?breed=persian",
+    species: "felis_catus"
+  });
+
+  assertEquals(result["urn:ró:animal:cat?breed=siamese"], {
+    id: "urn:ró:animal:cat?breed=siamese",
+    species: "felis_catus"
+  });
+});
+
+Deno.test("object function handles multiple values for same relation", () => {
+  const triplesWithMultipleValues: Triple[] = [
+    ["project1", "contributor", "alice"],
+    ["project1", "contributor", "bob"],
+    ["project1", "contributor", "charlie"],
+    ["project1", "name", "TripleDB"],
+    ["project1", "language", "TypeScript"],
+  ];
+  const database = new TribbleDB(triplesWithMultipleValues);
+  const result = database.object();
+
+  assertEquals(result["project1"], {
+    id: "project1",
+    contributor: ["alice", "bob", "charlie"],
+    name: "TripleDB",
+    language: "TypeScript"
+  });
+});
+
+Deno.test("object function returns empty object for empty database", () => {
+  const database = new TribbleDB([]);
+  const result = database.object();
+
+  assertEquals(result, {});
+});
+
+Deno.test("object function handles single triple correctly", () => {
+  const singleTriple: Triple[] = [
+    ["entity1", "property", "value"]
+  ];
+  const database = new TribbleDB(singleTriple);
+  const result = database.object();
+
+  assertEquals(result, {
+    "entity1": {
+      id: "entity1",
+      property: "value"
+    }
+  });
+});
+
+Deno.test("object function listOnly behavior with single values", () => {
+  const singleValueTriples: Triple[] = [
+    ["user1", "name", "Alice"],
+    ["user2", "age", "25"],
+  ];
+  const database = new TribbleDB(singleValueTriples);
+  
+  const normalResult = database.object(false);
+  const listOnlyResult = database.object(true);
+
+  // Normal behavior: single values are strings
+  assertEquals(normalResult["user1"].name, "Alice");
+  assertEquals(normalResult["user2"].age, "25");
+
+  // ListOnly behavior: single values become arrays
+  assertEquals(listOnlyResult["user1"].name, ["Alice"]);
+  assertEquals(listOnlyResult["user2"].age, ["25"]);
+});
+
+Deno.test("object function preserves all relation values in correct order", () => {
+  const orderedTriples: Triple[] = [
+    ["timeline", "event", "first"],
+    ["timeline", "event", "second"], 
+    ["timeline", "event", "third"],
+    ["timeline", "name", "Test Timeline"],
+  ];
+  const database = new TribbleDB(orderedTriples);
+  const result = database.object();
+
+  assertEquals(result["timeline"], {
+    id: "timeline",
+    event: ["first", "second", "third"],
+    name: "Test Timeline"
+  });
+});
+
+Deno.test("object function handles complex mixed data types", () => {
+  const mixedTriples: Triple[] = [
+    ["user:1", "name", "Alice"],
+    ["user:1", "tag", "admin"],
+    ["user:1", "tag", "developer"],
+    ["user:1", "status", "active"],
+    ["urn:ró:group:admins", "member", "user:1"],
+    ["urn:ró:group:admins", "name", "Administrators"],
+  ];
+  const database = new TribbleDB(mixedTriples);
+  const result = database.object();
+
+  assertEquals(result["user:1"], {
+    id: "user:1",
+    name: "Alice",
+    tag: ["admin", "developer"],
+    status: "active"
+  });
+
+  assertEquals(result["urn:ró:group:admins"], {
+    id: "urn:ró:group:admins",
+    member: "user:1",
+    name: "Administrators"
+  });
+});
