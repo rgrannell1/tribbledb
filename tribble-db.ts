@@ -216,15 +216,9 @@ export class TribbleDB {
     return objs;
   }
 
-  /*
-   * Search all triples in the database.
-   *
-   * @param params - The search parameters.
-   * @returns A new TribbleDB instance containing the matching triples.
-   */
-  search(
+  findMatchingRows(
     params: { source?: Dsl; relation?: string | DslRelation; target?: Dsl },
-  ): TribbleDB {
+  ): Set<number> {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too, by
     // insecting all row sets.
@@ -252,7 +246,7 @@ export class TribbleDB {
         if (sourceTypeSet) {
           matchingRowSets.push(sourceTypeSet);
         } else {
-          return new TribbleDB([]);
+          return new Set<number>();
         }
       }
 
@@ -261,7 +255,7 @@ export class TribbleDB {
         if (sourceIdSet) {
           matchingRowSets.push(sourceIdSet);
         } else {
-          return new TribbleDB([]);
+          return new Set<number>();
         }
       }
 
@@ -271,7 +265,7 @@ export class TribbleDB {
           if (sourceQsSet) {
             matchingRowSets.push(sourceQsSet);
           } else {
-            return new TribbleDB([]);
+            return new Set<number>();
           }
         }
       }
@@ -283,7 +277,7 @@ export class TribbleDB {
         if (targetTypeSet) {
           matchingRowSets.push(targetTypeSet);
         } else {
-          return new TribbleDB([]);
+          return new Set<number>();
         }
       }
 
@@ -292,7 +286,7 @@ export class TribbleDB {
         if (targetIdSet) {
           matchingRowSets.push(targetIdSet);
         } else {
-          return new TribbleDB([]);
+          return new Set<number>();
         }
       }
 
@@ -302,7 +296,7 @@ export class TribbleDB {
           if (targetQsSet) {
             matchingRowSets.push(targetQsSet);
           } else {
-            return new TribbleDB([]);
+            return new Set<number>();
           }
         }
       }
@@ -328,12 +322,12 @@ export class TribbleDB {
       if (unionedRelations.size > 0) {
         matchingRowSets.push(unionedRelations);
       } else {
-        return new TribbleDB([]);
+        return new Set<number>();
       }
     }
 
     const intersection = Sets.intersection(this.metrics, matchingRowSets);
-    const matchingTriples: Triple[] = [];
+    const matchingTriples: Set<number> = new Set();
 
     // Collect matching triples, applying predicate filters as we go
     for (const index of intersection) {
@@ -343,7 +337,7 @@ export class TribbleDB {
         !source?.predicate && !target?.predicate &&
         !(typeof relation === "object" && relation.predicate)
       ) {
-        matchingTriples.push(triple);
+        matchingTriples.add(index);
         continue;
       }
 
@@ -362,6 +356,27 @@ export class TribbleDB {
       }
 
       if (isValid) {
+        matchingTriples.add(index);
+      }
+    }
+
+    return matchingTriples;
+  }
+
+  /*
+   * Search all triples in the database.
+   *
+   * @param params - The search parameters.
+   * @returns A new TribbleDB instance containing the matching triples.
+   */
+  search(
+    params: { source?: Dsl; relation?: string | DslRelation; target?: Dsl },
+  ): TribbleDB {
+    const matchingTriples: Triple[] = [];
+
+    for (const rowIdx of this.findMatchingRows(params)) {
+      const triple = this.index.getTriple(rowIdx);
+      if (triple) {
         matchingTriples.push(triple);
       }
     }
