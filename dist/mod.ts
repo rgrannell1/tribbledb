@@ -354,7 +354,9 @@ function joinSubqueryResults(metrics, acc, tripleResult) {
     const endRowsIndices = endings.get(link);
     for (const startRowIndex of startRowIndices) {
       for (const endRowIndex of endRowsIndices) {
-        const joinedRow = acc.rows[startRowIndex].concat(tripleResult.rows[endRowIndex]);
+        const joinedRow = acc.rows[startRowIndex].concat(
+          tripleResult.rows[endRowIndex]
+        );
         joinedRows.push(joinedRow);
       }
     }
@@ -544,7 +546,7 @@ var TribbleDB = class _TribbleDB {
     }
     return objs;
   }
-  findMatchingRows(params) {
+  #findMatchingRows(params) {
     const matchingRowSets = [
       this.cursorIndices
     ];
@@ -664,7 +666,7 @@ var TribbleDB = class _TribbleDB {
    */
   search(params) {
     const matchingTriples = [];
-    for (const rowIdx of this.findMatchingRows(params)) {
+    for (const rowIdx of this.#findMatchingRows(params)) {
       const triple = this.index.getTriple(rowIdx);
       if (triple) {
         matchingTriples.push(triple);
@@ -683,7 +685,7 @@ var TribbleDB = class _TribbleDB {
         target: tripleSlice[2][1]
       };
       const bindingNames = tripleSlice.map((pair) => pair[0]);
-      const tripleRows = this.findMatchingRows(pattern);
+      const tripleRows = this.#findMatchingRows(pattern);
       const rowData = Array.from(tripleRows).flatMap((row) => {
         const contents = this.index.getTripleIndices(row);
         return typeof contents === "undefined" ? [] : [contents];
@@ -693,13 +695,16 @@ var TribbleDB = class _TribbleDB {
         rows: rowData
       });
     }
-    const queryResult = subqueryResults.reduce(joinSubqueryResults.bind(this, this.metrics));
+    const queryResult = subqueryResults.reduce(
+      joinSubqueryResults.bind(this, this.metrics)
+    );
     const outputNames = queryResult.names;
     const objects = [];
     for (const row of queryResult.rows) {
       const data = {};
       for (let idx = 0; idx < outputNames.length; idx++) {
-        data[outputNames[idx]] = this.index.stringIndex.getValue(row[idx]);
+        const label = outputNames[idx];
+        data[label] = this.index.stringIndex.getValue(row[idx]);
       }
       objects.push(data);
     }

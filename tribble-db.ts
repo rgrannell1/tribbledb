@@ -3,12 +3,11 @@ import { Index } from "./triple-index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
-import { red } from "jsr:@std/fmt@^0.218.2/colors";
 
 type SubqueryResult = {
   names: string[];
-  rows: number[][]
-}
+  rows: number[][];
+};
 
 /*
  * Combine subquery results into a single result set.
@@ -25,13 +24,17 @@ type SubqueryResult = {
 ]
 
  */
-function joinSubqueryResults(metrics, acc: SubqueryResult, tripleResult: SubqueryResult): SubqueryResult {
+function joinSubqueryResults(
+  metrics: TribbleDBPerformanceMetrics,
+  acc: SubqueryResult,
+  tripleResult: SubqueryResult,
+): SubqueryResult {
   const joinedNames = acc.names.concat(tripleResult.names);
 
   if (acc.rows.length === 0 || tripleResult.rows.length === 0) {
     return {
       names: joinedNames,
-      rows: []
+      rows: [],
     };
   }
 
@@ -43,7 +46,7 @@ function joinSubqueryResults(metrics, acc: SubqueryResult, tripleResult: Subquer
     const refId = acc.rows[idx][2];
 
     if (!endings.has(refId)) {
-      endings.set(refId, [])
+      endings.set(refId, []);
     }
 
     endings.get(refId)!.push(idx);
@@ -53,7 +56,7 @@ function joinSubqueryResults(metrics, acc: SubqueryResult, tripleResult: Subquer
     const refId = tripleResult.rows[idx][0];
 
     if (!starts.has(refId)) {
-      starts.set(refId, [])
+      starts.set(refId, []);
     }
 
     starts.get(refId)!.push(idx);
@@ -62,19 +65,21 @@ function joinSubqueryResults(metrics, acc: SubqueryResult, tripleResult: Subquer
   // find the endings that are also starts (words are hard)
   const commonLinks = Sets.intersection(metrics, [
     new Set(endings.keys()),
-    new Set(starts.keys())
+    new Set(starts.keys()),
   ]);
 
   const joinedRows: number[][] = [];
 
   for (const link of commonLinks) {
-    const startRowIndices = starts.get(link);
-    const endRowsIndices = endings.get(link);
+    const startRowIndices = starts.get(link)!;
+    const endRowsIndices = endings.get(link)!;
 
     // cross-product
     for (const startRowIndex of startRowIndices) {
       for (const endRowIndex of endRowsIndices) {
-        const joinedRow = acc.rows[startRowIndex].concat(tripleResult.rows[endRowIndex]);
+        const joinedRow = acc.rows[startRowIndex].concat(
+          tripleResult.rows[endRowIndex],
+        );
         joinedRows.push(joinedRow);
       }
     }
@@ -82,8 +87,8 @@ function joinSubqueryResults(metrics, acc: SubqueryResult, tripleResult: Subquer
 
   return {
     names: joinedNames,
-    rows: joinedRows
-  }
+    rows: joinedRows,
+  };
 }
 
 /*
@@ -298,7 +303,7 @@ export class TribbleDB {
     return objs;
   }
 
-  findMatchingRows(
+  #findMatchingRows(
     params: { source?: Dsl; relation?: string | DslRelation; target?: Dsl },
   ): Set<number> {
     // by default, all triples are in the intersection set. Then, we
@@ -459,7 +464,7 @@ export class TribbleDB {
   ): TribbleDB {
     const matchingTriples: Triple[] = [];
 
-    for (const rowIdx of this.findMatchingRows(params)) {
+    for (const rowIdx of this.#findMatchingRows(params)) {
       const triple = this.index.getTriple(rowIdx);
       if (triple) {
         matchingTriples.push(triple);
@@ -473,12 +478,8 @@ export class TribbleDB {
     const bindings = Object.entries(query);
     const subqueryResults: {
       names: string[];
-      rows: {
-        row: number;
-        contents: number[];
-      }[];
+      rows: number[][];
     }[] = [];
-
 
     for (let idx = 0; idx < bindings.length - 2; idx += 2) {
       const tripleSlice = bindings.slice(idx, idx + 3);
@@ -488,32 +489,33 @@ export class TribbleDB {
         target: tripleSlice[2][1],
       };
 
-      const bindingNames = tripleSlice.map(pair => pair[0]);
+      const bindingNames = tripleSlice.map((pair) => pair[0]);
 
-      const tripleRows = this.findMatchingRows(pattern as any);
+      const tripleRows = this.#findMatchingRows(pattern as any);
       const rowData = Array.from(tripleRows).flatMap((row) => {
         const contents = this.index.getTripleIndices(row);
 
-        return typeof contents === 'undefined'
-          ? []
-          : [contents]
+        return typeof contents === "undefined" ? [] : [contents];
       });
 
       subqueryResults.push({
         names: bindingNames,
-        rows: rowData
+        rows: rowData,
       });
     }
 
-    const queryResult = subqueryResults.reduce(joinSubqueryResults.bind(this, this.metrics));
+    const queryResult = subqueryResults.reduce(
+      joinSubqueryResults.bind(this, this.metrics),
+    );
 
     const outputNames = queryResult.names;
-    const objects = []
+    const objects = [];
 
     for (const row of queryResult.rows) {
-      const data = {}
-      for (let idx = 0 ; idx < outputNames.length; idx++) {
-        data[outputNames[idx]] = this.index.stringIndex.getValue(row[idx]);
+      const data: Record<string, string> = {};
+      for (let idx = 0; idx < outputNames.length; idx++) {
+        const label = outputNames[idx];
+        data[label] = this.index.stringIndex.getValue(row[idx])!;
       }
 
       objects.push(data);

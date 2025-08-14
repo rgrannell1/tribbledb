@@ -18,7 +18,7 @@ export class Index {
   private indexedTriples: IndexedTriple[];
 
   // String indexing sets for memory efficiency
-  private stringIndex: IndexedSet;
+  stringIndex: IndexedSet;
 
   sourceType: Map<number, Set<number>>;
   sourceId: Map<number, Set<number>>;
