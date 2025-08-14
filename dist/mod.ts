@@ -252,6 +252,12 @@ var Index = class {
       this.stringIndex.getValue(targetIdx)
     ];
   }
+  getTripleIndices(index) {
+    if (index < 0 || index >= this.indexedTriples.length) {
+      return void 0;
+    }
+    return this.indexedTriples[index];
+  }
   /*
    * Helper methods to convert string keys to indices for external API compatibility
    */
@@ -314,6 +320,50 @@ var Index = class {
 };
 
 // tribble-db.ts
+function joinSubqueryResults(metrics, acc, tripleResult) {
+  const joinedNames = acc.names.concat(tripleResult.names);
+  if (acc.rows.length === 0 || tripleResult.rows.length === 0) {
+    return {
+      names: joinedNames,
+      rows: []
+    };
+  }
+  const endings = /* @__PURE__ */ new Map();
+  const starts = /* @__PURE__ */ new Map();
+  for (let idx = 0; idx < acc.rows.length; idx++) {
+    const refId = acc.rows[idx][2];
+    if (!endings.has(refId)) {
+      endings.set(refId, []);
+    }
+    endings.get(refId).push(idx);
+  }
+  for (let idx = 0; idx < tripleResult.rows.length; idx++) {
+    const refId = tripleResult.rows[idx][0];
+    if (!starts.has(refId)) {
+      starts.set(refId, []);
+    }
+    starts.get(refId).push(idx);
+  }
+  const commonLinks = Sets.intersection(metrics, [
+    new Set(endings.keys()),
+    new Set(starts.keys())
+  ]);
+  const joinedRows = [];
+  for (const link of commonLinks) {
+    const startRowIndices = starts.get(link);
+    const endRowsIndices = endings.get(link);
+    for (const startRowIndex of startRowIndices) {
+      for (const endRowIndex of endRowsIndices) {
+        const joinedRow = acc.rows[startRowIndex].concat(tripleResult.rows[endRowIndex]);
+        joinedRows.push(joinedRow);
+      }
+    }
+  }
+  return {
+    names: joinedNames,
+    rows: joinedRows
+  };
+}
 var TribbleDB = class _TribbleDB {
   index;
   triplesCount;
@@ -621,6 +671,39 @@ var TribbleDB = class _TribbleDB {
       }
     }
     return new _TribbleDB(matchingTriples);
+  }
+  search2(query) {
+    const bindings = Object.entries(query);
+    const subqueryResults = [];
+    for (let idx = 0; idx < bindings.length - 2; idx += 2) {
+      const tripleSlice = bindings.slice(idx, idx + 3);
+      const pattern = {
+        source: tripleSlice[0][1],
+        relation: tripleSlice[1][1],
+        target: tripleSlice[2][1]
+      };
+      const bindingNames = tripleSlice.map((pair) => pair[0]);
+      const tripleRows = this.findMatchingRows(pattern);
+      const rowData = Array.from(tripleRows).flatMap((row) => {
+        const contents = this.index.getTripleIndices(row);
+        return typeof contents === "undefined" ? [] : [contents];
+      });
+      subqueryResults.push({
+        names: bindingNames,
+        rows: rowData
+      });
+    }
+    const queryResult = subqueryResults.reduce(joinSubqueryResults.bind(this, this.metrics));
+    const outputNames = queryResult.names;
+    const objects = [];
+    for (const row of queryResult.rows) {
+      const data = {};
+      for (let idx = 0; idx < outputNames.length; idx++) {
+        data[outputNames[idx]] = this.index.stringIndex.getValue(row[idx]);
+      }
+      objects.push(data);
+    }
+    return objects;
   }
   getMetrics() {
     return {

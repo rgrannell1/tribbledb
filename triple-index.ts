@@ -176,6 +176,14 @@ export class Index {
     ];
   }
 
+  getTripleIndices(index: number): [number, number, number] | undefined {
+    if (index < 0 || index >= this.indexedTriples.length) {
+      return undefined;
+    }
+
+    return this.indexedTriples[index];
+  }
+
   /*
    * Helper methods to convert string keys to indices for external API compatibility
    */

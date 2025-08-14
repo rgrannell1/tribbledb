@@ -3,6 +3,88 @@ import { Index } from "./triple-index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
+import { red } from "jsr:@std/fmt@^0.218.2/colors";
+
+type SubqueryResult = {
+  names: string[];
+  rows: number[][]
+}
+
+/*
+ * Combine subquery results into a single result set.
+
+[
+  {
+    names: [ "person", "works_at", "company" ],
+    rows: [ [ 5, 8, 11 ], [ 14, 8, 17 ] ]
+  },
+  {
+    names: [ "company", "location", "city" ],
+    rows: [ [ 11, 19, 22 ], [ 17, 19, 25 ] ]
+  }
+]
+
+ */
+function joinSubqueryResults(metrics, acc: SubqueryResult, tripleResult: SubqueryResult): SubqueryResult {
+  const joinedNames = acc.names.concat(tripleResult.names);
+
+  if (acc.rows.length === 0 || tripleResult.rows.length === 0) {
+    return {
+      names: joinedNames,
+      rows: []
+    };
+  }
+
+  const endings: Map<number, number[]> = new Map();
+  const starts: Map<number, number[]> = new Map();
+
+  // index the starts and endings for more efficient joins
+  for (let idx = 0; idx < acc.rows.length; idx++) {
+    const refId = acc.rows[idx][2];
+
+    if (!endings.has(refId)) {
+      endings.set(refId, [])
+    }
+
+    endings.get(refId)!.push(idx);
+  }
+
+  for (let idx = 0; idx < tripleResult.rows.length; idx++) {
+    const refId = tripleResult.rows[idx][0];
+
+    if (!starts.has(refId)) {
+      starts.set(refId, [])
+    }
+
+    starts.get(refId)!.push(idx);
+  }
+
+  // find the endings that are also starts (words are hard)
+  const commonLinks = Sets.intersection(metrics, [
+    new Set(endings.keys()),
+    new Set(starts.keys())
+  ]);
+
+  const joinedRows: number[][] = [];
+
+  for (const link of commonLinks) {
+    const startRowIndices = starts.get(link);
+    const endRowsIndices = endings.get(link);
+
+    // cross-product
+    for (const startRowIndex of startRowIndices) {
+      for (const endRowIndex of endRowsIndices) {
+        const joinedRow = acc.rows[startRowIndex].concat(tripleResult.rows[endRowIndex]);
+        joinedRows.push(joinedRow);
+      }
+    }
+  }
+
+  return {
+    names: joinedNames,
+    rows: joinedRows
+  }
+}
 
 /*
  * A searchable triple database
@@ -227,7 +309,10 @@ export class TribbleDB {
     ];
 
     const { source, relation, target } = params;
-    if (typeof source === 'undefined' && typeof target === 'undefined' && typeof relation === 'undefined') {
+    if (
+      typeof source === "undefined" && typeof target === "undefined" &&
+      typeof relation === "undefined"
+    ) {
       // yes, we could just return everything instead
       throw new Error("At least one search parameter must be defined");
     }
@@ -382,6 +467,59 @@ export class TribbleDB {
     }
 
     return new TribbleDB(matchingTriples);
+  }
+
+  search2(query: Record<string, Dsl | DslRelation>) {
+    const bindings = Object.entries(query);
+    const subqueryResults: {
+      names: string[];
+      rows: {
+        row: number;
+        contents: number[];
+      }[];
+    }[] = [];
+
+
+    for (let idx = 0; idx < bindings.length - 2; idx += 2) {
+      const tripleSlice = bindings.slice(idx, idx + 3);
+      const pattern = {
+        source: tripleSlice[0][1],
+        relation: tripleSlice[1][1],
+        target: tripleSlice[2][1],
+      };
+
+      const bindingNames = tripleSlice.map(pair => pair[0]);
+
+      const tripleRows = this.findMatchingRows(pattern as any);
+      const rowData = Array.from(tripleRows).flatMap((row) => {
+        const contents = this.index.getTripleIndices(row);
+
+        return typeof contents === 'undefined'
+          ? []
+          : [contents]
+      });
+
+      subqueryResults.push({
+        names: bindingNames,
+        rows: rowData
+      });
+    }
+
+    const queryResult = subqueryResults.reduce(joinSubqueryResults.bind(this, this.metrics));
+
+    const outputNames = queryResult.names;
+    const objects = []
+
+    for (const row of queryResult.rows) {
+      const data = {}
+      for (let idx = 0 ; idx < outputNames.length; idx++) {
+        data[outputNames[idx]] = this.index.stringIndex.getValue(row[idx]);
+      }
+
+      objects.push(data);
+    }
+
+    return objects;
   }
 
   getMetrics() {
