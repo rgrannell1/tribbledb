@@ -619,19 +619,21 @@ var TribbleDB = class _TribbleDB {
     }
     if (relation) {
       const relationDsl = typeof relation === "string" ? { relation: [relation] } : relation;
-      const unionedRelations = /* @__PURE__ */ new Set();
-      for (const rel of relationDsl.relation) {
-        const relationSet = this.index.getRelationSet(rel);
-        if (relationSet) {
-          for (const elem of relationSet) {
-            unionedRelations.add(elem);
+      if (relationDsl.relation) {
+        const unionedRelations = /* @__PURE__ */ new Set();
+        for (const rel of relationDsl.relation) {
+          const relationSet = this.index.getRelationSet(rel);
+          if (relationSet) {
+            for (const elem of relationSet) {
+              unionedRelations.add(elem);
+            }
           }
         }
-      }
-      if (unionedRelations.size > 0) {
-        matchingRowSets.push(unionedRelations);
-      } else {
-        return /* @__PURE__ */ new Set();
+        if (unionedRelations.size > 0) {
+          matchingRowSets.push(unionedRelations);
+        } else {
+          return /* @__PURE__ */ new Set();
+        }
       }
     }
     const intersection = Sets.intersection(this.metrics, matchingRowSets);

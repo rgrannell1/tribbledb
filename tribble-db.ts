@@ -38,6 +38,7 @@ function joinSubqueryResults(
     };
   }
 
+  // TODO this is too simplistic, due to query parameters
   const endings: Map<number, number[]> = new Map();
   const starts: Map<number, number[]> = new Map();
 
@@ -397,22 +398,24 @@ export class TribbleDB {
         ? { relation: [relation] }
         : relation;
 
-      // in this case, ANY relation in the `relation` list is good enough, so we
-      // union rather than intersection (which would always be the null set)
-      const unionedRelations = new Set<number>();
-      for (const rel of relationDsl.relation) {
-        const relationSet = this.index.getRelationSet(rel);
-        if (relationSet) {
-          for (const elem of relationSet) {
-            unionedRelations.add(elem);
+      if (relationDsl.relation) {
+        // in this case, ANY relation in the `relation` list is good enough, so we
+        // union rather than intersection (which would always be the null set)
+        const unionedRelations = new Set<number>();
+        for (const rel of relationDsl.relation) {
+          const relationSet = this.index.getRelationSet(rel);
+          if (relationSet) {
+            for (const elem of relationSet) {
+              unionedRelations.add(elem);
+            }
           }
         }
-      }
 
-      if (unionedRelations.size > 0) {
-        matchingRowSets.push(unionedRelations);
-      } else {
-        return new Set<number>();
+        if (unionedRelations.size > 0) {
+          matchingRowSets.push(unionedRelations);
+        } else {
+          return new Set<number>();
+        }
       }
     }
 
