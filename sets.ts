@@ -38,6 +38,11 @@ export class IndexedSet {
     return this.#idx - 1;
   }
 
+  setIndex(value: string, index: number) {
+    this.#map.set(value, index);
+    this.#reverseMap.set(index, value);
+  }
+
   getIndex(value: string): number | undefined {
     return this.#map.get(value);
   }

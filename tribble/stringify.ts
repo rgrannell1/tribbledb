@@ -1,0 +1,39 @@
+/*
+0 "Allianz Insurance"
+1 "id"
+src 0 rel 1 tgt 0
+2 "is"
+3 "Insurance Company"
+src 0 rel 2 tgt 3
+*/
+
+import { IndexedSet } from "../sets.ts";
+import type { Triple } from "../types.ts";
+
+/*
+ * Streaming stringify into tribble format
+ *
+ */
+export class TribbleStringifier {
+  stringIndex: IndexedSet
+
+  constructor() {
+    this.stringIndex = new IndexedSet();
+  }
+
+  stringify(triple: Triple): string {
+    const message: string[] = [];
+    const [source, relation, target] = triple;
+
+    for (const value of [source, relation, target]) {
+      if (!this.stringIndex.has(value)) {
+        const newId = this.stringIndex.add(value);
+        message.push(`${newId} ${JSON.stringify(value)}`);
+      }
+    }
+
+    message.push(`src ${this.stringIndex.getIndex(source)} rel ${this.stringIndex.getIndex(relation)} tgt ${this.stringIndex.getIndex(target)}`);
+
+    return message.join("\n");
+  }
+}
