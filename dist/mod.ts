@@ -63,6 +63,10 @@ var IndexedSet = class {
     this.#idx++;
     return this.#idx - 1;
   }
+  setIndex(value, index) {
+    this.#map.set(value, index);
+    this.#reverseMap.set(index, value);
+  }
   getIndex(value) {
     return this.#map.get(value);
   }
@@ -719,7 +723,14 @@ var TribbleDB = class _TribbleDB {
     };
   }
 };
+
+// mod.ts
+var Tribble = class {
+  static parser;
+  static stringifier;
+};
 export {
+  Tribble,
   TribbleDB,
   asUrn,
   parseUrn

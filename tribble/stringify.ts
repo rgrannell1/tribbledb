@@ -28,7 +28,11 @@ export class TribbleStringifier {
     for (const value of [source, relation, target]) {
       if (!this.stringIndex.has(value)) {
         const newId = this.stringIndex.add(value);
-        message.push(`${newId} ${JSON.stringify(value)}`);
+        const stringifiedValue = value === 'null' || value === null
+          ? JSON.stringify("null")
+          : JSON.stringify(value.toString());
+
+        message.push(`${newId} ${stringifiedValue}`);
       }
     }
 
