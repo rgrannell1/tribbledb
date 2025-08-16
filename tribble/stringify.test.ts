@@ -10,7 +10,7 @@ Deno.test("TribbleStringifier stringifies triples and assigns indices", () => {
   const expectedLines = [
     '0 "Allianz Insurance"',
     '1 "id"',
-    'src 0 rel 1 tgt 0'
+    "0 1 0",
   ];
   for (const line of expectedLines) {
     if (!result.includes(line)) {
@@ -30,5 +30,5 @@ Deno.test("TribbleStringifier does not duplicate indices for repeated values", (
   assertEquals(result2.includes('1 "id"'), false);
   assertEquals(result2.includes('2 "is"'), true);
   assertEquals(result2.includes('3 "Insurance Company"'), true);
-  assertEquals(result2.includes('src 0 rel 2 tgt 3'), true);
+  assertEquals(result2.includes("0 2 3"), true);
 });

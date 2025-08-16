@@ -114,6 +114,17 @@ export class TribbleDB {
     }
   }
 
+  clone() {
+    const clonedDB = new TribbleDB([]);
+
+    clonedDB.index = this.index;
+    clonedDB.triplesCount = this.triplesCount;
+    clonedDB.cursorIndices = this.cursorIndices;
+    clonedDB.metrics = this.metrics;
+
+    return clonedDB;
+  }
+
   static of(triples: Triple[]): TribbleDB {
     return new TribbleDB(triples);
   }
@@ -496,7 +507,7 @@ export class TribbleDB {
 
       const tripleRows = this.#findMatchingRows(pattern as any);
       const rowData = Array.from(tripleRows).flatMap((row) => {
-        const contents = this.index.getTripleIndices(row);
+      const contents = this.index.getTripleIndices(row);
 
         return typeof contents === "undefined" ? [] : [contents];
       });

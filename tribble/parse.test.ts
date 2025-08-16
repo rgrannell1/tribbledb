@@ -22,10 +22,10 @@ Deno.test("TribbleParser parses triple lines", () => {
   parser.parseDeclaration('2 "is"');
   parser.parseDeclaration('3 "Insurance Company"');
 
-  const triple = parser.parseTriple('src 0 rel 1 tgt 0');
+  const triple = parser.parseTriple("0 1 0");
   assertEquals(triple, ["Allianz Insurance", "id", "Allianz Insurance"]);
 
-  const triple2 = parser.parseTriple('src 0 rel 2 tgt 3');
+  const triple2 = parser.parseTriple("0 2 3");
   assertEquals(triple2, ["Allianz Insurance", "is", "Insurance Company"]);
 });
 
@@ -36,8 +36,8 @@ Deno.test("TribbleParser full parse works", () => {
     '1 "id"',
     '2 "is"',
     '3 "Insurance Company"',
-    'src 0 rel 1 tgt 0',
-    'src 0 rel 2 tgt 3',
+    "0 1 0",
+    "0 2 3",
   ];
   const triples: Triple[] = [];
   for (const line of lines) {
@@ -46,6 +46,6 @@ Deno.test("TribbleParser full parse works", () => {
   }
   assertEquals(triples, [
     ["Allianz Insurance", "id", "Allianz Insurance"],
-    ["Allianz Insurance", "is", "Insurance Company"]
+    ["Allianz Insurance", "is", "Insurance Company"],
   ]);
 });

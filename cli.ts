@@ -16,7 +16,9 @@ const options = docopt(doc);
 async function readStdinLines(): Promise<string[]> {
   const decoder = new TextDecoder();
   const input = await Deno.readAll(Deno.stdin);
-  return decoder.decode(input).split(/\r?\n/).filter(line => line.trim().length > 0);
+  return decoder.decode(input).split(/\r?\n/).filter((line) =>
+    line.trim().length > 0
+  );
 }
 
 function parse(lines: string[]) {

@@ -1,43 +1,3 @@
-// urn.ts
-function parseUrn(urn, namespace = "r\xF3") {
-  if (!urn.startsWith(`urn:${namespace}:`)) {
-    throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
-  }
-  const type = urn.split(":")[2];
-  const [urnPart, queryString] = urn.split("?");
-  const id = urnPart.split(":")[3];
-  const qs = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
-  return {
-    type,
-    id,
-    qs
-  };
-}
-function asUrn(value, namespace = "r\xF3") {
-  try {
-    return parseUrn(value, namespace);
-  } catch (_) {
-    return {
-      type: "unknown",
-      id: value,
-      qs: {}
-    };
-  }
-}
-
-// triples.ts
-var Triples = class {
-  static source(triple) {
-    return triple[0];
-  }
-  static relation(triple) {
-    return triple[1];
-  }
-  static target(triple) {
-    return triple[2];
-  }
-};
-
 // sets.ts
 var IndexedSet = class {
   #idx;
@@ -109,6 +69,96 @@ var Sets = class {
   }
 };
 
+// tribble/parse.ts
+var TribbleParser = class {
+  stringIndex;
+  constructor() {
+    this.stringIndex = new IndexedSet();
+  }
+  parseTriple(line) {
+    const match = line.match(/^(\d+) (\d+) (\d+)$/);
+    if (!match) {
+      throw new SyntaxError(`Invalid format for triple line: ${line}`);
+    }
+    const src = this.stringIndex.getValue(parseInt(match[1], 10));
+    const rel = this.stringIndex.getValue(parseInt(match[2], 10));
+    const tgt = this.stringIndex.getValue(parseInt(match[3], 10));
+    if (src === void 0 || rel === void 0 || tgt === void 0) {
+      throw new SyntaxError(`Invalid triple reference: ${line}`);
+    }
+    return [src, rel, tgt];
+  }
+  parseDeclaration(line) {
+    console.log(line);
+    const match = line.match(/^(\d+) "(.*)"$/);
+    if (!match) {
+      throw new SyntaxError(`Invalid format for declaration line: ${line}`);
+    }
+    const id = match[1];
+    const value = match[2];
+    this.stringIndex.setIndex(value, parseInt(id, 10));
+  }
+  parse(line) {
+    const isTriple = /^(\d+)\s(\d+)\s(\d+)$/;
+    if (isTriple.test(line)) {
+      return this.parseTriple(line);
+    } else {
+      this.parseDeclaration(line);
+      return;
+    }
+  }
+};
+
+// tribble/stringify.ts
+var TribbleStringifier = class {
+  stringIndex;
+  constructor() {
+    this.stringIndex = new IndexedSet();
+  }
+  stringify(triple) {
+    const message = [];
+    const [source, relation, target] = triple;
+    for (const value of [source, relation, target]) {
+      if (!this.stringIndex.has(value)) {
+        const newId = this.stringIndex.add(value);
+        const stringifiedValue = value === "null" || value === null ? JSON.stringify("null") : JSON.stringify(value.toString());
+        message.push(`${newId} ${stringifiedValue}`);
+      }
+    }
+    message.push(
+      `${this.stringIndex.getIndex(source)} ${this.stringIndex.getIndex(relation)} ${this.stringIndex.getIndex(target)}`
+    );
+    return message.join("\n");
+  }
+};
+
+// urn.ts
+function parseUrn(urn, namespace = "r\xF3") {
+  if (!urn.startsWith(`urn:${namespace}:`)) {
+    throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
+  }
+  const type = urn.split(":")[2];
+  const [urnPart, queryString] = urn.split("?");
+  const id = urnPart.split(":")[3];
+  const qs = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
+  return {
+    type,
+    id,
+    qs
+  };
+}
+function asUrn(value, namespace = "r\xF3") {
+  try {
+    return parseUrn(value, namespace);
+  } catch (_) {
+    return {
+      type: "unknown",
+      id: value,
+      qs: {}
+    };
+  }
+}
+
 // metrics.ts
 var IndexPerformanceMetrics = class {
   mapReadCount;
@@ -144,6 +194,7 @@ var Index = class {
   targetId;
   targetQs;
   metrics;
+  stringUrn;
   constructor(triples) {
     this.indexedTriples = [];
     this.stringIndex = new IndexedSet();
@@ -154,76 +205,65 @@ var Index = class {
     this.targetType = /* @__PURE__ */ new Map();
     this.targetId = /* @__PURE__ */ new Map();
     this.targetQs = /* @__PURE__ */ new Map();
-    this.indexTriples(triples);
+    this.stringUrn = /* @__PURE__ */ new Map();
+    this.add(triples);
     this.metrics = new IndexPerformanceMetrics();
-  }
-  /*
-   * Associate each triple onto an appropriate map `Term := <id>: <value>`
-   */
-  indexTriples(triples) {
-    for (let idx = 0; idx < triples.length; idx++) {
-      this.indexTriple(triples[idx], idx);
-    }
-  }
-  /*
-   * Index a single triple at the given index position
-   */
-  indexTriple(triple, idx) {
-    const parsedSource = asUrn(Triples.source(triple));
-    const relation = Triples.relation(triple);
-    const parsedTarget = asUrn(Triples.target(triple));
-    const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
-    const sourceIdIdx = this.stringIndex.add(parsedSource.id);
-    const relationIdx = this.stringIndex.add(relation);
-    const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
-    const targetIdIdx = this.stringIndex.add(parsedTarget.id);
-    this.indexedTriples.push([
-      this.stringIndex.add(Triples.source(triple)),
-      relationIdx,
-      this.stringIndex.add(Triples.target(triple))
-    ]);
-    if (!this.sourceType.has(sourceTypeIdx)) {
-      this.sourceType.set(sourceTypeIdx, /* @__PURE__ */ new Set());
-    }
-    this.sourceType.get(sourceTypeIdx).add(idx);
-    if (!this.sourceId.has(sourceIdIdx)) {
-      this.sourceId.set(sourceIdIdx, /* @__PURE__ */ new Set());
-    }
-    this.sourceId.get(sourceIdIdx).add(idx);
-    for (const [key, val] of Object.entries(parsedSource.qs)) {
-      const qsIdx = this.stringIndex.add(`${key}=${val}`);
-      if (!this.sourceQs.has(qsIdx)) {
-        this.sourceQs.set(qsIdx, /* @__PURE__ */ new Set());
-      }
-      this.sourceQs.get(qsIdx).add(idx);
-    }
-    if (!this.relations.has(relationIdx)) {
-      this.relations.set(relationIdx, /* @__PURE__ */ new Set());
-    }
-    this.relations.get(relationIdx).add(idx);
-    if (!this.targetType.has(targetTypeIdx)) {
-      this.targetType.set(targetTypeIdx, /* @__PURE__ */ new Set());
-    }
-    this.targetType.get(targetTypeIdx).add(idx);
-    if (!this.targetId.has(targetIdIdx)) {
-      this.targetId.set(targetIdIdx, /* @__PURE__ */ new Set());
-    }
-    this.targetId.get(targetIdIdx).add(idx);
-    for (const [key, val] of Object.entries(parsedTarget.qs)) {
-      const qsIdx = this.stringIndex.add(`${key}=${val}`);
-      if (!this.targetQs.has(qsIdx)) {
-        this.targetQs.set(qsIdx, /* @__PURE__ */ new Set());
-      }
-      this.targetQs.get(qsIdx).add(idx);
-    }
   }
   /*
    * Add new triples to the index incrementally
    */
-  add(newTriples) {
+  add(triples) {
     const startIdx = this.indexedTriples.length;
-    for (let idx = 0; idx < newTriples.length; idx++) {
-      this.indexTriple(newTriples[idx], startIdx + idx);
+    for (let jdx = 0; jdx < triples.length; jdx++) {
+      const idx = startIdx + jdx;
+      const triple = triples[jdx];
+      const parsedSource = this.stringUrn.has(triple[0]) ? this.stringUrn.get(triple[0]) : this.stringUrn.set(triple[0], asUrn(triple[0])).get(triple[0]);
+      const relation = triple[1];
+      const parsedTarget = this.stringUrn.has(triple[2]) ? this.stringUrn.get(triple[2]) : this.stringUrn.set(triple[2], asUrn(triple[2])).get(triple[2]);
+      const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
+      const sourceIdIdx = this.stringIndex.add(parsedSource.id);
+      const relationIdx = this.stringIndex.add(relation);
+      const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
+      const targetIdIdx = this.stringIndex.add(parsedTarget.id);
+      this.indexedTriples.push([
+        this.stringIndex.add(triple[0]),
+        relationIdx,
+        this.stringIndex.add(triple[2])
+      ]);
+      if (!this.sourceType.has(sourceTypeIdx)) {
+        this.sourceType.set(sourceTypeIdx, /* @__PURE__ */ new Set());
+      }
+      this.sourceType.get(sourceTypeIdx).add(idx);
+      if (!this.sourceId.has(sourceIdIdx)) {
+        this.sourceId.set(sourceIdIdx, /* @__PURE__ */ new Set());
+      }
+      this.sourceId.get(sourceIdIdx).add(idx);
+      for (const [key, val] of Object.entries(parsedSource.qs)) {
+        const qsIdx = this.stringIndex.add(`${key}=${val}`);
+        if (!this.sourceQs.has(qsIdx)) {
+          this.sourceQs.set(qsIdx, /* @__PURE__ */ new Set());
+        }
+        this.sourceQs.get(qsIdx).add(idx);
+      }
+      if (!this.relations.has(relationIdx)) {
+        this.relations.set(relationIdx, /* @__PURE__ */ new Set());
+      }
+      this.relations.get(relationIdx).add(idx);
+      if (!this.targetType.has(targetTypeIdx)) {
+        this.targetType.set(targetTypeIdx, /* @__PURE__ */ new Set());
+      }
+      this.targetType.get(targetTypeIdx).add(idx);
+      if (!this.targetId.has(targetIdIdx)) {
+        this.targetId.set(targetIdIdx, /* @__PURE__ */ new Set());
+      }
+      this.targetId.get(targetIdIdx).add(idx);
+      for (const [key, val] of Object.entries(parsedTarget.qs)) {
+        const qsIdx = this.stringIndex.add(`${key}=${val}`);
+        if (!this.targetQs.has(qsIdx)) {
+          this.targetQs.set(qsIdx, /* @__PURE__ */ new Set());
+        }
+        this.targetQs.get(qsIdx).add(idx);
+      }
     }
   }
   /*
@@ -323,6 +363,19 @@ var Index = class {
   }
 };
 
+// triples.ts
+var Triples = class {
+  static source(triple) {
+    return triple[0];
+  }
+  static relation(triple) {
+    return triple[1];
+  }
+  static target(triple) {
+    return triple[2];
+  }
+};
+
 // tribble-db.ts
 function joinSubqueryResults(metrics, acc, tripleResult) {
   const joinedNames = acc.names.concat(tripleResult.names);
@@ -383,6 +436,14 @@ var TribbleDB = class _TribbleDB {
     for (let idx = 0; idx < this.triplesCount; idx++) {
       this.cursorIndices.add(idx);
     }
+  }
+  clone() {
+    const clonedDB = new _TribbleDB([]);
+    clonedDB.index = this.index;
+    clonedDB.triplesCount = this.triplesCount;
+    clonedDB.cursorIndices = this.cursorIndices;
+    clonedDB.metrics = this.metrics;
+    return clonedDB;
   }
   static of(triples) {
     return new _TribbleDB(triples);
@@ -723,15 +784,10 @@ var TribbleDB = class _TribbleDB {
     };
   }
 };
-
-// mod.ts
-var Tribble = class {
-  static parser;
-  static stringifier;
-};
 export {
-  Tribble,
   TribbleDB,
+  TribbleParser,
+  TribbleStringifier,
   asUrn,
   parseUrn
 };

@@ -12,10 +12,9 @@ import type { Triple } from "../types.ts";
 
 /*
  * Streaming stringify into tribble format
- *
  */
 export class TribbleStringifier {
-  stringIndex: IndexedSet
+  stringIndex: IndexedSet;
 
   constructor() {
     this.stringIndex = new IndexedSet();
@@ -28,7 +27,7 @@ export class TribbleStringifier {
     for (const value of [source, relation, target]) {
       if (!this.stringIndex.has(value)) {
         const newId = this.stringIndex.add(value);
-        const stringifiedValue = value === 'null' || value === null
+        const stringifiedValue = value === "null" || value === null
           ? JSON.stringify("null")
           : JSON.stringify(value.toString());
 
@@ -36,7 +35,11 @@ export class TribbleStringifier {
       }
     }
 
-    message.push(`src ${this.stringIndex.getIndex(source)} rel ${this.stringIndex.getIndex(relation)} tgt ${this.stringIndex.getIndex(target)}`);
+    message.push(
+      `${this.stringIndex.getIndex(source)} ${
+        this.stringIndex.getIndex(relation)
+      } ${this.stringIndex.getIndex(target)}`,
+    );
 
     return message.join("\n");
   }
