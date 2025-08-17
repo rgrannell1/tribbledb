@@ -1,4 +1,4 @@
-import { TribbleDBPerformanceMetrics } from "./metrics.ts";
+import type { TribbleDBPerformanceMetrics } from "./metrics.ts";
 
 /*
  * Indexed set class
@@ -18,15 +18,24 @@ export class IndexedSet {
     this.#reverseMap = new Map();
   }
 
-  map() {
+  /*
+   * Return the underlying map of values to indices
+   */
+  map(): Map<string, number> {
     return this.#map;
   }
 
-  reverseMap() {
+  /*
+   * Return the underlying map of indices to values
+   */
+  reverseMap(): Map<number, string> {
     return this.#reverseMap;
   }
 
-  add(value: string) {
+  /*
+   * Add a value to the set, and return its index
+   */
+  add(value: string): number {
     if (this.#map.has(value)) {
       return this.#map.get(value)!;
     }
@@ -38,19 +47,31 @@ export class IndexedSet {
     return this.#idx - 1;
   }
 
+  /**
+   * Set the index for a value in the set
+   */
   setIndex(value: string, index: number) {
     this.#map.set(value, index);
     this.#reverseMap.set(index, value);
   }
 
+  /**
+   * Get the index for a value in the set
+   */
   getIndex(value: string): number | undefined {
     return this.#map.get(value);
   }
 
+  /**
+   * Set the values for an index in the set
+   */
   getValue(idx: number): string | undefined {
     return this.#reverseMap.get(idx);
   }
 
+  /**
+   * Does this structure have a value?
+   */
   has(value: string): boolean {
     return this.#map.has(value);
   }
@@ -61,13 +82,13 @@ export class Sets {
    * Compute the intersection of multiple numeric sets.
    * The number of sets will be low (we're not adding ninety
    * query parameters to these URNs) so first sort the
-   * sets in ascending size. This could be done much, much more
-   * efficiently with a dataset that allows cheap intersections though...TODO
+   * sets in ascending size.
    */
   static intersection<T>(
     metrics: TribbleDBPerformanceMetrics,
     sets: Set<T>[],
   ): Set<T> {
+    // empty sets, nothing to check
     if (sets.length === 0) {
       return new Set<T>();
     }
@@ -75,6 +96,7 @@ export class Sets {
     sets.sort((setA, setB) => {
       return setA.size - setB.size;
     });
+
     const acc = new Set<T>(sets[0]);
 
     for (let idx = 1; idx < sets.length; idx++) {

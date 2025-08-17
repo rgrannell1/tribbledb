@@ -1,8 +1,8 @@
 import { assertEquals } from "jsr:@std/assert";
-import { TribbleDB } from "./tribble-db.ts";
-import type { Triple } from "./types.ts";
-import { Triples } from "./triples.ts";
-import { asUrn } from "./urn.ts";
+import { TribbleDB } from "../tribble-db.ts";
+import type { Triple } from "../types.ts";
+import { Triples } from "../triples.ts";
+import { asUrn } from "../urn.ts";
 
 const testTriples: Triple[] = [
   ["urn:ró:person:alice", "name", "Alice Smith"],

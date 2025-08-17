@@ -1,8 +1,7 @@
-import { Triples } from "./triples.ts";
-import type { IndexedTriple, Triple } from "./types.ts";
-import { asUrn } from "./urn.ts";
-import { IndexedSet } from "./sets.ts";
-import { IndexPerformanceMetrics } from "./metrics.ts";
+import type { IndexedTriple, ParsedUrn, Triple } from "../types.ts";
+import { asUrn } from "../urn.ts";
+import { IndexedSet } from "../sets.ts";
+import { IndexPerformanceMetrics } from "../metrics.ts";
 
 /*
  * Construct an index to accelerate triple searches. Normally

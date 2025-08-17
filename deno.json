@@ -1,7 +1,7 @@
 {
   "name": "tribbledb",
   "version": "1.0.0",
-  "exports": "./mod.ts",
+  "exports": "./src/mod.ts",
   "tasks": {
     "test": "deno test --allow-read --allow-write",
     "check": "deno check *.ts indices/*.ts",

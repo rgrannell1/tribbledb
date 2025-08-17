@@ -1,8 +1,8 @@
 #! /usr/bin/env -S deno run --allow-read
 
 import docopt from "https://deno.land/x/docopt/mod.ts";
-import { TribbleParser } from "./tribble/parse.ts";
-import { TribbleStringifier } from "./tribble/stringify.ts";
+import { TribbleParser } from "./src/tribble/parse.ts";
+import { TribbleStringifier } from "./src/tribble/stringify.ts";
 import type { Triple } from "./types.ts";
 
 const doc = `
@@ -47,7 +47,7 @@ if (options["stringify"]) {
   let triples: Triple[] = [];
   try {
     triples = JSON.parse(lines.join("\n"));
-  } catch (err) {
+  } catch (_) {
     console.error("Failed to parse input as JSON array of triples.");
     Deno.exit(1);
   }

@@ -1,12 +1,17 @@
 import type { Dsl, DslRelation, Triple, TripleObject } from "./types.ts";
-import { Index } from "./triple-index.ts";
+import { Index } from "./indices/index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
-import { TribbleDBPerformanceMetrics } from "./metrics.ts";
+import type { IndexPerformanceMetrics, TribbleDBPerformanceMetrics } from "./metrics.ts";
 
 type SubqueryResult = {
   names: string[];
   rows: number[][];
+};
+
+export type TribbleDBMetrics = {
+  index: IndexPerformanceMetrics;
+  db: TribbleDBPerformanceMetrics
 };
 
 /*
@@ -114,7 +119,12 @@ export class TribbleDB {
     }
   }
 
-  clone() {
+  /*
+   * Clone the database.
+   *
+   * @returns A new TribbleDB instance, constructed with the same data as the original.
+   */
+  clone(): TribbleDB {
     const clonedDB = new TribbleDB([]);
 
     clonedDB.index = this.index;
@@ -507,7 +517,7 @@ export class TribbleDB {
 
       const tripleRows = this.#findMatchingRows(pattern as any);
       const rowData = Array.from(tripleRows).flatMap((row) => {
-      const contents = this.index.getTripleIndices(row);
+        const contents = this.index.getTripleIndices(row);
 
         return typeof contents === "undefined" ? [] : [contents];
       });
@@ -538,7 +548,7 @@ export class TribbleDB {
     return objects;
   }
 
-  getMetrics() {
+  getMetrics(): TribbleDBMetrics {
     return {
       index: this.index.metrics,
       db: this.metrics,
