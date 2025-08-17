@@ -1,3 +1,4 @@
 test-triples.ts
 coverage/
 *.lcov
+node_modules/

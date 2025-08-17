@@ -3,7 +3,7 @@
 import docopt from "https://deno.land/x/docopt/mod.ts";
 import { TribbleParser } from "./src/tribble/parse.ts";
 import { TribbleStringifier } from "./src/tribble/stringify.ts";
-import type { Triple } from "./types.ts";
+import type { Triple } from "./src/types.ts";
 
 const doc = `
 Usage:

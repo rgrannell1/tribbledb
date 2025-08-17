@@ -2,7 +2,8 @@ import type { Dsl, DslRelation, Triple, TripleObject } from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
-import type { IndexPerformanceMetrics, TribbleDBPerformanceMetrics } from "./metrics.ts";
+import { TribbleDBPerformanceMetrics } from "./metrics.ts";
+import type { IndexPerformanceMetrics } from "./metrics.ts";
 
 type SubqueryResult = {
   names: string[];

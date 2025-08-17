@@ -1,4 +1,4 @@
-// sets.ts
+// src/sets.ts
 var IndexedSet = class {
   #idx;
   #map;
@@ -8,12 +8,21 @@ var IndexedSet = class {
     this.#map = /* @__PURE__ */ new Map();
     this.#reverseMap = /* @__PURE__ */ new Map();
   }
+  /*
+   * Return the underlying map of values to indices
+   */
   map() {
     return this.#map;
   }
+  /*
+   * Return the underlying map of indices to values
+   */
   reverseMap() {
     return this.#reverseMap;
   }
+  /*
+   * Add a value to the set, and return its index
+   */
   add(value) {
     if (this.#map.has(value)) {
       return this.#map.get(value);
@@ -23,16 +32,28 @@ var IndexedSet = class {
     this.#idx++;
     return this.#idx - 1;
   }
+  /**
+   * Set the index for a value in the set
+   */
   setIndex(value, index) {
     this.#map.set(value, index);
     this.#reverseMap.set(index, value);
   }
+  /**
+   * Get the index for a value in the set
+   */
   getIndex(value) {
     return this.#map.get(value);
   }
+  /**
+   * Set the values for an index in the set
+   */
   getValue(idx) {
     return this.#reverseMap.get(idx);
   }
+  /**
+   * Does this structure have a value?
+   */
   has(value) {
     return this.#map.has(value);
   }
@@ -42,8 +63,7 @@ var Sets = class {
    * Compute the intersection of multiple numeric sets.
    * The number of sets will be low (we're not adding ninety
    * query parameters to these URNs) so first sort the
-   * sets in ascending size. This could be done much, much more
-   * efficiently with a dataset that allows cheap intersections though...TODO
+   * sets in ascending size.
    */
   static intersection(metrics, sets) {
     if (sets.length === 0) {
@@ -69,7 +89,7 @@ var Sets = class {
   }
 };
 
-// tribble/parse.ts
+// src/tribble/parse.ts
 var TribbleParser = class {
   stringIndex;
   constructor() {
@@ -89,7 +109,6 @@ var TribbleParser = class {
     return [src, rel, tgt];
   }
   parseDeclaration(line) {
-    console.log(line);
     const match = line.match(/^(\d+) "(.*)"$/);
     if (!match) {
       throw new SyntaxError(`Invalid format for declaration line: ${line}`);
@@ -109,7 +128,7 @@ var TribbleParser = class {
   }
 };
 
-// tribble/stringify.ts
+// src/tribble/stringify.ts
 var TribbleStringifier = class {
   stringIndex;
   constructor() {
@@ -132,7 +151,7 @@ var TribbleStringifier = class {
   }
 };
 
-// urn.ts
+// src/urn.ts
 function parseUrn(urn, namespace = "r\xF3") {
   if (!urn.startsWith(`urn:${namespace}:`)) {
     throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
@@ -159,7 +178,7 @@ function asUrn(value, namespace = "r\xF3") {
   }
 }
 
-// metrics.ts
+// src/metrics.ts
 var IndexPerformanceMetrics = class {
   mapReadCount;
   constructor() {
@@ -179,7 +198,7 @@ var TribbleDBPerformanceMetrics = class {
   }
 };
 
-// triple-index.ts
+// src/indices/index.ts
 var Index = class {
   // Internal indexed representation for memory efficiency
   indexedTriples;
@@ -363,7 +382,7 @@ var Index = class {
   }
 };
 
-// triples.ts
+// src/triples.ts
 var Triples = class {
   static source(triple) {
     return triple[0];
@@ -376,7 +395,7 @@ var Triples = class {
   }
 };
 
-// tribble-db.ts
+// src/tribble-db.ts
 function joinSubqueryResults(metrics, acc, tripleResult) {
   const joinedNames = acc.names.concat(tripleResult.names);
   if (acc.rows.length === 0 || tripleResult.rows.length === 0) {
@@ -437,6 +456,11 @@ var TribbleDB = class _TribbleDB {
       this.cursorIndices.add(idx);
     }
   }
+  /*
+   * Clone the database.
+   *
+   * @returns A new TribbleDB instance, constructed with the same data as the original.
+   */
   clone() {
     const clonedDB = new _TribbleDB([]);
     clonedDB.index = this.index;
