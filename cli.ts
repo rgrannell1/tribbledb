@@ -13,6 +13,9 @@ Usage:
 
 const options = docopt(doc);
 
+/*
+ * Read lines from standard input
+ */
 async function readStdinLines(): Promise<string[]> {
   const decoder = new TextDecoder();
   const input = await Deno.readAll(Deno.stdin);
@@ -21,6 +24,9 @@ async function readStdinLines(): Promise<string[]> {
   );
 }
 
+/*
+ * Parse the array of lines into triples, print as JSON
+ */
 function parse(lines: string[]) {
   const parser = new TribbleParser();
 
@@ -35,6 +41,9 @@ function parse(lines: string[]) {
   console.log(JSON.stringify(triples, null, 2));
 }
 
+/*
+ * Convert triples to tribbles and print
+ */
 function stringify(triples: Triple[]) {
   const stringifier = new TribbleStringifier();
   for (const triple of triples) {
@@ -42,17 +51,21 @@ function stringify(triples: Triple[]) {
   }
 }
 
-if (options["stringify"]) {
-  const lines = await readStdinLines();
-  let triples: Triple[] = [];
-  try {
-    triples = JSON.parse(lines.join("\n"));
-  } catch (_) {
-    console.error("Failed to parse input as JSON array of triples.");
-    Deno.exit(1);
+async function main() {
+  if (options["stringify"]) {
+    const lines = await readStdinLines();
+    let triples: Triple[] = [];
+    try {
+      triples = JSON.parse(lines.join("\n"));
+    } catch (_) {
+      console.error("Failed to parse input as JSON array of triples.");
+      Deno.exit(1);
+    }
+    stringify(triples);
+  } else if (options["parse"]) {
+    const lines = await readStdinLines();
+    parse(lines);
   }
-  stringify(triples);
-} else if (options["parse"]) {
-  const lines = await readStdinLines();
-  parse(lines);
 }
+
+await main()

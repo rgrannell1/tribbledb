@@ -36,3 +36,8 @@ export type DslRelation = {
  * instead of strings for memory efficiency
  */
 export type IndexedTriple = [number, number, number];
+
+/*
+ * Validate that relation targets conform to some expectation. Return a string on complaint.
+ */
+export type TargetValidator = (sourceType: string, relation: string, value: string) => string | undefined;

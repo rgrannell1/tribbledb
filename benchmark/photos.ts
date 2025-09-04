@@ -1,3 +1,7 @@
+/*
+ * Benchmark against the actual photo dataset
+ */
+
 import { TribbleParser } from "../src/tribble/parse.ts";
 import { TribbleDB } from "../src/tribble-db.ts";
 import type { Triple } from "../src/types.ts";

@@ -502,3 +502,53 @@ Deno.test("search with complex DslRelation predicate based on triple context", (
     true,
   );
 });
+
+Deno.test("validateTriples enforces photo_count and description relation", () => {
+  // photo_count must be a positive integer string
+  const photoCountValidator = (_type: string, _relation: string, target: string) => {
+    return /^\d+$/.test(target) && Number(target) > 0
+      ? undefined
+      : "photo_count must be a positive integer";
+  };
+  // description must be a non-empty string
+  const descriptionValidator = (_type: string, _relation: string, target: string) => {
+    return target.length > 0
+      ? undefined
+      : "description must be non-empty";
+  };
+
+  const validations = {
+    photo_count: photoCountValidator,
+    description: descriptionValidator,
+  };
+
+  const db = new TribbleDB([], validations);
+
+  // Valid triples
+  db.validateTriples([
+    ["urn:ró:album:foo", "photo_count", "42"],
+    ["urn:ró:album:foo", "description", "A nice album"],
+  ]);
+
+  // Invalid photo_count
+  let threwPhotoCount = false;
+  try {
+    db.validateTriples([
+      ["urn:ró:album:foo", "photo_count", "-1"],
+    ]);
+  } catch (err) {
+    threwPhotoCount = String(err).includes("photo_count must be a positive integer");
+  }
+  if (!threwPhotoCount) throw new Error("Expected error for invalid photo_count");
+
+  // Invalid description
+  let threwDescription = false;
+  try {
+    db.validateTriples([
+      ["urn:ró:album:foo", "description", ""],
+    ]);
+  } catch (err) {
+    threwDescription = String(err).includes("description must be non-empty");
+  }
+  if (!threwDescription) throw new Error("Expected error for empty description");
+});

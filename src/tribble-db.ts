@@ -1,9 +1,10 @@
-import type { Dsl, DslRelation, Triple, TripleObject } from "./types.ts";
+import type { Dsl, DslRelation, TargetValidator, Triple, TripleObject } from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 import type { IndexPerformanceMetrics } from "./metrics.ts";
+import { asUrn } from "./urn.ts";
 
 type SubqueryResult = {
   names: string[];
@@ -108,12 +109,14 @@ export class TribbleDB {
   triplesCount: number;
   cursorIndices: Set<number>;
   metrics: TribbleDBPerformanceMetrics;
+  validations: Record<string, TargetValidator>;
 
-  constructor(triples: Triple[]) {
+  constructor(triples: Triple[], validations: Record<string, TargetValidator> = {}) {
     this.index = new Index(triples);
     this.triplesCount = this.index.length;
     this.cursorIndices = new Set<number>();
     this.metrics = new TribbleDBPerformanceMetrics();
+    this.validations = validations;
 
     for (let idx = 0; idx < this.triplesCount; idx++) {
       this.cursorIndices.add(idx);
@@ -170,6 +173,29 @@ export class TribbleDB {
     return new TribbleDB(triples);
   }
 
+  validateTriples(triples: Triple[]): void {
+    const messages: string[] = [];
+
+    for (const [source, relation, target] of triples) {
+      const validator = this.validations[relation];
+
+      if (!validator) {
+        continue
+      }
+
+      const { type } = asUrn(source);
+
+      const res = validator(type, relation, target);
+      if (typeof res === "string") {
+        messages.push(res);
+      }
+    }
+
+    if (messages.length > 0) {
+      throw new Error(`Triple validation failed:\n- ${messages.join("\n- ")}`);
+    }
+  }
+
   /**
    * Add new triples to the database.
    *
@@ -177,6 +203,7 @@ export class TribbleDB {
    */
   add(triples: Triple[]): void {
     const oldLength = this.index.length;
+    this.validateTriples(triples)
 
     this.index.add(triples);
     this.triplesCount = this.index.length;
