@@ -1,0 +1,39 @@
+{
+  "name": "tribbledb",
+  "version": "1.0.0",
+  "description": "[![CI](https://github.com/rgrannell1/tribbledb/workflows/Test/badge.svg)](https://github.com/rgrannell1/tribbledb/actions)",
+  "main": "dist/mod.js",
+  "types": "dist/mod.d.ts",
+  "module": "dist/mod.js",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/mod.js",
+      "require": "./dist/mod.js",
+      "types": "./dist/mod.d.ts"
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "build": "bash ./bs/build.sh",
+    "test": "bash ./bs/test.sh",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rgrannell1/tribbledb.git"
+  },
+  "author": "Róisín Grannell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rgrannell1/tribbledb/issues"
+  },
+  "homepage": "https://github.com/rgrannell1/tribbledb#readme"
+}
