@@ -447,11 +447,13 @@ var TribbleDB = class _TribbleDB {
   triplesCount;
   cursorIndices;
   metrics;
-  constructor(triples) {
+  validations;
+  constructor(triples, validations = {}) {
     this.index = new Index(triples);
     this.triplesCount = this.index.length;
     this.cursorIndices = /* @__PURE__ */ new Set();
     this.metrics = new TribbleDBPerformanceMetrics();
+    this.validations = validations;
     for (let idx = 0; idx < this.triplesCount; idx++) {
       this.cursorIndices.add(idx);
     }
@@ -498,6 +500,24 @@ var TribbleDB = class _TribbleDB {
     }
     return new _TribbleDB(triples);
   }
+  validateTriples(triples) {
+    const messages = [];
+    for (const [source, relation, target] of triples) {
+      const validator = this.validations[relation];
+      if (!validator) {
+        continue;
+      }
+      const { type } = asUrn(source);
+      const res = validator(type, relation, target);
+      if (typeof res === "string") {
+        messages.push(res);
+      }
+    }
+    if (messages.length > 0) {
+      throw new Error(`Triple validation failed:
+- ${messages.join("\n- ")}`);
+    }
+  }
   /**
    * Add new triples to the database.
    *
@@ -505,6 +525,7 @@ var TribbleDB = class _TribbleDB {
    */
   add(triples) {
     const oldLength = this.index.length;
+    this.validateTriples(triples);
     this.index.add(triples);
     this.triplesCount = this.index.length;
     for (let idx = oldLength; idx < this.triplesCount; idx++) {
