@@ -18,7 +18,8 @@
     }
   },
   "redirects": {
-    "https://deno.land/x/docopt/mod.ts": "https://deno.land/x/docopt@v1.0.7/mod.ts"
+    "https://deno.land/x/docopt/mod.ts": "https://deno.land/x/docopt@v1.0.7/mod.ts",
+    "https://deno.land/x/peach_ts/src/mod.ts": "https://deno.land/x/peach_ts@0.4.2/src/mod.ts"
   },
   "remote": {
     "https://deno.land/std@0.203.0/assert/_constants.ts": "8a9da298c26750b28b326b297316cdde860bc237533b07e1337c021379e6b2a9",
@@ -92,7 +93,31 @@
     "https://deno.land/x/docopt@v1.0.7/src/parse.ts": "ef9402318c2ed88ce543335b394adc8d3ca9e5dbe336c1c2a9ac4b70adc56c83",
     "https://deno.land/x/docopt@v1.0.7/src/pattern.ts": "281be05c8613b3c4015c50e638c3502e311949a3e88d94d78cacda6b175f52f6",
     "https://deno.land/x/docopt@v1.0.7/src/token.ts": "fd680a204af72e99361598bdb36ba78cad1f5ac3e9acf70ff13f883c19ad97b7",
-    "https://deno.land/x/docopt@v1.0.7/src/utils.ts": "52c2a03c68a0ecfe70146e1183ae55bac632dbaf094cf13efdcf2deb178c507d"
+    "https://deno.land/x/docopt@v1.0.7/src/utils.ts": "52c2a03c68a0ecfe70146e1183ae55bac632dbaf094cf13efdcf2deb178c507d",
+    "https://deno.land/x/peach_ts@0.3.4/data/unicode_ranges.json": "9f64f22e008c8faa80d06b17a8774844b3575d7ef2a1092de999f3847b5ed2e3",
+    "https://deno.land/x/peach_ts@0.3.4/src/array/array.ts": "ade065141b9c4ca0b8dcae814951e0d6496c9282509c1d8c8a5d06ba7e99687b",
+    "https://deno.land/x/peach_ts@0.3.4/src/bigint/bigint.ts": "498e3679dcfb2c4cd6117bb7bdb9acf8621cb62e5a2ff260c0741283d055fda2",
+    "https://deno.land/x/peach_ts@0.3.4/src/boolean/boolean.ts": "b5994e369b44d9a5b6ad1581356709ec613d2a57fbb4689b1f6fc89e6c173d37",
+    "https://deno.land/x/peach_ts@0.3.4/src/constants.ts": "5dbb308eb16980b34ac3c83c1cb4e2b96f50d5baec7c53de170a4db7d36d49c7",
+    "https://deno.land/x/peach_ts@0.3.4/src/logic/logic.ts": "52709501bf53b8f5d57718adb510eb1122c8c8e96cd04f41a0043a2b152f974b",
+    "https://deno.land/x/peach_ts@0.3.4/src/mod.ts": "c73c14ac063fc524e5f94679d76afccba8a909c40946fe59ade04cbae45327d6",
+    "https://deno.land/x/peach_ts@0.3.4/src/number/number.ts": "133391e94ce17c52fbc7ba090796aff3693a4befe181a07f328942bccd6f0f62",
+    "https://deno.land/x/peach_ts@0.3.4/src/object/object.ts": "d349697009d43e49df55ec68643252b04f020342eba4a4be820881dd81d4e1fe",
+    "https://deno.land/x/peach_ts@0.3.4/src/set/set.ts": "c77e41fb27406a70998423f988d2d457f03755372ce41d1b6b8f4dae63010496",
+    "https://deno.land/x/peach_ts@0.3.4/src/string/string.ts": "40d034ae73b61ef190ed2be4c4950419933021441bb78601a026708c654b8136",
+    "https://deno.land/x/peach_ts@0.3.4/src/types.ts": "0b0f44422901cdfe91e777f564cf53384ff2b4690a4e63aa46259dce00d794e5",
+    "https://deno.land/x/peach_ts@0.4.2/data/unicode_ranges.json": "9f64f22e008c8faa80d06b17a8774844b3575d7ef2a1092de999f3847b5ed2e3",
+    "https://deno.land/x/peach_ts@0.4.2/src/array/array.ts": "fbba23d379a92e953417d167f05f8eb47d400cc7cffc490c7309e1cd56607528",
+    "https://deno.land/x/peach_ts@0.4.2/src/bigint/bigint.ts": "c430e8df7e592c071a827ec616fd260afe081e5d76089d4b7ed4c06774207696",
+    "https://deno.land/x/peach_ts@0.4.2/src/boolean/boolean.ts": "3830a12ba4cca2cd2d056978d3d88a437d2e6ca848662fc2b527fef641fda286",
+    "https://deno.land/x/peach_ts@0.4.2/src/constants.ts": "5dbb308eb16980b34ac3c83c1cb4e2b96f50d5baec7c53de170a4db7d36d49c7",
+    "https://deno.land/x/peach_ts@0.4.2/src/logic/logic.ts": "b1087d4ccbac3dd274d90459e56e624a0a8c2d7e3d6a408e1a9e35a8f27df2aa",
+    "https://deno.land/x/peach_ts@0.4.2/src/mod.ts": "c73c14ac063fc524e5f94679d76afccba8a909c40946fe59ade04cbae45327d6",
+    "https://deno.land/x/peach_ts@0.4.2/src/number/number.ts": "133391e94ce17c52fbc7ba090796aff3693a4befe181a07f328942bccd6f0f62",
+    "https://deno.land/x/peach_ts@0.4.2/src/object/object.ts": "ac00c7799a141b0cde3cdad07f629f3958b757f9966514def471561d740b64a3",
+    "https://deno.land/x/peach_ts@0.4.2/src/set/set.ts": "20b95bf3322c4b516ab2fcbfdb71359b7db155d4b6a97f616348b186d689e1e2",
+    "https://deno.land/x/peach_ts@0.4.2/src/string/string.ts": "8975f974132e46ed4fea419b694e36ee2a8e0a66121b8daab50e57cbad11e59b",
+    "https://deno.land/x/peach_ts@0.4.2/src/types.ts": "c7cc3af26b77977fd1a18eec6a7c457f75463336cca4a5b85f48bc1fc99b9b1e"
   },
   "workspace": {
     "packageJson": {

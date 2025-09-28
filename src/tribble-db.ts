@@ -353,8 +353,37 @@ export class TribbleDB {
     return objs;
   }
 
+  nodeAsDSL(node: unknown): Dsl | undefined {
+    if (typeof node === "undefined") {
+      return undefined
+    }
+
+    if (typeof node === 'string') {
+      return { type: 'unknown', id: node }
+    }
+
+    return node as Dsl;
+  };
+
+  relationAsDSL(relation: unknown): DslRelation | undefined {
+
+    if (typeof relation === "undefined") {
+      return undefined
+    }
+
+    if (typeof relation === 'string') {
+      return { relation: [relation] }
+    }
+
+    if (Array.isArray(relation)) {
+      return { relation }
+    }
+
+    return relation as DslRelation;
+  }
+
   #findMatchingRows(
-    params: { source?: Dsl; relation?: string | DslRelation; target?: Dsl },
+    params: { source?: string | Dsl; relation?: string | string[] | DslRelation; target?: string | Dsl },
   ): Set<number> {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too, by
@@ -380,9 +409,13 @@ export class TribbleDB {
       }
     }
 
-    if (source) {
-      if (source.type) {
-        const sourceTypeSet = this.index.getSourceTypeSet(source.type);
+    const expandedSource = this.nodeAsDSL(source);
+    const expandedRelation = this.relationAsDSL(relation);
+    const expandedTarget = this.nodeAsDSL(target);
+
+    if (expandedSource) {
+      if (expandedSource.type) {
+        const sourceTypeSet = this.index.getSourceTypeSet(expandedSource.type);
         if (sourceTypeSet) {
           matchingRowSets.push(sourceTypeSet);
         } else {
@@ -390,8 +423,8 @@ export class TribbleDB {
         }
       }
 
-      if (source.id) {
-        const sourceIdSet = this.index.getSourceIdSet(source.id);
+      if (expandedSource.id) {
+        const sourceIdSet = this.index.getSourceIdSet(expandedSource.id);
         if (sourceIdSet) {
           matchingRowSets.push(sourceIdSet);
         } else {
@@ -399,8 +432,8 @@ export class TribbleDB {
         }
       }
 
-      if (source.qs) {
-        for (const [key, val] of Object.entries(source.qs)) {
+      if (expandedSource.qs) {
+        for (const [key, val] of Object.entries(expandedSource.qs)) {
           const sourceQsSet = this.index.getSourceQsSet(key, val);
           if (sourceQsSet) {
             matchingRowSets.push(sourceQsSet);
@@ -411,9 +444,9 @@ export class TribbleDB {
       }
     }
 
-    if (target) {
-      if (target.type) {
-        const targetTypeSet = this.index.getTargetTypeSet(target.type);
+    if (expandedTarget) {
+      if (expandedTarget.type) {
+        const targetTypeSet = this.index.getTargetTypeSet(expandedTarget.type);
         if (targetTypeSet) {
           matchingRowSets.push(targetTypeSet);
         } else {
@@ -421,8 +454,8 @@ export class TribbleDB {
         }
       }
 
-      if (target.id) {
-        const targetIdSet = this.index.getTargetIdSet(target.id);
+      if (expandedTarget.id) {
+        const targetIdSet = this.index.getTargetIdSet(expandedTarget.id);
         if (targetIdSet) {
           matchingRowSets.push(targetIdSet);
         } else {
@@ -430,8 +463,8 @@ export class TribbleDB {
         }
       }
 
-      if (target.qs) {
-        for (const [key, val] of Object.entries(target.qs)) {
+      if (expandedTarget.qs) {
+        for (const [key, val] of Object.entries(expandedTarget.qs)) {
           const targetQsSet = this.index.getTargetQsSet(key, val);
           if (targetQsSet) {
             matchingRowSets.push(targetQsSet);
@@ -442,16 +475,12 @@ export class TribbleDB {
       }
     }
 
-    if (relation) {
-      const relationDsl: DslRelation = typeof relation === "string"
-        ? { relation: [relation] }
-        : relation;
-
-      if (relationDsl.relation) {
+    if (expandedRelation) {
+      if (expandedRelation.relation) {
         // in this case, ANY relation in the `relation` list is good enough, so we
         // union rather than intersection (which would always be the null set)
         const unionedRelations = new Set<number>();
-        for (const rel of relationDsl.relation) {
+        for (const rel of expandedRelation.relation) {
           const relationSet = this.index.getRelationSet(rel);
           if (relationSet) {
             for (const elem of relationSet) {
@@ -476,8 +505,8 @@ export class TribbleDB {
       const triple = this.index.getTriple(index)!;
 
       if (
-        !source?.predicate && !target?.predicate &&
-        !(typeof relation === "object" && relation.predicate)
+        !expandedSource?.predicate && !expandedTarget?.predicate &&
+        !expandedRelation?.predicate
       ) {
         matchingTriples.add(index);
         continue;
@@ -485,16 +514,16 @@ export class TribbleDB {
 
       let isValid = true;
 
-      if (source?.predicate) {
-        isValid = isValid && source.predicate(Triples.source(triple));
+      if (expandedSource?.predicate) {
+        isValid = isValid && expandedSource.predicate(Triples.source(triple));
       }
 
-      if (target?.predicate) {
-        isValid = isValid && target.predicate(Triples.target(triple));
+      if (expandedTarget?.predicate) {
+        isValid = isValid && expandedTarget.predicate(Triples.target(triple));
       }
 
-      if (typeof relation === "object" && relation.predicate) {
-        isValid = isValid && relation.predicate(Triples.relation(triple));
+      if (typeof expandedRelation === "object" && expandedRelation.predicate) {
+        isValid = isValid && expandedRelation.predicate(Triples.relation(triple));
       }
 
       if (isValid) {
@@ -512,7 +541,7 @@ export class TribbleDB {
    * @returns A new TribbleDB instance containing the matching triples.
    */
   search(
-    params: { source?: Dsl; relation?: string | DslRelation; target?: Dsl },
+    params: { source?: Dsl | string; relation?: string | string[] | DslRelation; target?: string | Dsl },
   ): TribbleDB {
     const matchingTriples: Triple[] = [];
 
