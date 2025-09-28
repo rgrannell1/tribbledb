@@ -9,13 +9,13 @@ export type ParsedUrn = {
     id: string;
     qs: Record<string, string>;
 };
-export type Dsl = {
+export type NodeSearch = {
     type?: string;
     id?: string;
     predicate?: Predicate;
     qs?: Record<string, string>;
 };
-export type DslRelation = {
+export type RelationSearch = {
     relation: string[];
     predicate?: Predicate;
 };

@@ -1,4 +1,4 @@
-import type { Dsl, DslRelation, TargetValidator, Triple, TripleObject } from "./types.ts";
+import type { NodeSearch, RelationSearch, TargetValidator, Triple, TripleObject } from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 import type { IndexPerformanceMetrics } from "./metrics.ts";
@@ -6,6 +6,17 @@ export type TribbleDBMetrics = {
     index: IndexPerformanceMetrics;
     db: TribbleDBPerformanceMetrics;
 };
+export type SearchParamsObject = {
+    source?: NodeSearch | string;
+    relation?: string | string[] | RelationSearch;
+    target?: NodeSearch | string;
+};
+export type SearchParamsArray = [
+    NodeSearch | string | undefined,
+    string | string[] | RelationSearch | undefined,
+    NodeSearch | string | undefined
+];
+export type SearchParams = SearchParamsObject | SearchParamsArray;
 export declare class TribbleDB {
     #private;
     index: Index;
@@ -75,14 +86,11 @@ export declare class TribbleDB {
     targets(): Set<string>;
     objects(listOnly?: boolean): TripleObject[];
     object(listOnly?: boolean): Record<string, TripleObject>;
-    nodeAsDSL(node: unknown): Dsl | undefined;
-    relationAsDSL(relation: unknown): DslRelation | undefined;
-    search(params: {
-        source?: Dsl | string;
-        relation?: string | string[] | DslRelation;
-        target?: string | Dsl;
-    }): TribbleDB;
-    search2(query: Record<string, Dsl | DslRelation>): any[];
+    nodeAsDSL(node: unknown): NodeSearch | undefined;
+    relationAsDSL(relation: unknown): RelationSearch | undefined;
+    searchParamsToObject(params: SearchParams): SearchParamsObject;
+    search(params: SearchParams): TribbleDB;
+    search2(query: Record<string, NodeSearch | RelationSearch>): any[];
     getMetrics(): TribbleDBMetrics;
 }
 //# sourceMappingURL=tribble-db.d.ts.map

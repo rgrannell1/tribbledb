@@ -656,40 +656,77 @@ var TribbleDB = class _TribbleDB {
     }
     return objs;
   }
+  nodeAsDSL(node) {
+    if (typeof node === "undefined") {
+      return void 0;
+    }
+    if (typeof node === "string") {
+      return { type: "unknown", id: node };
+    }
+    return node;
+  }
+  relationAsDSL(relation) {
+    if (typeof relation === "undefined") {
+      return void 0;
+    }
+    if (typeof relation === "string") {
+      return { relation: [relation] };
+    }
+    if (Array.isArray(relation)) {
+      return { relation };
+    }
+    return relation;
+  }
+  searchParamsToObject(params) {
+    if (!Array.isArray(params)) {
+      return params;
+    }
+    const [source, relation, target] = params;
+    return {
+      source: this.nodeAsDSL(source),
+      relation: this.relationAsDSL(relation),
+      target: this.nodeAsDSL(target)
+    };
+  }
   #findMatchingRows(params) {
     const matchingRowSets = [
       this.cursorIndices
     ];
-    const { source, relation, target } = params;
+    const { source, relation, target } = this.searchParamsToObject(params);
     if (typeof source === "undefined" && typeof target === "undefined" && typeof relation === "undefined") {
       throw new Error("At least one search parameter must be defined");
     }
     const allowedKeys = ["source", "relation", "target"];
-    for (const key of Object.keys(params)) {
-      if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
-      if (!allowedKeys.includes(key)) {
-        throw new Error(`Unexpected search parameter: ${key}`);
+    if (!Array.isArray(params)) {
+      for (const key of Object.keys(params)) {
+        if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
+        if (!allowedKeys.includes(key)) {
+          throw new Error(`Unexpected search parameter: ${key}`);
+        }
       }
     }
-    if (source) {
-      if (source.type) {
-        const sourceTypeSet = this.index.getSourceTypeSet(source.type);
+    const expandedSource = this.nodeAsDSL(source);
+    const expandedRelation = this.relationAsDSL(relation);
+    const expandedTarget = this.nodeAsDSL(target);
+    if (expandedSource) {
+      if (expandedSource.type) {
+        const sourceTypeSet = this.index.getSourceTypeSet(expandedSource.type);
         if (sourceTypeSet) {
           matchingRowSets.push(sourceTypeSet);
         } else {
           return /* @__PURE__ */ new Set();
         }
       }
-      if (source.id) {
-        const sourceIdSet = this.index.getSourceIdSet(source.id);
+      if (expandedSource.id) {
+        const sourceIdSet = this.index.getSourceIdSet(expandedSource.id);
         if (sourceIdSet) {
           matchingRowSets.push(sourceIdSet);
         } else {
           return /* @__PURE__ */ new Set();
         }
       }
-      if (source.qs) {
-        for (const [key, val] of Object.entries(source.qs)) {
+      if (expandedSource.qs) {
+        for (const [key, val] of Object.entries(expandedSource.qs)) {
           const sourceQsSet = this.index.getSourceQsSet(key, val);
           if (sourceQsSet) {
             matchingRowSets.push(sourceQsSet);
@@ -699,25 +736,25 @@ var TribbleDB = class _TribbleDB {
         }
       }
     }
-    if (target) {
-      if (target.type) {
-        const targetTypeSet = this.index.getTargetTypeSet(target.type);
+    if (expandedTarget) {
+      if (expandedTarget.type) {
+        const targetTypeSet = this.index.getTargetTypeSet(expandedTarget.type);
         if (targetTypeSet) {
           matchingRowSets.push(targetTypeSet);
         } else {
           return /* @__PURE__ */ new Set();
         }
       }
-      if (target.id) {
-        const targetIdSet = this.index.getTargetIdSet(target.id);
+      if (expandedTarget.id) {
+        const targetIdSet = this.index.getTargetIdSet(expandedTarget.id);
         if (targetIdSet) {
           matchingRowSets.push(targetIdSet);
         } else {
           return /* @__PURE__ */ new Set();
         }
       }
-      if (target.qs) {
-        for (const [key, val] of Object.entries(target.qs)) {
+      if (expandedTarget.qs) {
+        for (const [key, val] of Object.entries(expandedTarget.qs)) {
           const targetQsSet = this.index.getTargetQsSet(key, val);
           if (targetQsSet) {
             matchingRowSets.push(targetQsSet);
@@ -727,11 +764,10 @@ var TribbleDB = class _TribbleDB {
         }
       }
     }
-    if (relation) {
-      const relationDsl = typeof relation === "string" ? { relation: [relation] } : relation;
-      if (relationDsl.relation) {
+    if (expandedRelation) {
+      if (expandedRelation.relation) {
         const unionedRelations = /* @__PURE__ */ new Set();
-        for (const rel of relationDsl.relation) {
+        for (const rel of expandedRelation.relation) {
           const relationSet = this.index.getRelationSet(rel);
           if (relationSet) {
             for (const elem of relationSet) {
@@ -750,19 +786,19 @@ var TribbleDB = class _TribbleDB {
     const matchingTriples = /* @__PURE__ */ new Set();
     for (const index of intersection) {
       const triple = this.index.getTriple(index);
-      if (!source?.predicate && !target?.predicate && !(typeof relation === "object" && relation.predicate)) {
+      if (!expandedSource?.predicate && !expandedTarget?.predicate && !expandedRelation?.predicate) {
         matchingTriples.add(index);
         continue;
       }
       let isValid = true;
-      if (source?.predicate) {
-        isValid = isValid && source.predicate(Triples.source(triple));
+      if (expandedSource?.predicate) {
+        isValid = isValid && expandedSource.predicate(Triples.source(triple));
       }
-      if (target?.predicate) {
-        isValid = isValid && target.predicate(Triples.target(triple));
+      if (expandedTarget?.predicate) {
+        isValid = isValid && expandedTarget.predicate(Triples.target(triple));
       }
-      if (typeof relation === "object" && relation.predicate) {
-        isValid = isValid && relation.predicate(Triples.relation(triple));
+      if (typeof expandedRelation === "object" && expandedRelation.predicate) {
+        isValid = isValid && expandedRelation.predicate(Triples.relation(triple));
       }
       if (isValid) {
         matchingTriples.add(index);
