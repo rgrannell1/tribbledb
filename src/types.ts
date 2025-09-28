@@ -15,7 +15,7 @@ export type ParsedUrn = {
 /*
  * Queries against sources and targets can specify these parameters.
  */
-export type Dsl = {
+export type NodeSearch = {
   type?: string;
   id?: string;
   predicate?: Predicate;
@@ -26,7 +26,7 @@ export type Dsl = {
  * Queries against relations can specify multiple relations to match
  * or include a predicate for custom filtering.
  */
-export type DslRelation = {
+export type RelationSearch = {
   relation: string[];
   predicate?: Predicate;
 };
@@ -40,4 +40,8 @@ export type IndexedTriple = [number, number, number];
 /*
  * Validate that relation targets conform to some expectation. Return a string on complaint.
  */
-export type TargetValidator = (sourceType: string, relation: string, value: string) => string | undefined;
+export type TargetValidator = (
+  sourceType: string,
+  relation: string,
+  value: string,
+) => string | undefined;

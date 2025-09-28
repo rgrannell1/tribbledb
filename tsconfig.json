@@ -8,7 +8,7 @@
     "outDir": "dist",
     "stripInternal": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*"],
   "exclude": ["src/**/*.test.ts"]

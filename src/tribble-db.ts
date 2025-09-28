@@ -1,4 +1,10 @@
-import type { Dsl, DslRelation, TargetValidator, Triple, TripleObject } from "./types.ts";
+import type {
+  NodeSearch,
+  RelationSearch,
+  TargetValidator,
+  Triple,
+  TripleObject,
+} from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
@@ -13,8 +19,22 @@ type SubqueryResult = {
 
 export type TribbleDBMetrics = {
   index: IndexPerformanceMetrics;
-  db: TribbleDBPerformanceMetrics
+  db: TribbleDBPerformanceMetrics;
 };
+
+export type SearchParamsObject = {
+  source?: NodeSearch | string;
+  relation?: string | string[] | RelationSearch;
+  target?: NodeSearch | string;
+};
+
+export type SearchParamsArray = [
+  NodeSearch | string | undefined,
+  string | string[] | RelationSearch | undefined,
+  NodeSearch | string | undefined,
+];
+
+export type SearchParams = SearchParamsObject | SearchParamsArray;
 
 /*
  * Combine subquery results into a single result set.
@@ -111,7 +131,10 @@ export class TribbleDB {
   metrics: TribbleDBPerformanceMetrics;
   validations: Record<string, TargetValidator>;
 
-  constructor(triples: Triple[], validations: Record<string, TargetValidator> = {}) {
+  constructor(
+    triples: Triple[],
+    validations: Record<string, TargetValidator> = {},
+  ) {
     this.index = new Index(triples);
     this.triplesCount = this.index.length;
     this.cursorIndices = new Set<number>();
@@ -180,7 +203,7 @@ export class TribbleDB {
       const validator = this.validations[relation];
 
       if (!validator) {
-        continue
+        continue;
       }
 
       const { type } = asUrn(source);
@@ -203,7 +226,7 @@ export class TribbleDB {
    */
   add(triples: Triple[]): void {
     const oldLength = this.index.length;
-    this.validateTriples(triples)
+    this.validateTriples(triples);
 
     this.index.add(triples);
     this.triplesCount = this.index.length;
@@ -353,37 +376,50 @@ export class TribbleDB {
     return objs;
   }
 
-  nodeAsDSL(node: unknown): Dsl | undefined {
+  nodeAsDSL(node: unknown): NodeSearch | undefined {
     if (typeof node === "undefined") {
-      return undefined
+      return undefined;
     }
 
-    if (typeof node === 'string') {
-      return { type: 'unknown', id: node }
+    if (typeof node === "string") {
+      return { type: "unknown", id: node };
     }
 
-    return node as Dsl;
-  };
+    return node as NodeSearch;
+  }
 
-  relationAsDSL(relation: unknown): DslRelation | undefined {
-
+  relationAsDSL(relation: unknown): RelationSearch | undefined {
     if (typeof relation === "undefined") {
-      return undefined
+      return undefined;
     }
 
-    if (typeof relation === 'string') {
-      return { relation: [relation] }
+    if (typeof relation === "string") {
+      return { relation: [relation] };
     }
 
     if (Array.isArray(relation)) {
-      return { relation }
+      return { relation };
     }
 
-    return relation as DslRelation;
+    return relation as RelationSearch;
+  }
+
+  searchParamsToObject(params: SearchParams): SearchParamsObject {
+    if (!Array.isArray(params)) {
+      return params;
+    }
+
+    const [source, relation, target] = params;
+
+    return {
+      source: this.nodeAsDSL(source),
+      relation: this.relationAsDSL(relation),
+      target: this.nodeAsDSL(target),
+    };
   }
 
   #findMatchingRows(
-    params: { source?: string | Dsl; relation?: string | string[] | DslRelation; target?: string | Dsl },
+    params: SearchParams,
   ): Set<number> {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too, by
@@ -392,7 +428,7 @@ export class TribbleDB {
       this.cursorIndices,
     ];
 
-    const { source, relation, target } = params;
+    const { source, relation, target } = this.searchParamsToObject(params);
     if (
       typeof source === "undefined" && typeof target === "undefined" &&
       typeof relation === "undefined"
@@ -402,10 +438,12 @@ export class TribbleDB {
     }
 
     const allowedKeys = ["source", "relation", "target"];
-    for (const key of Object.keys(params)) {
-      if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
-      if (!allowedKeys.includes(key)) {
-        throw new Error(`Unexpected search parameter: ${key}`);
+    if (!Array.isArray(params)) {
+      for (const key of Object.keys(params)) {
+        if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
+        if (!allowedKeys.includes(key)) {
+          throw new Error(`Unexpected search parameter: ${key}`);
+        }
       }
     }
 
@@ -523,7 +561,8 @@ export class TribbleDB {
       }
 
       if (typeof expandedRelation === "object" && expandedRelation.predicate) {
-        isValid = isValid && expandedRelation.predicate(Triples.relation(triple));
+        isValid = isValid &&
+          expandedRelation.predicate(Triples.relation(triple));
       }
 
       if (isValid) {
@@ -541,7 +580,7 @@ export class TribbleDB {
    * @returns A new TribbleDB instance containing the matching triples.
    */
   search(
-    params: { source?: Dsl | string; relation?: string | string[] | DslRelation; target?: string | Dsl },
+    params: SearchParams,
   ): TribbleDB {
     const matchingTriples: Triple[] = [];
 
@@ -555,7 +594,7 @@ export class TribbleDB {
     return new TribbleDB(matchingTriples);
   }
 
-  search2(query: Record<string, Dsl | DslRelation>) {
+  search2(query: Record<string, NodeSearch | RelationSearch>) {
     const bindings = Object.entries(query);
     const subqueryResults: {
       names: string[];

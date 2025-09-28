@@ -75,10 +75,12 @@ export declare class TribbleDB {
     targets(): Set<string>;
     objects(listOnly?: boolean): TripleObject[];
     object(listOnly?: boolean): Record<string, TripleObject>;
+    nodeAsDSL(node: unknown): Dsl | undefined;
+    relationAsDSL(relation: unknown): DslRelation | undefined;
     search(params: {
-        source?: Dsl;
-        relation?: string | DslRelation;
-        target?: Dsl;
+        source?: Dsl | string;
+        relation?: string | string[] | DslRelation;
+        target?: string | Dsl;
     }): TribbleDB;
     search2(query: Record<string, Dsl | DslRelation>): any[];
     getMetrics(): TribbleDBMetrics;

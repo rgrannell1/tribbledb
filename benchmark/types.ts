@@ -1,4 +1,3 @@
-
 export type ExperimentResult = {
   label: string;
   samples: number;
@@ -7,7 +6,7 @@ export type ExperimentResult = {
   p95: number;
   mean: number;
   stdev: number;
-}
+};
 
 export interface IExperiment {
   setup(): this;

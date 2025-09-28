@@ -18,6 +18,23 @@ const testTriples: Triple[] = [
   ["urn:ró:animal:cat?breed=siamese", "species", "felis_catus"],
 ];
 
+// Simple test triples for testing string-based API (no URNs)
+const simpleTestTriples: Triple[] = [
+  ["alice", "name", "Alice Smith"],
+  ["alice", "age", "30"],
+  ["alice", "works_for", "acme"],
+  ["bob", "name", "Bob Jones"],
+  ["bob", "age", "25"],
+  ["bob", "works_for", "techcorp"],
+  ["charlie", "name", "Charlie Brown"],
+  ["charlie", "likes", "alice"],
+  ["charlie", "likes", "bob"],
+  ["acme", "name", "ACME Corp"],
+  ["acme", "industry", "manufacturing"],
+  ["techcorp", "name", "TechCorp Inc"],
+  ["techcorp", "industry", "technology"],
+];
+
 Deno.test("search by source type returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
   const results = database.search({ source: { type: "person" } });
@@ -503,18 +520,190 @@ Deno.test("search with complex DslRelation predicate based on triple context", (
   );
 });
 
+// New API Tests: source and target as strings, relation as array
+
+Deno.test("search with source as string maps to id constraint", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ source: "alice" });
+
+  assertEquals(results.triplesCount, 3);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.id === "alice";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with target as string maps to id constraint", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ target: "acme" });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "alice",
+    "works_for",
+    "acme",
+  ]);
+});
+
+Deno.test("search with relation as array of strings returns union", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({ relation: ["name", "age"] });
+
+  assertEquals(results.triplesCount, 6);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      return rel === "name" || rel === "age";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with single item relation array works like string", () => {
+  const database = new TribbleDB(testTriples);
+  const resultsWithArray = database.search({ relation: ["name"] });
+  const resultsWithString = database.search({ relation: "name" });
+
+  assertEquals(resultsWithArray.triplesCount, resultsWithString.triplesCount);
+  assertEquals(resultsWithArray.triples(), resultsWithString.triples());
+});
+
+Deno.test("search with empty relation array returns no results", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({ relation: [] });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search combining string source and array relation", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({
+    source: "alice",
+    relation: ["name", "age"],
+  });
+
+  assertEquals(results.triplesCount, 2);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      const rel = Triples.relation(triple);
+      return parsed.id === "alice" && (rel === "name" || rel === "age");
+    }),
+    true,
+  );
+});
+
+Deno.test("search with string source, string target, and array relation", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({
+    source: "alice",
+    target: "acme",
+    relation: ["works_for", "manages"],
+  });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "alice",
+    "works_for",
+    "acme",
+  ]);
+});
+
+Deno.test("search with non-existent string source returns empty", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ source: "nonexistent" });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with non-existent string target returns empty", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ target: "nonexistent" });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search mixing old and new API works correctly", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({
+    source: "alice", // New API (string maps to id)
+    target: "acme", // New API (string maps to id)
+    relation: ["works_for"], // New API (array of strings)
+  });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "alice",
+    "works_for",
+    "acme",
+  ]);
+});
+
+Deno.test("search with string source only", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ source: "alice" });
+
+  assertEquals(results.triplesCount, 3);
+  assertEquals(
+    results.triples().every((triple: Triple) =>
+      Triples.source(triple) === "alice"
+    ),
+    true,
+  );
+});
+
+Deno.test("search with string target only", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ target: "alice" });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "charlie",
+    "likes",
+    "alice",
+  ]);
+});
+
+Deno.test("search with array relation only", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({ relation: ["name", "age"] });
+
+  const nameAgeTriples = simpleTestTriples.filter((triple) => {
+    const rel = Triples.relation(triple);
+    return rel === "name" || rel === "age";
+  });
+
+  assertEquals(results.triplesCount, nameAgeTriples.length);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      return rel === "name" || rel === "age";
+    }),
+    true,
+  );
+});
+
 Deno.test("validateTriples enforces photo_count and description relation", () => {
   // photo_count must be a positive integer string
-  const photoCountValidator = (_type: string, _relation: string, target: string) => {
+  const photoCountValidator = (
+    _type: string,
+    _relation: string,
+    target: string,
+  ) => {
     return /^\d+$/.test(target) && Number(target) > 0
       ? undefined
       : "photo_count must be a positive integer";
   };
   // description must be a non-empty string
-  const descriptionValidator = (_type: string, _relation: string, target: string) => {
-    return target.length > 0
-      ? undefined
-      : "description must be non-empty";
+  const descriptionValidator = (
+    _type: string,
+    _relation: string,
+    target: string,
+  ) => {
+    return target.length > 0 ? undefined : "description must be non-empty";
   };
 
   const validations = {
@@ -537,9 +726,13 @@ Deno.test("validateTriples enforces photo_count and description relation", () =>
       ["urn:ró:album:foo", "photo_count", "-1"],
     ]);
   } catch (err) {
-    threwPhotoCount = String(err).includes("photo_count must be a positive integer");
+    threwPhotoCount = String(err).includes(
+      "photo_count must be a positive integer",
+    );
   }
-  if (!threwPhotoCount) throw new Error("Expected error for invalid photo_count");
+  if (!threwPhotoCount) {
+    throw new Error("Expected error for invalid photo_count");
+  }
 
   // Invalid description
   let threwDescription = false;
@@ -550,5 +743,121 @@ Deno.test("validateTriples enforces photo_count and description relation", () =>
   } catch (err) {
     threwDescription = String(err).includes("description must be non-empty");
   }
-  if (!threwDescription) throw new Error("Expected error for empty description");
+  if (!threwDescription) {
+    throw new Error("Expected error for empty description");
+  }
+});
+
+// Tests for array-based search parameters [source, relation, target]
+// Note: These tests assume array overload is implemented for search method
+Deno.test("search with array params [source, relation, target] works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search(["alice", "name", undefined] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, ["alice", "name", "Alice Smith"]);
+});
+
+Deno.test("search with array params [source, undefined, target] works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search(["alice", undefined, "acme"] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, ["alice", "works_for", "acme"]);
+});
+
+Deno.test("search with array params [undefined, relation, target] works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search([undefined, "likes", "alice"] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, ["charlie", "likes", "alice"]);
+});
+
+Deno.test("search with array params [source, undefined, undefined] works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search(["alice", undefined, undefined] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 3);
+  assertEquals(
+    results.triples().every((triple: Triple) => Triples.source(triple) === "alice"),
+    true,
+  );
+});
+
+Deno.test("search with array params [undefined, relation, undefined] works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search([undefined, "name", undefined] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 5); // alice, bob, charlie, acme, techcorp all have names
+  assertEquals(
+    results.triples().every((triple: Triple) => Triples.relation(triple) === "name"),
+    true,
+  );
+});
+
+Deno.test("search with array params [undefined, undefined, target] works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search([undefined, undefined, "alice"] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, ["charlie", "likes", "alice"]);
+});
+
+Deno.test("search with array params all defined works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search(["alice", "works_for", "acme"] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, ["alice", "works_for", "acme"]);
+});
+
+Deno.test("search with array params using array relations works", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search(["alice", ["name", "age"], undefined] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 2);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const rel = Triples.relation(triple);
+      return rel === "name" || rel === "age";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with array params using Dsl objects works", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search([{ type: "person" }, "name", undefined] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 2);
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const parsed = asUrn(Triples.source(triple));
+      return parsed.type === "person" && Triples.relation(triple) === "name";
+    }),
+    true,
+  );
+});
+
+Deno.test("search with array params non-existent values returns empty", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search(["nonexistent", undefined, undefined] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with array params all undefined throws error", () => {
+  const database = new TribbleDB(simpleTestTriples);
+
+  let threwError = false;
+  try {
+    database.search([undefined, undefined, undefined] as unknown as Parameters<typeof database.search>[0]);
+  } catch (err) {
+    threwError = String(err).includes("At least one search parameter must be defined");
+  }
+
+  if (!threwError) {
+    throw new Error("Expected error for all undefined parameters");
+  }
 });
