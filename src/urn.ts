@@ -41,10 +41,14 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
   const delimited = urn.split(':');
 
   const type = delimited[2];
-  const id = delimited[3];
 
   const idx = urn.indexOf('?');
-  const queryString = idx !== -1 ? urn.slice(idx + 1) : '';
+  const queryString = idx !== -1
+    ? urn.slice(idx + 1)
+    : '';
+  const id = idx !== -1
+    ? delimited[3].slice(0, delimited[3].indexOf('?'))
+    : delimited[3];
 
   const qs = queryString
     ? Object.fromEntries(new URLSearchParams(queryString))

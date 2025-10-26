@@ -590,9 +590,28 @@ var TribbleDB = class _TribbleDB {
   }
   /*
    * Get the first object in the database.
+   *
    */
   firstObject(listOnly = false) {
-    return this.objects(listOnly)[0];
+    let firstId = void 0;
+    let obj = {};
+    for (const [source, relation, target] of this.index.triples()) {
+      if (firstId === void 0) {
+        firstId = source;
+        obj.id = source;
+      }
+      if (firstId !== source) {
+        continue;
+      }
+      if (!obj[relation]) {
+        obj[relation] = listOnly ? [target] : target;
+      } else if (Array.isArray(obj[relation])) {
+        obj[relation].push(target);
+      } else {
+        obj[relation] = [obj[relation], target];
+      }
+    }
+    return obj;
   }
   /*
    * Get all triples in the database.
