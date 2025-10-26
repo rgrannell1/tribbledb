@@ -25,7 +25,7 @@ export type TribbleDBMetrics = {
 export type SearchParamsObject = {
   source?: NodeSearch | string;
   relation?: string | string[] | RelationSearch;
-  target?: NodeSearch | string;
+  target?: NodeSearch | string | string[];
 };
 
 export type SearchParamsArray = [
@@ -385,6 +385,10 @@ export class TribbleDB {
       return { type: "unknown", id: node };
     }
 
+    if (Array.isArray(node)) {
+      return { type: "unknown", id: node };
+    }
+
     return node as NodeSearch;
   }
 
@@ -423,7 +427,7 @@ export class TribbleDB {
   ): Set<number> {
     // by default, all triples are in the intersection set. Then, we
     // only keep the triple rows that meet the other criteria too, by
-    // insecting all row sets.
+    // intersecting all row sets.
     const matchingRowSets: Set<number>[] = [
       this.cursorIndices,
     ];
@@ -447,6 +451,7 @@ export class TribbleDB {
       }
     }
 
+    // Expand user-inputs into DLS objects
     const expandedSource = this.nodeAsDSL(source);
     const expandedRelation = this.relationAsDSL(relation);
     const expandedTarget = this.nodeAsDSL(target);
@@ -457,17 +462,28 @@ export class TribbleDB {
         if (sourceTypeSet) {
           matchingRowSets.push(sourceTypeSet);
         } else {
+          // no type matched, no no rows matching
           return new Set<number>();
         }
       }
 
       if (expandedSource.id) {
-        const sourceIdSet = this.index.getSourceIdSet(expandedSource.id);
-        if (sourceIdSet) {
-          matchingRowSets.push(sourceIdSet);
-        } else {
-          return new Set<number>();
+        const ids = Array.isArray(expandedSource.id)
+          ? expandedSource.id
+          : [expandedSource.id];
+
+        const idSet = new Set<number>();
+
+        for (const id of ids) {
+          const sourceIdSet = this.index.getSourceIdSet(id);
+          if (sourceIdSet) {
+            Sets.append(idSet, sourceIdSet);
+          } else {
+            return new Set<number>();
+          }
         }
+
+        matchingRowSets.push(idSet);
       }
 
       if (expandedSource.qs) {
@@ -492,13 +508,24 @@ export class TribbleDB {
         }
       }
 
+
       if (expandedTarget.id) {
-        const targetIdSet = this.index.getTargetIdSet(expandedTarget.id);
-        if (targetIdSet) {
-          matchingRowSets.push(targetIdSet);
-        } else {
-          return new Set<number>();
+        const ids = Array.isArray(expandedTarget.id)
+          ? expandedTarget.id
+          : [expandedTarget.id];
+
+        const idSet = new Set<number>();
+
+        for (const id of ids) {
+          const targetIdSet = this.index.getTargetIdSet(id);
+          if (targetIdSet) {
+            Sets.append(idSet, targetIdSet);
+          } else {
+            return new Set<number>();
+          }
         }
+
+        matchingRowSets.push(idSet);
       }
 
       if (expandedTarget.qs) {

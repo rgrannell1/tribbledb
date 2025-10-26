@@ -115,4 +115,12 @@ export class Sets {
 
     return acc;
   }
+
+  static append<T>(set0: Set<T>, set1: Set<T>): Set<T> {
+    for (const item of set1) {
+      set0.add(item);
+    }
+
+    return set0;
+  }
 }

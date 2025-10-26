@@ -9,7 +9,7 @@ export type TribbleDBMetrics = {
 export type SearchParamsObject = {
     source?: NodeSearch | string;
     relation?: string | string[] | RelationSearch;
-    target?: NodeSearch | string;
+    target?: NodeSearch | string | string[];
 };
 export type SearchParamsArray = [
     NodeSearch | string | undefined,

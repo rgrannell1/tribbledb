@@ -11,7 +11,7 @@ export type ParsedUrn = {
 };
 export type NodeSearch = {
     type?: string;
-    id?: string;
+    id?: string | string[];
     predicate?: Predicate;
     qs?: Record<string, string>;
 };

@@ -156,9 +156,11 @@ function parseUrn(urn, namespace = "r\xF3") {
   if (!urn.startsWith(`urn:${namespace}:`)) {
     throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
   }
-  const type = urn.split(":")[2];
-  const [urnPart, queryString] = urn.split("?");
-  const id = urnPart.split(":")[3];
+  const delimited = urn.split(":");
+  const type = delimited[2];
+  const id = delimited[3];
+  const idx = urn.indexOf("?");
+  const queryString = idx !== -1 ? urn.slice(idx + 1) : "";
   const qs = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
   return {
     type,
@@ -663,6 +665,9 @@ var TribbleDB = class _TribbleDB {
     if (typeof node === "string") {
       return { type: "unknown", id: node };
     }
+    if (Array.isArray(node)) {
+      return { type: "unknown", id: node };
+    }
     return node;
   }
   relationAsDSL(relation) {
@@ -718,11 +723,14 @@ var TribbleDB = class _TribbleDB {
         }
       }
       if (expandedSource.id) {
-        const sourceIdSet = this.index.getSourceIdSet(expandedSource.id);
-        if (sourceIdSet) {
-          matchingRowSets.push(sourceIdSet);
-        } else {
-          return /* @__PURE__ */ new Set();
+        const ids = Array.isArray(expandedSource.id) ? expandedSource.id : [expandedSource.id];
+        for (const id of ids) {
+          const sourceIdSet = this.index.getSourceIdSet(id);
+          if (sourceIdSet) {
+            matchingRowSets.push(sourceIdSet);
+          } else {
+            return /* @__PURE__ */ new Set();
+          }
         }
       }
       if (expandedSource.qs) {
@@ -746,11 +754,14 @@ var TribbleDB = class _TribbleDB {
         }
       }
       if (expandedTarget.id) {
-        const targetIdSet = this.index.getTargetIdSet(expandedTarget.id);
-        if (targetIdSet) {
-          matchingRowSets.push(targetIdSet);
-        } else {
-          return /* @__PURE__ */ new Set();
+        const ids = Array.isArray(expandedTarget.id) ? expandedTarget.id : [expandedTarget.id];
+        for (const id of ids) {
+          const targetIdSet = this.index.getTargetIdSet(id);
+          if (targetIdSet) {
+            matchingRowSets.push(targetIdSet);
+          } else {
+            return /* @__PURE__ */ new Set();
+          }
         }
       }
       if (expandedTarget.qs) {

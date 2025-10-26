@@ -861,3 +861,52 @@ Deno.test("search with array params all undefined throws error", () => {
     throw new Error("Expected error for all undefined parameters");
   }
 });
+
+// New tests: relation 'name' with an array of target ids should match any
+Deno.test("search with relation 'name' and array of targets", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({
+    relation: "name",
+    target: ["Alice Smith", "Charlie Brown"],
+  });
+  console.log(simpleTestTriples);
+
+  assertEquals(results.triplesCount, 2);
+  const triples = results.triples();
+  // All relations are 'name'
+  assertEquals(triples.every((t) => Triples.relation(t) === "name"), true);
+  // Matched targets are exactly the requested ones
+  const targets = new Set(triples.map((t) => Triples.target(t)));
+  assertEquals(targets.has("Alice Smith"), true);
+  assertEquals(targets.has("Charlie Brown"), true);
+});
+
+Deno.test("search with relation 'name' and array of targets (URN dataset)", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: "name",
+    target: { id: ["Acme Corp", "Alice Smith"] },
+  });
+
+  assertEquals(results.triplesCount, 2);
+  const triples = results.triples();
+  assertEquals(triples.every((t) => Triples.relation(t) === "name"), true);
+  const targets = new Set(triples.map((t) => Triples.target(t)));
+  assertEquals(targets.has("Acme Corp"), true);
+  assertEquals(targets.has("Alice Smith"), true);
+
+  // Ensure sources align with expected entities
+  const sources = new Set(triples.map((t) => Triples.source(t)));
+  assertEquals(sources.has("urn:ró:company:acme"), true);
+  assertEquals(sources.has("urn:ró:person:alice"), true);
+});
+
+Deno.test("search with relation 'name' and array of non-existent targets returns empty", () => {
+  const database = new TribbleDB(simpleTestTriples);
+  const results = database.search({
+    relation: "name",
+    target: { id: ["Does Not Exist", "Also Missing"] },
+  });
+
+  assertEquals(results.triplesCount, 0);
+});

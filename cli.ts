@@ -9,6 +9,7 @@ const doc = `
 Usage:
   tribble parse
   tribble stringify
+  tribble search <filter>
 `;
 
 const options = docopt(doc);
@@ -49,6 +50,11 @@ function stringify(triples: Triple[]) {
   for (const triple of triples) {
     console.log(stringifier.stringify(triple));
   }
+}
+
+function search(filter: string) {
+
+
 }
 
 async function main() {
