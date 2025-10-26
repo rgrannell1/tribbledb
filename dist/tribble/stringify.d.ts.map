@@ -1,0 +1,1 @@
+{"version":3,"file":"stringify.d.ts","sourceRoot":"","sources":["../../src/tribble/stringify.ts"],"names":[],"mappings":"AASA,OAAO,EAAE,UAAU,EAAE,MAAM,YAAY,CAAC;AACxC,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,aAAa,CAAC;AAK1C,qBAAa,kBAAkB;IAC7B,WAAW,EAAE,UAAU,CAAC;;IAMxB,SAAS,CAAC,MAAM,EAAE,MAAM,GAAG,MAAM;CAuBlC"}

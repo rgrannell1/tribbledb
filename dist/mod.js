@@ -87,6 +87,12 @@ var Sets = class {
     }
     return acc;
   }
+  static append(set0, set1) {
+    for (const item of set1) {
+      set0.add(item);
+    }
+    return set0;
+  }
 };
 
 // src/tribble/parse.ts
@@ -724,14 +730,16 @@ var TribbleDB = class _TribbleDB {
       }
       if (expandedSource.id) {
         const ids = Array.isArray(expandedSource.id) ? expandedSource.id : [expandedSource.id];
+        const idSet = /* @__PURE__ */ new Set();
         for (const id of ids) {
           const sourceIdSet = this.index.getSourceIdSet(id);
           if (sourceIdSet) {
-            matchingRowSets.push(sourceIdSet);
+            Sets.append(idSet, sourceIdSet);
           } else {
             return /* @__PURE__ */ new Set();
           }
         }
+        matchingRowSets.push(idSet);
       }
       if (expandedSource.qs) {
         for (const [key, val] of Object.entries(expandedSource.qs)) {
@@ -755,14 +763,16 @@ var TribbleDB = class _TribbleDB {
       }
       if (expandedTarget.id) {
         const ids = Array.isArray(expandedTarget.id) ? expandedTarget.id : [expandedTarget.id];
+        const idSet = /* @__PURE__ */ new Set();
         for (const id of ids) {
           const targetIdSet = this.index.getTargetIdSet(id);
           if (targetIdSet) {
-            matchingRowSets.push(targetIdSet);
+            Sets.append(idSet, targetIdSet);
           } else {
             return /* @__PURE__ */ new Set();
           }
         }
+        matchingRowSets.push(idSet);
       }
       if (expandedTarget.qs) {
         for (const [key, val] of Object.entries(expandedTarget.qs)) {

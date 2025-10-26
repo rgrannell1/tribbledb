@@ -292,9 +292,34 @@ export class TribbleDB {
 
   /*
    * Get the first object in the database.
+   *
    */
   firstObject(listOnly: boolean = false): TripleObject | undefined {
-    return this.objects(listOnly)[0];
+    let firstId = undefined;
+    let obj: TripleObject = {};
+
+    for (const [source, relation, target] of this.index.triples()) {
+      if (firstId === undefined) {
+        firstId = source;
+        obj.id = source;
+      }
+
+      if (firstId !== source) {
+        // This could be slow, though this method should only be pointed at things with a single object in them
+        // in future, lets raise an error if this is pointed at a datasource with more than one object
+        continue
+      }
+
+      if (!obj[relation]) {
+        obj[relation] = listOnly ? [target] : target;
+      } else if (Array.isArray(obj[relation])) {
+        (obj[relation] as string[]).push(target);
+      } else {
+        obj[relation] = [obj[relation] as string, target];
+      }
+    }
+
+    return obj;
   }
 
   /*
