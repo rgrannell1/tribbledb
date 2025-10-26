@@ -27,6 +27,8 @@ import type { ParsedUrn } from "./types.ts";
 /*
  * Parses a URN string into its components.
  *
+ * Note: this code is a bottleneck, so it's written in a slightly horrible way for performance.
+ *
  * @param urn - The URN string to parse.
  * @param namespace - The namespace to use (default: "ró").
  * @returns The parsed URN components.
@@ -36,9 +38,14 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
     throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
   }
 
-  const type = urn.split(":")[2];
-  const [urnPart, queryString] = urn.split("?");
-  const id = urnPart.split(":")[3];
+  const delimited = urn.split(':');
+
+  const type = delimited[2];
+  const id = delimited[3];
+
+  const idx = urn.indexOf('?');
+  const queryString = idx !== -1 ? urn.slice(idx + 1) : '';
+
   const qs = queryString
     ? Object.fromEntries(new URLSearchParams(queryString))
     : {};
@@ -46,7 +53,7 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
   return {
     type,
     id,
-    qs,
+    qs
   };
 }
 
