@@ -85,7 +85,6 @@ export declare class TribbleDB {
      */
     targets(): Set<string>;
     objects(listOnly?: boolean): TripleObject[];
-    object(listOnly?: boolean): Record<string, TripleObject>;
     nodeAsDSL(node: unknown): NodeSearch | undefined;
     relationAsDSL(relation: unknown): RelationSearch | undefined;
     searchParamsToObject(params: SearchParams): SearchParamsObject;

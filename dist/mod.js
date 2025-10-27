@@ -175,14 +175,13 @@ function parseUrn(urn, namespace = "r\xF3") {
   };
 }
 function asUrn(value, namespace = "r\xF3") {
-  if (!urn.startsWith(`urn:${namespace}:`)) {
+  if (typeof value !== "string" || !value.startsWith(`urn:${namespace}:`)) {
     return {
       type: "unknown",
       id: value,
       qs: {}
     };
   }
-
   return parseUrn(value, namespace);
 }
 
@@ -244,27 +243,41 @@ var Index = class {
     for (let jdx = 0; jdx < triples.length; jdx++) {
       const idx = startIdx + jdx;
       const triple = triples[jdx];
-      const parsedSource = this.stringUrn.has(triple[0]) ? this.stringUrn.get(triple[0]) : this.stringUrn.set(triple[0], asUrn(triple[0])).get(triple[0]);
+      const source = triple[0];
       const relation = triple[1];
-      const parsedTarget = this.stringUrn.has(triple[2]) ? this.stringUrn.get(triple[2]) : this.stringUrn.set(triple[2], asUrn(triple[2])).get(triple[2]);
+      const target = triple[2];
+      let parsedSource = this.stringUrn.get(source);
+      if (!parsedSource) {
+        parsedSource = asUrn(source);
+        this.stringUrn.set(source, parsedSource);
+      }
+      let parsedTarget = this.stringUrn.get(target);
+      if (!parsedTarget) {
+        parsedTarget = asUrn(target);
+        this.stringUrn.set(target, parsedTarget);
+      }
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
       const sourceIdIdx = this.stringIndex.add(parsedSource.id);
       const relationIdx = this.stringIndex.add(relation);
       const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
       this.indexedTriples.push([
-        this.stringIndex.add(triple[0]),
+        this.stringIndex.add(source),
         relationIdx,
-        this.stringIndex.add(triple[2])
+        this.stringIndex.add(target)
       ]);
-      if (!this.sourceType.has(sourceTypeIdx)) {
-        this.sourceType.set(sourceTypeIdx, /* @__PURE__ */ new Set());
+      let sourceTypeSet = this.sourceType.get(sourceTypeIdx);
+      if (!sourceTypeSet) {
+        sourceTypeSet = /* @__PURE__ */ new Set();
+        this.sourceType.set(sourceTypeIdx, sourceTypeSet);
       }
-      this.sourceType.get(sourceTypeIdx).add(idx);
-      if (!this.sourceId.has(sourceIdIdx)) {
-        this.sourceId.set(sourceIdIdx, /* @__PURE__ */ new Set());
+      sourceTypeSet.add(idx);
+      let sourceIdSet = this.sourceId.get(sourceIdIdx);
+      if (!sourceIdSet) {
+        sourceIdSet = /* @__PURE__ */ new Set();
+        this.sourceId.set(sourceIdIdx, sourceIdSet);
       }
-      this.sourceId.get(sourceIdIdx).add(idx);
+      sourceIdSet.add(idx);
       for (const [key, val] of Object.entries(parsedSource.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
         if (!this.sourceQs.has(qsIdx)) {
@@ -272,18 +285,24 @@ var Index = class {
         }
         this.sourceQs.get(qsIdx).add(idx);
       }
-      if (!this.relations.has(relationIdx)) {
-        this.relations.set(relationIdx, /* @__PURE__ */ new Set());
+      let relationSet = this.relations.get(relationIdx);
+      if (!relationSet) {
+        relationSet = /* @__PURE__ */ new Set();
+        this.relations.set(relationIdx, relationSet);
       }
-      this.relations.get(relationIdx).add(idx);
-      if (!this.targetType.has(targetTypeIdx)) {
-        this.targetType.set(targetTypeIdx, /* @__PURE__ */ new Set());
+      relationSet.add(idx);
+      let targetTypeSet = this.targetType.get(targetTypeIdx);
+      if (!targetTypeSet) {
+        targetTypeSet = /* @__PURE__ */ new Set();
+        this.targetType.set(targetTypeIdx, targetTypeSet);
       }
-      this.targetType.get(targetTypeIdx).add(idx);
-      if (!this.targetId.has(targetIdIdx)) {
-        this.targetId.set(targetIdIdx, /* @__PURE__ */ new Set());
+      targetTypeSet.add(idx);
+      let targetIdSet = this.targetId.get(targetIdIdx);
+      if (!targetIdSet) {
+        targetIdSet = /* @__PURE__ */ new Set();
+        this.targetId.set(targetIdIdx, targetIdSet);
       }
-      this.targetId.get(targetIdIdx).add(idx);
+      targetIdSet.add(idx);
       for (const [key, val] of Object.entries(parsedTarget.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
         if (!this.targetQs.has(qsIdx)) {
@@ -479,6 +498,10 @@ var TribbleDB = class _TribbleDB {
     clonedDB.metrics = this.metrics;
     return clonedDB;
   }
+  /*
+   * Convert an array of triples to a TribbleDB.
+   *
+   */
   static of(triples) {
     return new _TribbleDB(triples);
   }
@@ -594,7 +617,7 @@ var TribbleDB = class _TribbleDB {
    */
   firstObject(listOnly = false) {
     let firstId = void 0;
-    let obj = {};
+    const obj = {};
     for (const [source, relation, target] of this.index.triples()) {
       if (firstId === void 0) {
         firstId = source;
@@ -665,9 +688,13 @@ var TribbleDB = class _TribbleDB {
     return output;
   }
   /*
-   * yes, this is a bad name given firstObject.
+   * Internal function; convert all triples to an object representation.
+   *
+   * @param listOnly - Whether to always represent relation values as lists.
+   *
+   *
    */
-  object(listOnly = false) {
+  #object(listOnly = false) {
     const objs = {};
     for (const [source, relation, target] of this.index.triples()) {
       if (!objs[source]) {
@@ -683,6 +710,10 @@ var TribbleDB = class _TribbleDB {
     }
     return objs;
   }
+  /*
+   * Convert a node to a node DSL object.
+   *
+   */
   nodeAsDSL(node) {
     if (typeof node === "undefined") {
       return void 0;
@@ -695,6 +726,10 @@ var TribbleDB = class _TribbleDB {
     }
     return node;
   }
+  /*
+   * Convert a relation input to a relation DSL object
+   *
+   */
   relationAsDSL(relation) {
     if (typeof relation === "undefined") {
       return void 0;
@@ -898,6 +933,9 @@ var TribbleDB = class _TribbleDB {
     }
     return objects;
   }
+  /*
+   * Get performance metrics for the database.
+   */
   getMetrics() {
     return {
       index: this.index.metrics,
