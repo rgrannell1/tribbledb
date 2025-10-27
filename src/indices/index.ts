@@ -45,6 +45,7 @@ export class Index {
     this.targetId = new Map();
     this.targetQs = new Map();
 
+    // maps strings to URNs
     this.stringUrn = new Map();
     this.add(triples);
 
@@ -62,14 +63,21 @@ export class Index {
       const idx = startIdx + jdx;
       const triple = triples[jdx];
 
-      const parsedSource = this.stringUrn.has(triple[0])
-        ? this.stringUrn.get(triple[0])!
-        : this.stringUrn.set(triple[0], asUrn(triple[0])).get(triple[0])!;
-
+      const source = triple[0];
       const relation = triple[1];
-      const parsedTarget = this.stringUrn.has(triple[2])
-        ? this.stringUrn.get(triple[2])!
-        : this.stringUrn.set(triple[2], asUrn(triple[2])).get(triple[2])!;
+      const target = triple[2];
+
+      let parsedSource = this.stringUrn.get(source);
+      if (!parsedSource) {
+        parsedSource = asUrn(source);
+        this.stringUrn.set(source, parsedSource);
+      }
+
+      let parsedTarget = this.stringUrn.get(target);
+      if (!parsedTarget) {
+        parsedTarget = asUrn(target);
+        this.stringUrn.set(target, parsedTarget);
+      }
 
       // Convert strings to indices using the IndexedSet
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
@@ -80,22 +88,26 @@ export class Index {
 
       // Store the indexed triple
       this.indexedTriples.push([
-        this.stringIndex.add(triple[0]),
+        this.stringIndex.add(source),
         relationIdx,
-        this.stringIndex.add(triple[2]),
+        this.stringIndex.add(target),
       ]);
 
       // source.type
-      if (!this.sourceType.has(sourceTypeIdx)) {
-        this.sourceType.set(sourceTypeIdx, new Set());
+      let sourceTypeSet = this.sourceType.get(sourceTypeIdx);
+      if (!sourceTypeSet) {
+        sourceTypeSet = new Set();
+        this.sourceType.set(sourceTypeIdx, sourceTypeSet);
       }
-      this.sourceType.get(sourceTypeIdx)!.add(idx);
+      sourceTypeSet.add(idx);
 
       // source.id
-      if (!this.sourceId.has(sourceIdIdx)) {
-        this.sourceId.set(sourceIdIdx, new Set());
+      let sourceIdSet = this.sourceId.get(sourceIdIdx);
+      if (!sourceIdSet) {
+        sourceIdSet = new Set();
+        this.sourceId.set(sourceIdIdx, sourceIdSet);
       }
-      this.sourceId.get(sourceIdIdx)!.add(idx);
+      sourceIdSet.add(idx);
 
       // source.qs
       for (const [key, val] of Object.entries(parsedSource.qs)) {
@@ -107,23 +119,28 @@ export class Index {
         this.sourceQs.get(qsIdx)!.add(idx);
       }
 
-      // relation
-      if (!this.relations.has(relationIdx)) {
-        this.relations.set(relationIdx, new Set());
+      let relationSet = this.relations.get(relationIdx);
+      if (!relationSet) {
+        relationSet = new Set();
+        this.relations.set(relationIdx, relationSet);
       }
-      this.relations.get(relationIdx)!.add(idx);
+      relationSet.add(idx);
 
       // target.type
-      if (!this.targetType.has(targetTypeIdx)) {
-        this.targetType.set(targetTypeIdx, new Set());
+      let targetTypeSet = this.targetType.get(targetTypeIdx);
+      if (!targetTypeSet) {
+        targetTypeSet = new Set();
+        this.targetType.set(targetTypeIdx, targetTypeSet);
       }
-      this.targetType.get(targetTypeIdx)!.add(idx);
+      targetTypeSet.add(idx);
 
       // target.id
-      if (!this.targetId.has(targetIdIdx)) {
-        this.targetId.set(targetIdIdx, new Set());
+      let targetIdSet = this.targetId.get(targetIdIdx);
+      if (!targetIdSet) {
+        targetIdSet = new Set();
+        this.targetId.set(targetIdIdx, targetIdSet);
       }
-      this.targetId.get(targetIdIdx)!.add(idx);
+      targetIdSet.add(idx);
 
       // target.qs
       for (const [key, val] of Object.entries(parsedTarget.qs)) {

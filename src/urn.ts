@@ -63,15 +63,20 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
 
 /*
  * Converts a string value to a URN.
+ *
+ * @param value - The string value to convert.
+ * @param namespace - The namespace to use (default: "ró").
+ *
+ * @returns The parsed URN components, or "unknown" type if not a valid URN.
  */
 export function asUrn(value: string, namespace: string = "ró"): ParsedUrn {
-  try {
-    return parseUrn(value, namespace);
-  } catch (_) {
+  if (typeof value !== 'string' || !value.startsWith(`urn:${namespace}:`)) {
     return {
       type: "unknown",
       id: value,
-      qs: {},
+      qs: {}
     };
   }
+
+  return parseUrn(value, namespace);
 }

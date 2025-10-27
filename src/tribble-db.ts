@@ -162,6 +162,10 @@ export class TribbleDB {
     return clonedDB;
   }
 
+  /*
+   * Convert an array of triples to a TribbleDB.
+   *
+   */
   static of(triples: Triple[]): TribbleDB {
     return new TribbleDB(triples);
   }
@@ -296,7 +300,7 @@ export class TribbleDB {
    */
   firstObject(listOnly: boolean = false): TripleObject | undefined {
     let firstId = undefined;
-    let obj: TripleObject = {};
+    const obj: TripleObject = {};
 
     for (const [source, relation, target] of this.index.triples()) {
       if (firstId === undefined) {
@@ -371,7 +375,7 @@ export class TribbleDB {
    */
   objects(listOnly: boolean = false): TripleObject[] {
     const output: TripleObject[] = [];
-    for (const [id, obj] of Object.entries(this.object(listOnly))) {
+    for (const [id, obj] of Object.entries(this.#object(listOnly))) {
       obj.id = id;
       output.push(obj);
     }
@@ -380,9 +384,13 @@ export class TribbleDB {
   }
 
   /*
-   * yes, this is a bad name given firstObject.
+   * Internal function; convert all triples to an object representation.
+   *
+   * @param listOnly - Whether to always represent relation values as lists.
+   *
+   *
    */
-  object(listOnly: boolean = false): Record<string, TripleObject> {
+  #object(listOnly: boolean = false): Record<string, TripleObject> {
     const objs: Record<string, TripleObject> = {};
 
     for (const [source, relation, target] of this.index.triples()) {
@@ -401,6 +409,10 @@ export class TribbleDB {
     return objs;
   }
 
+  /*
+   * Convert a node to a node DSL object.
+   *
+   */
   nodeAsDSL(node: unknown): NodeSearch | undefined {
     if (typeof node === "undefined") {
       return undefined;
@@ -417,6 +429,10 @@ export class TribbleDB {
     return node as NodeSearch;
   }
 
+  /*
+   * Convert a relation input to a relation DSL object
+   *
+   */
   relationAsDSL(relation: unknown): RelationSearch | undefined {
     if (typeof relation === "undefined") {
       return undefined;
@@ -696,6 +712,9 @@ export class TribbleDB {
     return objects;
   }
 
+  /*
+   * Get performance metrics for the database.
+   */
   getMetrics(): TribbleDBMetrics {
     return {
       index: this.index.metrics,

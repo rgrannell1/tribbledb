@@ -164,9 +164,9 @@ function parseUrn(urn, namespace = "r\xF3") {
   }
   const delimited = urn.split(":");
   const type = delimited[2];
-  const id = delimited[3];
   const idx = urn.indexOf("?");
   const queryString = idx !== -1 ? urn.slice(idx + 1) : "";
+  const id = idx !== -1 ? delimited[3].slice(0, delimited[3].indexOf("?")) : delimited[3];
   const qs = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
   return {
     type,
@@ -175,15 +175,15 @@ function parseUrn(urn, namespace = "r\xF3") {
   };
 }
 function asUrn(value, namespace = "r\xF3") {
-  try {
-    return parseUrn(value, namespace);
-  } catch (_) {
+  if (!urn.startsWith(`urn:${namespace}:`)) {
     return {
       type: "unknown",
       id: value,
       qs: {}
     };
   }
+
+  return parseUrn(value, namespace);
 }
 
 // src/metrics.ts
@@ -658,7 +658,7 @@ var TribbleDB = class _TribbleDB {
    */
   objects(listOnly = false) {
     const output = [];
-    for (const [id, obj] of Object.entries(this.object(listOnly))) {
+    for (const [id, obj] of Object.entries(this.#object(listOnly))) {
       obj.id = id;
       output.push(obj);
     }
