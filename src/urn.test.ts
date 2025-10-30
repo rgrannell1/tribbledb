@@ -7,7 +7,7 @@ Deno.test("asUrn parses amphibian URN without query string", () => {
 
   assertEquals(parsedObj.type, "amphibian");
   assertEquals(parsedObj.id, "proteus-anguinus");
-  assertEquals(parsedObj.qs, { });
+  assertEquals(parsedObj.qs, {});
 });
 
 Deno.test("asUrn parses amphibian URN with query string", () => {

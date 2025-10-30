@@ -53,8 +53,6 @@ function stringify(triples: Triple[]) {
 }
 
 function search(filter: string) {
-
-
 }
 
 async function main() {

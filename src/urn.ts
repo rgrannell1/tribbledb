@@ -38,16 +38,14 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
     throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
   }
 
-  const delimited = urn.split(':');
+  const delimited = urn.split(":");
 
   const type = delimited[2];
 
-  const idx = urn.indexOf('?');
-  const queryString = idx !== -1
-    ? urn.slice(idx + 1)
-    : '';
+  const idx = urn.indexOf("?");
+  const queryString = idx !== -1 ? urn.slice(idx + 1) : "";
   const id = idx !== -1
-    ? delimited[3].slice(0, delimited[3].indexOf('?'))
+    ? delimited[3].slice(0, delimited[3].indexOf("?"))
     : delimited[3];
 
   const qs = queryString
@@ -57,7 +55,7 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
   return {
     type,
     id,
-    qs
+    qs,
   };
 }
 
@@ -70,11 +68,11 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
  * @returns The parsed URN components, or "unknown" type if not a valid URN.
  */
 export function asUrn(value: string, namespace: string = "ró"): ParsedUrn {
-  if (typeof value !== 'string' || !value.startsWith(`urn:${namespace}:`)) {
+  if (typeof value !== "string" || !value.startsWith(`urn:${namespace}:`)) {
     return {
       type: "unknown",
       id: value,
-      qs: {}
+      qs: {},
     };
   }
 

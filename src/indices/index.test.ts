@@ -752,7 +752,11 @@ Deno.test("validateTriples enforces photo_count and description relation", () =>
 // Note: These tests assume array overload is implemented for search method
 Deno.test("search with array params [source, relation, target] works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search(["alice", "name", undefined] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    ["alice", "name", undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 1);
   assertEquals(results.firstTriple()!, ["alice", "name", "Alice Smith"]);
@@ -760,7 +764,11 @@ Deno.test("search with array params [source, relation, target] works", () => {
 
 Deno.test("search with array params [source, undefined, target] works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search(["alice", undefined, "acme"] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    ["alice", undefined, "acme"] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 1);
   assertEquals(results.firstTriple()!, ["alice", "works_for", "acme"]);
@@ -768,7 +776,11 @@ Deno.test("search with array params [source, undefined, target] works", () => {
 
 Deno.test("search with array params [undefined, relation, target] works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search([undefined, "likes", "alice"] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    [undefined, "likes", "alice"] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 1);
   assertEquals(results.firstTriple()!, ["charlie", "likes", "alice"]);
@@ -776,29 +788,45 @@ Deno.test("search with array params [undefined, relation, target] works", () => 
 
 Deno.test("search with array params [source, undefined, undefined] works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search(["alice", undefined, undefined] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    ["alice", undefined, undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 3);
   assertEquals(
-    results.triples().every((triple: Triple) => Triples.source(triple) === "alice"),
+    results.triples().every((triple: Triple) =>
+      Triples.source(triple) === "alice"
+    ),
     true,
   );
 });
 
 Deno.test("search with array params [undefined, relation, undefined] works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search([undefined, "name", undefined] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    [undefined, "name", undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 5); // alice, bob, charlie, acme, techcorp all have names
   assertEquals(
-    results.triples().every((triple: Triple) => Triples.relation(triple) === "name"),
+    results.triples().every((triple: Triple) =>
+      Triples.relation(triple) === "name"
+    ),
     true,
   );
 });
 
 Deno.test("search with array params [undefined, undefined, target] works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search([undefined, undefined, "alice"] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    [undefined, undefined, "alice"] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 1);
   assertEquals(results.firstTriple()!, ["charlie", "likes", "alice"]);
@@ -806,7 +834,11 @@ Deno.test("search with array params [undefined, undefined, target] works", () =>
 
 Deno.test("search with array params all defined works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search(["alice", "works_for", "acme"] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    ["alice", "works_for", "acme"] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 1);
   assertEquals(results.firstTriple()!, ["alice", "works_for", "acme"]);
@@ -814,7 +846,11 @@ Deno.test("search with array params all defined works", () => {
 
 Deno.test("search with array params using array relations works", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search(["alice", ["name", "age"], undefined] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    ["alice", ["name", "age"], undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 2);
   assertEquals(
@@ -828,7 +864,11 @@ Deno.test("search with array params using array relations works", () => {
 
 Deno.test("search with array params using Dsl objects works", () => {
   const database = new TribbleDB(testTriples);
-  const results = database.search([{ type: "person" }, "name", undefined] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    [{ type: "person" }, "name", undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 2);
   assertEquals(
@@ -842,7 +882,11 @@ Deno.test("search with array params using Dsl objects works", () => {
 
 Deno.test("search with array params non-existent values returns empty", () => {
   const database = new TribbleDB(simpleTestTriples);
-  const results = database.search(["nonexistent", undefined, undefined] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    ["nonexistent", undefined, undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
+  );
 
   assertEquals(results.triplesCount, 0);
 });
@@ -852,9 +896,15 @@ Deno.test("search with array params all undefined throws error", () => {
 
   let threwError = false;
   try {
-    database.search([undefined, undefined, undefined] as unknown as Parameters<typeof database.search>[0]);
+    database.search(
+      [undefined, undefined, undefined] as unknown as Parameters<
+        typeof database.search
+      >[0],
+    );
   } catch (err) {
-    threwError = String(err).includes("At least one search parameter must be defined");
+    threwError = String(err).includes(
+      "At least one search parameter must be defined",
+    );
   }
 
   if (!threwError) {

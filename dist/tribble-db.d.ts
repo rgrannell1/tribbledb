@@ -89,7 +89,6 @@ export declare class TribbleDB {
     relationAsDSL(relation: unknown): RelationSearch | undefined;
     searchParamsToObject(params: SearchParams): SearchParamsObject;
     search(params: SearchParams): TribbleDB;
-    search2(query: Record<string, NodeSearch | RelationSearch>): any[];
     getMetrics(): TribbleDBMetrics;
 }
 //# sourceMappingURL=tribble-db.d.ts.map

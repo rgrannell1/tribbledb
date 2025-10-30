@@ -1,5 +1,6 @@
 import type {
   NodeSearch,
+  Predicate,
   RelationSearch,
   TargetValidator,
   Triple,
@@ -11,11 +12,6 @@ import { Triples } from "./triples.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 import type { IndexPerformanceMetrics } from "./metrics.ts";
 import { asUrn } from "./urn.ts";
-
-type SubqueryResult = {
-  names: string[];
-  rows: number[][];
-};
 
 export type TribbleDBMetrics = {
   index: IndexPerformanceMetrics;
@@ -35,89 +31,6 @@ export type SearchParamsArray = [
 ];
 
 export type SearchParams = SearchParamsObject | SearchParamsArray;
-
-/*
- * Combine subquery results into a single result set.
-
-[
-  {
-    names: [ "person", "works_at", "company" ],
-    rows: [ [ 5, 8, 11 ], [ 14, 8, 17 ] ]
-  },
-  {
-    names: [ "company", "location", "city" ],
-    rows: [ [ 11, 19, 22 ], [ 17, 19, 25 ] ]
-  }
-]
-
- */
-function joinSubqueryResults(
-  metrics: TribbleDBPerformanceMetrics,
-  acc: SubqueryResult,
-  tripleResult: SubqueryResult,
-): SubqueryResult {
-  const joinedNames = acc.names.concat(tripleResult.names);
-
-  if (acc.rows.length === 0 || tripleResult.rows.length === 0) {
-    return {
-      names: joinedNames,
-      rows: [],
-    };
-  }
-
-  // TODO this is too simplistic, due to query parameters
-  const endings: Map<number, number[]> = new Map();
-  const starts: Map<number, number[]> = new Map();
-
-  // index the starts and endings for more efficient joins
-  for (let idx = 0; idx < acc.rows.length; idx++) {
-    const refId = acc.rows[idx][2];
-
-    if (!endings.has(refId)) {
-      endings.set(refId, []);
-    }
-
-    endings.get(refId)!.push(idx);
-  }
-
-  for (let idx = 0; idx < tripleResult.rows.length; idx++) {
-    const refId = tripleResult.rows[idx][0];
-
-    if (!starts.has(refId)) {
-      starts.set(refId, []);
-    }
-
-    starts.get(refId)!.push(idx);
-  }
-
-  // find the endings that are also starts (words are hard)
-  const commonLinks = Sets.intersection(metrics, [
-    new Set(endings.keys()),
-    new Set(starts.keys()),
-  ]);
-
-  const joinedRows: number[][] = [];
-
-  for (const link of commonLinks) {
-    const startRowIndices = starts.get(link)!;
-    const endRowsIndices = endings.get(link)!;
-
-    // cross-product
-    for (const startRowIndex of startRowIndices) {
-      for (const endRowIndex of endRowsIndices) {
-        const joinedRow = acc.rows[startRowIndex].concat(
-          tripleResult.rows[endRowIndex],
-        );
-        joinedRows.push(joinedRow);
-      }
-    }
-  }
-
-  return {
-    names: joinedNames,
-    rows: joinedRows,
-  };
-}
 
 /*
  * A searchable triple database
@@ -164,7 +77,6 @@ export class TribbleDB {
 
   /*
    * Convert an array of triples to a TribbleDB.
-   *
    */
   static of(triples: Triple[]): TribbleDB {
     return new TribbleDB(triples);
@@ -296,7 +208,6 @@ export class TribbleDB {
 
   /*
    * Get the first object in the database.
-   *
    */
   firstObject(listOnly: boolean = false): TripleObject | undefined {
     let firstId = undefined;
@@ -311,7 +222,7 @@ export class TribbleDB {
       if (firstId !== source) {
         // This could be slow, though this method should only be pointed at things with a single object in them
         // in future, lets raise an error if this is pointed at a datasource with more than one object
-        continue
+        continue;
       }
 
       if (!obj[relation]) {
@@ -387,8 +298,6 @@ export class TribbleDB {
    * Internal function; convert all triples to an object representation.
    *
    * @param listOnly - Whether to always represent relation values as lists.
-   *
-   *
    */
   #object(listOnly: boolean = false): Record<string, TripleObject> {
     const objs: Record<string, TripleObject> = {};
@@ -411,7 +320,6 @@ export class TribbleDB {
 
   /*
    * Convert a node to a node DSL object.
-   *
    */
   nodeAsDSL(node: unknown): NodeSearch | undefined {
     if (typeof node === "undefined") {
@@ -431,7 +339,6 @@ export class TribbleDB {
 
   /*
    * Convert a relation input to a relation DSL object
-   *
    */
   relationAsDSL(relation: unknown): RelationSearch | undefined {
     if (typeof relation === "undefined") {
@@ -549,7 +456,6 @@ export class TribbleDB {
         }
       }
 
-
       if (expandedTarget.id) {
         const ids = Array.isArray(expandedTarget.id)
           ? expandedTarget.id
@@ -581,56 +487,58 @@ export class TribbleDB {
       }
     }
 
-    if (expandedRelation) {
-      if (expandedRelation.relation) {
-        // in this case, ANY relation in the `relation` list is good enough, so we
-        // union rather than intersection (which would always be the null set)
-        const unionedRelations = new Set<number>();
-        for (const rel of expandedRelation.relation) {
-          const relationSet = this.index.getRelationSet(rel);
-          if (relationSet) {
-            for (const elem of relationSet) {
-              unionedRelations.add(elem);
-            }
+    if (expandedRelation && expandedRelation.relation) {
+      // in this case, ANY relation in the `relation` list is good enough, so we
+      // union rather than intersection (which would always be the null set)
+      const unionedRelations = new Set<number>();
+      for (const rel of expandedRelation.relation) {
+        const relationSet = this.index.getRelationSet(rel);
+        if (relationSet) {
+          for (const elem of relationSet) {
+            unionedRelations.add(elem);
           }
         }
+      }
 
-        if (unionedRelations.size > 0) {
-          matchingRowSets.push(unionedRelations);
-        } else {
-          return new Set<number>();
-        }
+      if (unionedRelations.size > 0) {
+        matchingRowSets.push(unionedRelations);
+      } else {
+        return new Set<number>();
       }
     }
 
     const intersection = Sets.intersection(this.metrics, matchingRowSets);
     const matchingTriples: Set<number> = new Set();
 
+    const hasSourcePredicate = expandedSource?.predicate !== undefined;
+    const hasTargetPredicate = expandedTarget?.predicate !== undefined;
+    const hasRelationPredicate = typeof expandedRelation === "object" &&
+      expandedRelation.predicate !== undefined;
+
     // Collect matching triples, applying predicate filters as we go
     for (const index of intersection) {
       const triple = this.index.getTriple(index)!;
 
-      if (
-        !expandedSource?.predicate && !expandedTarget?.predicate &&
-        !expandedRelation?.predicate
-      ) {
+      if (!hasSourcePredicate && !hasTargetPredicate && !hasRelationPredicate) {
         matchingTriples.add(index);
         continue;
       }
 
       let isValid = true;
 
-      if (expandedSource?.predicate) {
-        isValid = isValid && expandedSource.predicate(Triples.source(triple));
-      }
-
-      if (expandedTarget?.predicate) {
-        isValid = isValid && expandedTarget.predicate(Triples.target(triple));
-      }
-
-      if (typeof expandedRelation === "object" && expandedRelation.predicate) {
+      if (hasSourcePredicate) {
         isValid = isValid &&
-          expandedRelation.predicate(Triples.relation(triple));
+          (expandedSource.predicate as Predicate)(Triples.source(triple));
+      }
+
+      if (hasTargetPredicate && isValid) {
+        isValid = isValid &&
+          (expandedTarget.predicate as Predicate)(Triples.target(triple));
+      }
+
+      if (hasRelationPredicate && isValid) {
+        isValid = isValid &&
+          (expandedRelation.predicate as Predicate)(Triples.relation(triple));
       }
 
       if (isValid) {
@@ -642,7 +550,10 @@ export class TribbleDB {
   }
 
   /*
-   * Search all triples in the database.
+   * Search across all triples in the database. There are two forms of query possible:
+   *
+   * - Object: { source?, relation?, target }
+   * - Array: [ source?, relation?, target? ]
    *
    * @param params - The search parameters.
    * @returns A new TribbleDB instance containing the matching triples.
@@ -660,56 +571,6 @@ export class TribbleDB {
     }
 
     return new TribbleDB(matchingTriples);
-  }
-
-  search2(query: Record<string, NodeSearch | RelationSearch>) {
-    const bindings = Object.entries(query);
-    const subqueryResults: {
-      names: string[];
-      rows: number[][];
-    }[] = [];
-
-    for (let idx = 0; idx < bindings.length - 2; idx += 2) {
-      const tripleSlice = bindings.slice(idx, idx + 3);
-      const pattern = {
-        source: tripleSlice[0][1],
-        relation: tripleSlice[1][1],
-        target: tripleSlice[2][1],
-      };
-
-      const bindingNames = tripleSlice.map((pair) => pair[0]);
-
-      const tripleRows = this.#findMatchingRows(pattern as any);
-      const rowData = Array.from(tripleRows).flatMap((row) => {
-        const contents = this.index.getTripleIndices(row);
-
-        return typeof contents === "undefined" ? [] : [contents];
-      });
-
-      subqueryResults.push({
-        names: bindingNames,
-        rows: rowData,
-      });
-    }
-
-    const queryResult = subqueryResults.reduce(
-      joinSubqueryResults.bind(this, this.metrics),
-    );
-
-    const outputNames = queryResult.names;
-    const objects = [];
-
-    for (const row of queryResult.rows) {
-      const data: Record<string, string> = {};
-      for (let idx = 0; idx < outputNames.length; idx++) {
-        const label = outputNames[idx];
-        data[label] = this.index.stringIndex.getValue(row[idx])!;
-      }
-
-      objects.push(data);
-    }
-
-    return objects;
   }
 
   /*
