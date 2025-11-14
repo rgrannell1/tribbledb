@@ -960,3 +960,73 @@ Deno.test("search with relation 'name' and array of non-existent targets returns
 
   assertEquals(results.triplesCount, 0);
 });
+
+// Test that #object method only includes unique values
+Deno.test("objects method returns unique values only", () => {
+  // Create triples with duplicate targets for same source-relation pair
+  const triplesWithDuplicates: Triple[] = [
+    ["alice", "likes", "pizza"],
+    ["alice", "likes", "pizza"], // duplicate
+    ["alice", "likes", "burgers"],
+    ["alice", "likes", "burgers"], // duplicate
+    ["alice", "name", "Alice Smith"],
+    ["alice", "name", "Alice Smith"], // duplicate single value
+    ["bob", "likes", "pizza"],
+    ["bob", "likes", "sushi"],
+  ];
+
+  const database = new TribbleDB(triplesWithDuplicates);
+  const objects = database.objects();
+
+  // Find alice object
+  const aliceObj = objects.find(obj => obj.id === "alice");
+  assertEquals(aliceObj !== undefined, true);
+
+  // Alice should have unique likes array
+  assertEquals(Array.isArray(aliceObj!.likes), true);
+  const aliceLikes = aliceObj!.likes as string[];
+  assertEquals(aliceLikes.length, 2);
+  assertEquals(aliceLikes.includes("pizza"), true);
+  assertEquals(aliceLikes.includes("burgers"), true);
+  // Check no duplicates
+  assertEquals(new Set(aliceLikes).size, aliceLikes.length);
+
+  // Alice name should be single value (not array since all same)
+  assertEquals(aliceObj!.name, "Alice Smith");
+
+  // Bob should have likes array without duplicates
+  const bobObj = objects.find(obj => obj.id === "bob");
+  assertEquals(bobObj !== undefined, true);
+  const bobLikes = bobObj!.likes as string[];
+  assertEquals(Array.isArray(bobLikes), true);
+  assertEquals(bobLikes.length, 2);
+  assertEquals(new Set(bobLikes).size, bobLikes.length);
+});
+
+Deno.test("objects method with listOnly=true ensures arrays with unique values", () => {
+  const triplesWithDuplicates: Triple[] = [
+    ["alice", "name", "Alice"],
+    ["alice", "name", "Alice"], // duplicate
+    ["alice", "likes", "pizza"],
+    ["alice", "likes", "pizza"], // duplicate
+    ["alice", "likes", "burgers"],
+  ];
+
+  const database = new TribbleDB(triplesWithDuplicates);
+  const objects = database.objects(true); // listOnly=true
+
+  const aliceObj = objects.find(obj => obj.id === "alice");
+  assertEquals(aliceObj !== undefined, true);
+
+  // With listOnly=true, even single name should be array with unique value
+  assertEquals(Array.isArray(aliceObj!.name), true);
+  const aliceNames = aliceObj!.name as string[];
+  assertEquals(aliceNames.length, 1);
+  assertEquals(aliceNames[0], "Alice");
+
+  // Likes should be array with unique values
+  assertEquals(Array.isArray(aliceObj!.likes), true);
+  const aliceLikes = aliceObj!.likes as string[];
+  assertEquals(aliceLikes.length, 2);
+  assertEquals(new Set(aliceLikes).size, aliceLikes.length);
+});

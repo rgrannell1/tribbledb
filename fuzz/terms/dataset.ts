@@ -4,5 +4,6 @@ import { Name } from "./names.ts";
 import type { Wrapped } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
 
 export function Dataset(size: Wrapped<number>) {
-  return () => P.Array.from(PersonTriples(Name(), "urn:ró:person"), size)().flat();
+  return () =>
+    P.Array.from(PersonTriples(Name(), "urn:ró:person"), size)().flat();
 }

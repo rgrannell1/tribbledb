@@ -306,12 +306,17 @@ export class TribbleDB {
       if (!objs[source]) {
         objs[source] = { id: source };
       }
-      if (!objs[source][relation]) {
+      const relationRef = objs[source][relation];
+      if (!relationRef) {
         objs[source][relation] = listOnly ? [target] : target;
-      } else if (Array.isArray(objs[source][relation])) {
-        (objs[source][relation] as string[]).push(target);
+      } else if (Array.isArray(relationRef)) {
+        if (!relationRef.includes(target)) {
+          (relationRef as string[]).push(target);
+        }
       } else {
-        objs[source][relation] = [objs[source][relation] as string, target];
+        objs[source][relation] = relationRef === target
+          ? relationRef
+          : [relationRef as string, target];
       }
     }
 
