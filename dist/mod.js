@@ -650,12 +650,15 @@ var TribbleDB = class _TribbleDB {
       if (!objs[source]) {
         objs[source] = { id: source };
       }
-      if (!objs[source][relation]) {
+      const relationRef = objs[source][relation];
+      if (!relationRef) {
         objs[source][relation] = listOnly ? [target] : target;
-      } else if (Array.isArray(objs[source][relation])) {
-        objs[source][relation].push(target);
+      } else if (Array.isArray(relationRef)) {
+        if (!relationRef.includes(target)) {
+          relationRef.push(target);
+        }
       } else {
-        objs[source][relation] = [objs[source][relation], target];
+        objs[source][relation] = relationRef === target ? relationRef : [relationRef, target];
       }
     }
     return objs;

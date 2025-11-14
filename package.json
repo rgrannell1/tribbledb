@@ -1,6 +1,6 @@
 {
   "name": "@rgrannell1/tribbledb",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "[![CI](https://github.com/rgrannell1/tribbledb/workflows/Test/badge.svg)](https://github.com/rgrannell1/tribbledb/actions)",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
