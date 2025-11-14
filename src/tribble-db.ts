@@ -228,9 +228,13 @@ export class TribbleDB {
       if (!obj[relation]) {
         obj[relation] = listOnly ? [target] : target;
       } else if (Array.isArray(obj[relation])) {
-        (obj[relation] as string[]).push(target);
+        if (!(obj[relation] as string[]).includes(target)) {
+          (obj[relation] as string[]).push(target);
+        }
       } else {
-        obj[relation] = [obj[relation] as string, target];
+        obj[relation] = obj[relation] as string === target
+          ? obj[relation]
+          : [obj[relation] as string, target];
       }
     }
 

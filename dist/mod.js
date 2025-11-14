@@ -581,9 +581,11 @@ var TribbleDB = class _TribbleDB {
       if (!obj[relation]) {
         obj[relation] = listOnly ? [target] : target;
       } else if (Array.isArray(obj[relation])) {
-        obj[relation].push(target);
+        if (!obj[relation].includes(target)) {
+          obj[relation].push(target);
+        }
       } else {
-        obj[relation] = [obj[relation], target];
+        obj[relation] = obj[relation] === target ? obj[relation] : [obj[relation], target];
       }
     }
     return obj;
