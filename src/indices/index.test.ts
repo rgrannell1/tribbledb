@@ -931,6 +931,150 @@ Deno.test("search with relation 'name' and array of targets", () => {
   assertEquals(targets.has("Charlie Brown"), true);
 });
 
+// Tests for URN-style source queries (urn:ró:bird:chicken format)
+const birdTestTriples: Triple[] = [
+  ["urn:ró:bird:chicken", "species", "gallus_gallus"],
+  ["urn:ró:bird:chicken", "color", "brown"],
+  ["urn:ró:bird:chicken", "habitat", "farm"],
+  ["urn:ró:bird:sparrow", "species", "passer_domesticus"],
+  ["urn:ró:bird:eagle", "species", "aquila_chrysaetos"],
+  ["urn:ró:bird:eagle", "habitat", "mountains"],
+  ["urn:ró:mammal:cow", "species", "bos_taurus"],
+  ["urn:ró:mammal:cow", "habitat", "farm"],
+];
+
+Deno.test("search with URN string source: urn:ró:bird:chicken", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({ source: "urn:ró:bird:chicken" });
+
+  assertEquals(results.triplesCount, 3);
+  assertEquals(
+    results.triples().every((triple: Triple) =>
+      Triples.source(triple) === "urn:ró:bird:chicken"
+    ),
+    true,
+  );
+
+  // Verify we get all expected relations for the chicken
+  const relations = new Set(results.triples().map(Triples.relation));
+  assertEquals(relations.has("species"), true);
+  assertEquals(relations.has("color"), true);
+  assertEquals(relations.has("habitat"), true);
+});
+
+Deno.test("search with URN string source: urn:ró:bird:eagle", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({ source: "urn:ró:bird:eagle" });
+
+  assertEquals(results.triplesCount, 2);
+  assertEquals(
+    results.triples().every((triple: Triple) =>
+      Triples.source(triple) === "urn:ró:bird:eagle"
+    ),
+    true,
+  );
+});
+
+Deno.test("search with URN string source combined with relation filter", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({
+    source: "urn:ró:bird:chicken",
+    relation: "species",
+  });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:bird:chicken",
+    "species",
+    "gallus_gallus",
+  ]);
+});
+
+Deno.test("search with URN string source combined with target filter", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({
+    source: "urn:ró:bird:chicken",
+    target: "farm",
+  });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:bird:chicken",
+    "habitat",
+    "farm",
+  ]);
+});
+
+Deno.test("search with URN string source and complete triple match", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({
+    source: "urn:ró:bird:chicken",
+    relation: "color",
+    target: "brown",
+  });
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:bird:chicken",
+    "color",
+    "brown",
+  ]);
+});
+
+Deno.test("search with non-existent URN string source returns empty", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({ source: "urn:ró:bird:penguin" });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with URN string source using array format", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search([
+    "urn:ró:bird:chicken",
+    "species",
+    undefined,
+  ] as unknown as Parameters<typeof database.search>[0]);
+
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:bird:chicken",
+    "species",
+    "gallus_gallus",
+  ]);
+});
+
+Deno.test("search with multiple URN string sources using array", () => {
+  const database = new TribbleDB(birdTestTriples);
+  const results = database.search({
+    source: ["urn:ró:bird:chicken", "urn:ró:bird:eagle"],
+  });
+
+  assertEquals(results.triplesCount, 5); // 3 chicken + 2 eagle
+  assertEquals(
+    results.triples().every((triple: Triple) => {
+      const src = Triples.source(triple);
+      return src === "urn:ró:bird:chicken" || src === "urn:ró:bird:eagle";
+    }),
+    true,
+  );
+});
+
+Deno.test("search URN string that matches type and id pattern correctly", () => {
+  const database = new TribbleDB(birdTestTriples);
+  
+  // Search by type using DSL should include our chicken
+  const typeResults = database.search({ source: { type: "bird" } });
+  assertEquals(typeResults.triplesCount, 6); // chicken(3) + sparrow(1) + eagle(2)  // Search by id using DSL should match our chicken
+  const idResults = database.search({ source: { id: "chicken" } });
+  assertEquals(idResults.triplesCount, 3);
+
+  // Direct URN string search should work the same
+  const urnResults = database.search({ source: "urn:ró:bird:chicken" });
+  assertEquals(urnResults.triplesCount, 3);
+  assertEquals(urnResults.triples(), idResults.triples());
+});
+
 Deno.test("search with relation 'name' and array of targets (URN dataset)", () => {
   const database = new TribbleDB(testTriples);
   const results = database.search({
@@ -979,7 +1123,7 @@ Deno.test("objects method returns unique values only", () => {
   const objects = database.objects();
 
   // Find alice object
-  const aliceObj = objects.find(obj => obj.id === "alice");
+  const aliceObj = objects.find((obj) => obj.id === "alice");
   assertEquals(aliceObj !== undefined, true);
 
   // Alice should have unique likes array
@@ -995,7 +1139,7 @@ Deno.test("objects method returns unique values only", () => {
   assertEquals(aliceObj!.name, "Alice Smith");
 
   // Bob should have likes array without duplicates
-  const bobObj = objects.find(obj => obj.id === "bob");
+  const bobObj = objects.find((obj) => obj.id === "bob");
   assertEquals(bobObj !== undefined, true);
   const bobLikes = bobObj!.likes as string[];
   assertEquals(Array.isArray(bobLikes), true);
@@ -1015,7 +1159,7 @@ Deno.test("objects method with listOnly=true ensures arrays with unique values",
   const database = new TribbleDB(triplesWithDuplicates);
   const objects = database.objects(true); // listOnly=true
 
-  const aliceObj = objects.find(obj => obj.id === "alice");
+  const aliceObj = objects.find((obj) => obj.id === "alice");
   assertEquals(aliceObj !== undefined, true);
 
   // With listOnly=true, even single name should be array with unique value

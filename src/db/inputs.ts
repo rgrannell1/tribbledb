@@ -60,11 +60,9 @@ export function parseRelation(search: RelationSearch): RelationObjectQuery {
  * Parse the user-input search onto an internal SearchObject
  */
 export function parseSearch(search: Search): SearchObject {
-  if (!Array.isArray(search)) {
-    return search;
-  }
-
-  const [source, relation, target] = search;
+  const source = Array.isArray(search) ? search[0] : search.source;
+  const relation = Array.isArray(search) ? search[1] : search.relation;
+  const target = Array.isArray(search) ? search[2] : search.target;
 
   const out: SearchObject = {};
   if (source) {

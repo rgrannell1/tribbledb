@@ -1,17 +1,18 @@
 import type {
   NodeSearch,
-  Predicate,
   RelationSearch,
   TargetValidator,
   Triple,
   TripleObject,
 } from "./types.ts";
 import { Index } from "./indices/index.ts";
-import { Sets } from "./sets.ts";
 import { Triples } from "./triples.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 import type { IndexPerformanceMetrics } from "./metrics.ts";
 import { asUrn } from "./urn.ts";
+import { findMatchingRows, validateInput } from "./db/search.ts";
+import type { Search } from "./input-types.ts";
+import { parseSearch } from "./db/inputs.ts";
 
 export type TribbleDBMetrics = {
   index: IndexPerformanceMetrics;
@@ -112,6 +113,9 @@ export class TribbleDB {
     return new TribbleDB(triples);
   }
 
+  /*
+   * Validate triples against the provided validation functions.
+   */
   validateTriples(triples: Triple[]): void {
     const messages: string[] = [];
 
@@ -328,6 +332,13 @@ export class TribbleDB {
   }
 
   /*
+   * Parse a source / target node input.
+   */
+  parseNodeString(node: string) {
+    return { type: "unknown", id: node };
+  }
+
+  /*
    * Convert a node to a node DSL object.
    */
   nodeAsDSL(node: unknown): NodeSearch | undefined {
@@ -336,7 +347,7 @@ export class TribbleDB {
     }
 
     if (typeof node === "string") {
-      return { type: "unknown", id: node };
+      return this.parseNodeString(node);
     }
 
     if (Array.isArray(node)) {
@@ -365,199 +376,6 @@ export class TribbleDB {
     return relation as RelationSearch;
   }
 
-  searchParamsToObject(params: SearchParams): SearchParamsObject {
-    if (!Array.isArray(params)) {
-      return params;
-    }
-
-    const [source, relation, target] = params;
-
-    return {
-      source: this.nodeAsDSL(source),
-      relation: this.relationAsDSL(relation),
-      target: this.nodeAsDSL(target),
-    };
-  }
-
-  #findMatchingRows(
-    params: SearchParams,
-  ): Set<number> {
-    // by default, all triples are in the intersection set. Then, we
-    // only keep the triple rows that meet the other criteria too, by
-    // intersecting all row sets.
-    const matchingRowSets: Set<number>[] = [
-      this.cursorIndices,
-    ];
-
-    const { source, relation, target } = this.searchParamsToObject(params);
-    if (
-      typeof source === "undefined" && typeof target === "undefined" &&
-      typeof relation === "undefined"
-    ) {
-      // yes, we could just return everything instead
-      throw new Error("At least one search parameter must be defined");
-    }
-
-    const allowedKeys = ["source", "relation", "target"];
-    if (!Array.isArray(params)) {
-      for (const key of Object.keys(params)) {
-        if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
-        if (!allowedKeys.includes(key)) {
-          throw new Error(`Unexpected search parameter: ${key}`);
-        }
-      }
-    }
-
-    // Expand user-inputs into DLS objects
-    const expandedSource = this.nodeAsDSL(source);
-    const expandedRelation = this.relationAsDSL(relation);
-    const expandedTarget = this.nodeAsDSL(target);
-
-    if (expandedSource) {
-      if (expandedSource.type) {
-        const sourceTypeSet = this.index.getSourceTypeSet(expandedSource.type);
-        if (sourceTypeSet) {
-          matchingRowSets.push(sourceTypeSet);
-        } else {
-          // no type matched, no no rows matching
-          return new Set<number>();
-        }
-      }
-
-      if (expandedSource.id) {
-        const ids = Array.isArray(expandedSource.id)
-          ? expandedSource.id
-          : [expandedSource.id];
-
-        const idSet = new Set<number>();
-
-        for (const id of ids) {
-          const sourceIdSet = this.index.getSourceIdSet(id);
-          if (sourceIdSet) {
-            Sets.append(idSet, sourceIdSet);
-          } else {
-            return new Set<number>();
-          }
-        }
-
-        matchingRowSets.push(idSet);
-      }
-
-      if (expandedSource.qs) {
-        for (const [key, val] of Object.entries(expandedSource.qs)) {
-          const sourceQsSet = this.index.getSourceQsSet(key, val);
-          if (sourceQsSet) {
-            matchingRowSets.push(sourceQsSet);
-          } else {
-            return new Set<number>();
-          }
-        }
-      }
-    }
-
-    if (expandedTarget) {
-      if (expandedTarget.type) {
-        const targetTypeSet = this.index.getTargetTypeSet(expandedTarget.type);
-        if (targetTypeSet) {
-          matchingRowSets.push(targetTypeSet);
-        } else {
-          return new Set<number>();
-        }
-      }
-
-      if (expandedTarget.id) {
-        const ids = Array.isArray(expandedTarget.id)
-          ? expandedTarget.id
-          : [expandedTarget.id];
-
-        const idSet = new Set<number>();
-
-        for (const id of ids) {
-          const targetIdSet = this.index.getTargetIdSet(id);
-          if (targetIdSet) {
-            Sets.append(idSet, targetIdSet);
-          } else {
-            return new Set<number>();
-          }
-        }
-
-        matchingRowSets.push(idSet);
-      }
-
-      if (expandedTarget.qs) {
-        for (const [key, val] of Object.entries(expandedTarget.qs)) {
-          const targetQsSet = this.index.getTargetQsSet(key, val);
-          if (targetQsSet) {
-            matchingRowSets.push(targetQsSet);
-          } else {
-            return new Set<number>();
-          }
-        }
-      }
-    }
-
-    if (expandedRelation && expandedRelation.relation) {
-      // in this case, ANY relation in the `relation` list is good enough, so we
-      // union rather than intersection (which would always be the null set)
-      const unionedRelations = new Set<number>();
-      for (const rel of expandedRelation.relation) {
-        const relationSet = this.index.getRelationSet(rel);
-        if (relationSet) {
-          for (const elem of relationSet) {
-            unionedRelations.add(elem);
-          }
-        }
-      }
-
-      if (unionedRelations.size > 0) {
-        matchingRowSets.push(unionedRelations);
-      } else {
-        return new Set<number>();
-      }
-    }
-
-    const intersection = Sets.intersection(this.metrics, matchingRowSets);
-    const matchingTriples: Set<number> = new Set();
-
-    const hasSourcePredicate = expandedSource?.predicate !== undefined;
-    const hasTargetPredicate = expandedTarget?.predicate !== undefined;
-    const hasRelationPredicate = typeof expandedRelation === "object" &&
-      expandedRelation.predicate !== undefined;
-
-    // Collect matching triples, applying predicate filters as we go
-    for (const index of intersection) {
-      const triple = this.index.getTriple(index)!;
-
-      if (!hasSourcePredicate && !hasTargetPredicate && !hasRelationPredicate) {
-        matchingTriples.add(index);
-        continue;
-      }
-
-      let isValid = true;
-
-      if (hasSourcePredicate) {
-        isValid = isValid &&
-          (expandedSource.predicate as Predicate)(Triples.source(triple));
-      }
-
-      if (hasTargetPredicate && isValid) {
-        isValid = isValid &&
-          (expandedTarget.predicate as Predicate)(Triples.target(triple));
-      }
-
-      if (hasRelationPredicate && isValid) {
-        isValid = isValid &&
-          (expandedRelation.predicate as Predicate)(Triples.relation(triple));
-      }
-
-      if (isValid) {
-        matchingTriples.add(index);
-      }
-    }
-
-    return matchingTriples;
-  }
-
   /*
    * Search across all triples in the database. There are two forms of query possible:
    *
@@ -568,15 +386,22 @@ export class TribbleDB {
    * @returns A new TribbleDB instance containing the matching triples.
    */
   search(
-    params: SearchParams,
+    params: Search,
   ): TribbleDB {
+    const parsed = parseSearch(params);
+    validateInput(parsed);
+
     const matchingTriples: Triple[] = [];
 
-    for (const rowIdx of this.#findMatchingRows(params)) {
-      const triple = this.index.getTriple(rowIdx);
-      if (triple) {
-        matchingTriples.push(triple);
-      }
+    for (
+      const rowIdx of findMatchingRows(
+        parsed,
+        this.index,
+        this.cursorIndices,
+        this.metrics,
+      )
+    ) {
+      matchingTriples.push(this.index.getTriple(rowIdx)!);
     }
 
     return new TribbleDB(matchingTriples);

@@ -3,17 +3,17 @@
  */
 
 import type { Index } from "../indices/index.ts";
-import type { NodeObjectQuery, Search } from "../input-types.ts";
+import type { NodeObjectQuery, SearchObject } from "../input-types.ts";
 import type { RelationObjectQuery } from "../input-types.ts";
 import type { TribbleDBPerformanceMetrics } from "../metrics.ts";
 import { Sets } from "../sets.ts";
-import { parseSearch } from "./inputs.ts";
 
 /*
  * At runtime, validate the user provided a sensible search definition.
  */
-function validateInput(params: Search) {
-  const { source, relation, target } = parseSearch(params);
+export function validateInput(params: SearchObject) {
+  const { source, relation, target } = params;
+
   if (source === undefined && relation === undefined && target === undefined) {
     throw new Error("At least one search parameter must be defined");
   }
@@ -81,7 +81,7 @@ function nodeIdMatches(id: string | string[], source: boolean, index: Index) {
  * append each subset to an array, and union them
  */
 function nodeQsMatches(
-  qs: NodeObjectQuery["qs"],
+  qs: NonNullable<NodeObjectQuery["qs"]>,
   source: boolean,
   index: Index,
   metrics: TribbleDBPerformanceMetrics,
@@ -142,7 +142,7 @@ export function nodeMatches(
 
   let qsRows: Set<number> | undefined = undefined;
 
-  if (query.qs) {
+  if (query.qs && Object.keys(query.qs).length > 0) {
     qsRows = nodeQsMatches(query.qs, source, index, metrics);
 
     // no matching QS, so bail
@@ -157,7 +157,23 @@ export function nodeMatches(
    * with each defined term `typeRows`, `idRows`, `qsRows`
    */
   if (typeRows === undefined && idRows === undefined && qsRows === undefined) {
-    return cursorIndices;
+    const pred = query.predicate;
+
+    if (!pred) {
+      return cursorIndices;
+    }
+
+    const indexCopy = new Set([...cursorIndices]);
+
+    for (const idx of indexCopy) {
+      const triple = index.getTriple(idx)!;
+
+      if (!pred(source ? triple[0] : triple[2])) {
+        indexCopy.delete(idx); // Safe in JS
+      }
+    }
+
+    return indexCopy;
   }
 
   const matches: Set<number>[] = [cursorIndices];
@@ -262,19 +278,17 @@ export function findMatchingRelations(
  * Find triples that match the provided query
  */
 export function findMatchingRows(
-  params: Search,
+  params: SearchObject,
   index: Index,
   cursorIndices: Set<number>,
   metrics: TribbleDBPerformanceMetrics,
-) {
+): Set<number> {
   // by default, all triples are in the intersection set. Then, we
   // only keep the triple rows that meet the other criteria too, by
   // intersecting all row sets.
-  const matchingRowSets: Set<number>[] = [cursorIndices];
-  const parsed = parseSearch(params);
-  validateInput(parsed);
 
-  const { source, relation, target } = parsed;
+  const { source, relation, target } = params;
+  const matchingRowSets: Set<number>[] = [];
 
   if (source) {
     const input = Array.isArray(source) ? source : [source];

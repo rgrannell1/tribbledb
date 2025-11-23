@@ -26,15 +26,21 @@ export type RelationSearch = RelationObjectQuery | string | string[];
 /*
  * ++ Search DSL (object and array formats)
  */
+export type UserSearchObject = {
+  source?: NodeObjectQuery | string | string[];
+  relation?: RelationObjectQuery | string | string[];
+  target?: NodeObjectQuery | string | string[];
+};
+
 export type SearchObject = {
   source?: NodeObjectQuery[];
   relation?: RelationObjectQuery;
   target?: NodeObjectQuery[];
 };
-export type SearchArray = [
+export type UserSearchArray = [
   NodeSearch | undefined,
   RelationSearch | undefined,
   NodeSearch | undefined,
 ];
 
-export type Search = SearchObject | SearchArray;
+export type Search = UserSearchObject | UserSearchArray;
