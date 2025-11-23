@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert";
 import { TribbleDB } from "../tribble-db.ts";
-import type { Triple } from "../types.ts";
+import type { Triple, TripleObject } from "../types.ts";
 import { Triples } from "../triples.ts";
 import { asUrn } from "../urn.ts";
 
@@ -943,6 +943,24 @@ const birdTestTriples: Triple[] = [
   ["urn:ró:mammal:cow", "habitat", "farm"],
 ];
 
+// Test data with query string parameters
+const birdQsTestTriples: Triple[] = [
+  ["urn:ró:bird:apus-apus", "species", "apus_apus"],
+  ["urn:ró:bird:apus-apus", "name", "Common Swift"],
+  ["urn:ró:bird:apus-apus?context=wild", "in-flight", "true"],
+  ["urn:ró:bird:apus-apus?context=wild", "speed", "fast"],
+  ["urn:ró:bird:apus-apus?context=captivity", "in-flight", "false"],
+  ["urn:ró:bird:apus-apus?context=captivity", "speed", "slow"],
+  [
+    "urn:ró:bird:apus-apus?context=wild&location=europe",
+    "migration",
+    "seasonal",
+  ],
+  ["urn:ró:bird:chicken?age=adult", "weight", "2kg"],
+  ["urn:ró:bird:chicken?age=chick", "weight", "50g"],
+  ["urn:ró:bird:chicken", "species", "gallus_gallus"],
+];
+
 Deno.test("search with URN string source: urn:ró:bird:chicken", () => {
   const database = new TribbleDB(birdTestTriples);
   const results = database.search({ source: "urn:ró:bird:chicken" });
@@ -1030,11 +1048,13 @@ Deno.test("search with non-existent URN string source returns empty", () => {
 
 Deno.test("search with URN string source using array format", () => {
   const database = new TribbleDB(birdTestTriples);
-  const results = database.search([
-    "urn:ró:bird:chicken",
-    "species",
-    undefined,
-  ] as unknown as Parameters<typeof database.search>[0]);
+  const results = database.search(
+    [
+      "urn:ró:bird:chicken",
+      "species",
+      undefined,
+    ] as unknown as Parameters<typeof database.search>[0],
+  );
 
   assertEquals(results.triplesCount, 1);
   assertEquals(results.firstTriple()!, [
@@ -1062,7 +1082,7 @@ Deno.test("search with multiple URN string sources using array", () => {
 
 Deno.test("search URN string that matches type and id pattern correctly", () => {
   const database = new TribbleDB(birdTestTriples);
-  
+
   // Search by type using DSL should include our chicken
   const typeResults = database.search({ source: { type: "bird" } });
   assertEquals(typeResults.triplesCount, 6); // chicken(3) + sparrow(1) + eagle(2)  // Search by id using DSL should match our chicken
@@ -1073,6 +1093,162 @@ Deno.test("search URN string that matches type and id pattern correctly", () => 
   const urnResults = database.search({ source: "urn:ró:bird:chicken" });
   assertEquals(urnResults.triplesCount, 3);
   assertEquals(urnResults.triples(), idResults.triples());
+});
+
+// Query String Parameter Tests
+Deno.test("search with URN containing query string parameters", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Exact URN with query string should match that parameter and any superset
+  const wildResults = database.search({
+    source: "urn:ró:bird:apus-apus?context=wild",
+  });
+  assertEquals(wildResults.triplesCount, 3); // 2 exact + 1 with additional params
+  assertEquals(
+    wildResults.triples().every((triple: Triple) => {
+      const source = Triples.source(triple);
+      return source.includes("context=wild");
+    }),
+    true,
+  );
+
+  const captivityResults = database.search({
+    source: "urn:ró:bird:apus-apus?context=captivity",
+  });
+  assertEquals(captivityResults.triplesCount, 2); // Only exact matches for captivity
+});
+
+Deno.test("search with URN containing multiple query string parameters", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // URN with multiple query parameters
+  const multiParamResults = database.search({
+    source: "urn:ró:bird:apus-apus?context=wild&location=europe",
+  });
+  assertEquals(multiParamResults.triplesCount, 1);
+  assertEquals(multiParamResults.firstTriple()!, [
+    "urn:ró:bird:apus-apus?context=wild&location=europe",
+    "migration",
+    "seasonal",
+  ]);
+});
+
+Deno.test("search base URN without query params matches only base URN", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Base URN without query params should only match the base URN triples
+  const baseResults = database.search({ source: "urn:ró:bird:apus-apus" });
+  assertEquals(baseResults.triplesCount, 7); // base(2) + all parameterized versions(5)
+
+  // But if we want only the exact base URN, we can check the sources
+  const exactBaseResults = baseResults.triples().filter((triple: Triple) =>
+    Triples.source(triple) === "urn:ró:bird:apus-apus"
+  );
+  assertEquals(exactBaseResults.length, 2); // Only the base URN triples
+});
+
+Deno.test("search URN with query params combined with relation filter", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  const results = database.search({
+    source: "urn:ró:bird:apus-apus?context=wild",
+    relation: "in-flight",
+  });
+  assertEquals(results.triplesCount, 1);
+  assertEquals(results.firstTriple()!, [
+    "urn:ró:bird:apus-apus?context=wild",
+    "in-flight",
+    "true",
+  ]);
+});
+
+Deno.test("search URN with query params using DSL qs matching", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Search using DSL query string syntax should match URNs with those params
+  const qsResults = database.search({
+    source: { type: "bird", id: "apus-apus", qs: { context: "wild" } },
+  });
+  assertEquals(qsResults.triplesCount, 3); // 2 wild + 1 wild&europe
+
+  // More specific query string should match only exact match
+  const specificQsResults = database.search({
+    source: {
+      type: "bird",
+      id: "apus-apus",
+      qs: { context: "wild", location: "europe" },
+    },
+  });
+  assertEquals(specificQsResults.triplesCount, 1);
+});
+
+Deno.test("search with different URN parameter values", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Different age parameters for chickens
+  const adultResults = database.search({
+    source: "urn:ró:bird:chicken?age=adult",
+  });
+  assertEquals(adultResults.triplesCount, 1);
+  assertEquals(adultResults.firstTriple()![2], "2kg");
+
+  const chickResults = database.search({
+    source: "urn:ró:bird:chicken?age=chick",
+  });
+  assertEquals(chickResults.triplesCount, 1);
+  assertEquals(chickResults.firstTriple()![2], "50g");
+});
+
+Deno.test("search mixing URNs with and without query params", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Search by type should include both base URNs and parameterized URNs
+  const allBirds = database.search({ source: { type: "bird" } });
+  assertEquals(allBirds.triplesCount, 10); // All bird triples regardless of params
+
+  // Search by id should include both base and parameterized versions
+  const allChickens = database.search({ source: { id: "chicken" } });
+  assertEquals(allChickens.triplesCount, 3); // base + adult + chick
+
+  const allSwifts = database.search({ source: { id: "apus-apus" } });
+  assertEquals(allSwifts.triplesCount, 7); // base(2) + wild(2) + captivity(2) + wild&europe(1)
+});
+
+Deno.test("search with non-existent query string parameters", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // URN with non-existent parameters should return empty
+  const noResults = database.search({
+    source: "urn:ró:bird:apus-apus?context=laboratory",
+  });
+  assertEquals(noResults.triplesCount, 0);
+
+  // DSL query with non-existent params should return empty
+  const noDslResults = database.search({
+    source: { type: "bird", id: "apus-apus", qs: { habitat: "urban" } },
+  });
+  assertEquals(noDslResults.triplesCount, 0);
+});
+
+Deno.test("search with array of URNs including parameterized ones", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  const results = database.search({
+    source: [
+      "urn:ró:bird:apus-apus?context=wild",
+      "urn:ró:bird:chicken?age=adult",
+      "urn:ró:bird:apus-apus", // base URN
+    ],
+  });
+
+  assertEquals(results.triplesCount, 8); // Union of all matches: wild(3) + adult(1) + base(7) - 3 overlap = 8
+
+  // Verify we got results from all three searches
+  const sources = new Set(results.triples().map(Triples.source));
+  assertEquals(sources.has("urn:ró:bird:apus-apus?context=wild"), true);
+  assertEquals(sources.has("urn:ró:bird:chicken?age=adult"), true);
+  assertEquals(sources.has("urn:ró:bird:apus-apus"), true);
+  assertEquals(sources.has("urn:ró:bird:apus-apus?context=captivity"), true); // Included via base search
 });
 
 Deno.test("search with relation 'name' and array of targets (URN dataset)", () => {
@@ -1173,4 +1349,288 @@ Deno.test("objects method with listOnly=true ensures arrays with unique values",
   const aliceLikes = aliceObj!.likes as string[];
   assertEquals(aliceLikes.length, 2);
   assertEquals(new Set(aliceLikes).size, aliceLikes.length);
+});
+
+// Tests for readThing method
+Deno.test("readThing returns object for existing URN", () => {
+  const database = new TribbleDB(testTriples);
+  const obj = database.readThing("urn:ró:person:alice");
+
+  assertEquals(obj !== undefined, true);
+  assertEquals(obj!.id, "urn:ró:person:alice");
+  assertEquals(obj!.name, "Alice Smith");
+  assertEquals(obj!.age, "30");
+  assertEquals(obj!.works_at, "urn:ró:company:acme");
+});
+
+Deno.test("readThing returns undefined for non-existent URN", () => {
+  const database = new TribbleDB(testTriples);
+  const obj = database.readThing("urn:ró:person:nonexistent");
+
+  assertEquals(obj, undefined);
+});
+
+Deno.test("readThing with qs=true parses URN and searches by type/id", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+  const obj = database.readThing("urn:ró:bird:apus-apus", { qs: true });
+
+  assertEquals(obj !== undefined, true);
+  assertEquals(obj!.id, "urn:ró:bird:apus-apus");
+  assertEquals(obj!.species, "apus_apus");
+});
+
+Deno.test("readThing with qs=false but URN matching by type/id still works", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+  const obj = database.readThing("urn:ró:bird:apus-apus", { qs: false });
+
+  assertEquals(obj !== undefined, true);
+  assertEquals(obj!.id, "urn:ró:bird:apus-apus");
+  assertEquals(obj!.species, "apus_apus");
+});
+
+// Tests for readThings method
+Deno.test("readThings returns objects for existing URNs from array", () => {
+  const database = new TribbleDB(testTriples);
+  const objects = database.readThings([
+    "urn:ró:person:alice",
+    "urn:ró:company:acme",
+    "urn:ró:person:nonexistent",
+  ]);
+
+  assertEquals(objects.length, 2);
+
+  const alice = objects.find((obj) => obj.id === "urn:ró:person:alice");
+  assertEquals(alice !== undefined, true);
+  assertEquals(alice!.name, "Alice Smith");
+
+  const acme = objects.find((obj) => obj.id === "urn:ró:company:acme");
+  assertEquals(acme !== undefined, true);
+  assertEquals(acme!.name, "Acme Corp");
+});
+
+Deno.test("readThings returns objects for existing URNs from Set", () => {
+  const database = new TribbleDB(testTriples);
+  const urnSet = new Set([
+    "urn:ró:person:alice",
+    "urn:ró:person:bob",
+    "urn:ró:person:nonexistent",
+  ]);
+  const objects = database.readThings(urnSet);
+
+  assertEquals(objects.length, 2);
+
+  const ids = objects.map((obj) => obj.id).sort();
+  assertEquals(ids, ["urn:ró:person:alice", "urn:ró:person:bob"]);
+});
+
+Deno.test("readThings with qs option finds objects by parsed URN", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+  const objects = database.readThings([
+    "urn:ró:bird:apus-apus",
+    "urn:ró:bird:chicken",
+  ], { qs: true });
+
+  assertEquals(objects.length, 2);
+
+  const apus = objects.find((obj) => obj.id?.includes("apus-apus"));
+  assertEquals(apus !== undefined, true);
+  assertEquals(apus!.id, "urn:ró:bird:apus-apus");
+
+  const chicken = objects.find((obj) => obj.id?.includes("chicken"));
+  assertEquals(chicken !== undefined, true);
+  assertEquals(chicken!.id, "urn:ró:bird:chicken?age=adult");
+});
+
+Deno.test("readThings filters out undefined for non-existent URNs", () => {
+  const database = new TribbleDB(testTriples);
+  const objects = database.readThings([
+    "urn:ró:person:nobody",
+    "urn:ró:company:missing",
+  ]);
+
+  assertEquals(objects.length, 0);
+});
+
+// Tests for parseThing method
+Deno.test("parseThing applies parser to existing object", () => {
+  const database = new TribbleDB(testTriples);
+
+  // Parser that extracts age as number
+  const ageParser = (obj: TripleObject) => {
+    const ageStr = obj.age;
+    if (typeof ageStr === "string") {
+      return { name: obj.name as string, age: parseInt(ageStr) };
+    }
+    return undefined;
+  };
+
+  const parsed = database.parseThing(ageParser, "urn:ró:person:alice");
+
+  assertEquals(parsed !== undefined, true);
+  assertEquals(parsed!.name, "Alice Smith");
+  assertEquals(parsed!.age, 30);
+});
+
+Deno.test("parseThing returns undefined when parser returns undefined", () => {
+  const database = new TribbleDB(testTriples);
+
+  // Parser that only works with companies
+  const companyParser = (obj: TripleObject) => {
+    if (obj.type === "company") {
+      return { name: obj.name as string };
+    }
+    return undefined;
+  };
+
+  // Try to parse a person with company parser
+  const parsed = database.parseThing(companyParser, "urn:ró:person:alice");
+
+  assertEquals(parsed, undefined);
+});
+
+Deno.test("parseThing returns undefined for non-existent URN", () => {
+  const database = new TribbleDB(testTriples);
+
+  const simpleParser = (obj: TripleObject) => ({ name: obj.name as string });
+  const parsed = database.parseThing(simpleParser, "urn:ró:person:nobody");
+
+  assertEquals(parsed, undefined);
+});
+
+Deno.test("parseThing with qs option finds object by parsed URN", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Parser that captures full id with query string
+  const fullIdParser = (obj: TripleObject) => ({
+    fullId: obj.id as string,
+    species: obj.species as string,
+  });
+
+  const parsed = database.parseThing(fullIdParser, "urn:ró:bird:apus-apus", { qs: true });
+
+  assertEquals(parsed !== undefined, true);
+  assertEquals(parsed!.fullId, "urn:ró:bird:apus-apus");
+  assertEquals(parsed!.species, "apus_apus");
+});
+
+// Tests for parseThings method
+Deno.test("parseThings applies parser to multiple objects", () => {
+  const database = new TribbleDB(testTriples);
+
+  // Parser that extracts names
+  const nameParser = (obj: TripleObject) => {
+    const name = obj.name;
+    if (typeof name === "string") {
+      return { id: obj.id as string, name };
+    }
+    return undefined;
+  };
+
+  const parsed = database.parseThings(nameParser, [
+    "urn:ró:person:alice",
+    "urn:ró:person:bob",
+    "urn:ró:company:acme",
+  ]);
+
+  assertEquals(parsed.length, 3);
+
+  const alice = parsed.find((p) => p.id === "urn:ró:person:alice");
+  assertEquals(alice !== undefined, true);
+  assertEquals(alice!.name, "Alice Smith");
+
+  const bob = parsed.find((p) => p.id === "urn:ró:person:bob");
+  assertEquals(bob !== undefined, true);
+  assertEquals(bob!.name, "Bob Jones");
+
+  const acme = parsed.find((p) => p.id === "urn:ró:company:acme");
+  assertEquals(acme !== undefined, true);
+  assertEquals(acme!.name, "Acme Corp");
+});
+
+Deno.test("parseThings skips objects where parser returns undefined", () => {
+  const database = new TribbleDB(testTriples);
+
+  // Parser that only works with people (has age field)
+  const personParser = (obj: TripleObject) => {
+    if (obj.age) {
+      return {
+        id: obj.id as string,
+        name: obj.name as string,
+        age: parseInt(obj.age as string),
+      };
+    }
+    return undefined;
+  };
+
+  const parsed = database.parseThings(personParser, [
+    "urn:ró:person:alice",
+    "urn:ró:company:acme", // should be skipped - no age field
+    "urn:ró:person:bob",
+  ]);
+
+  assertEquals(parsed.length, 2);
+
+  const ids = parsed.map((p) => p.id).sort();
+  assertEquals(ids, ["urn:ró:person:alice", "urn:ró:person:bob"]);
+
+  // Check ages are parsed as numbers
+  assertEquals(parsed.every((p) => typeof p.age === "number"), true);
+});
+
+Deno.test("parseThings with Set input applies parser correctly", () => {
+  const database = new TribbleDB(birdQsTestTriples);
+
+  // Parser for bird data
+  const birdParser = (obj: TripleObject) => ({
+    id: obj.id as string,
+    species: obj.species as string,
+    habitat: obj.habitat as string,
+  });
+
+  const urnSet = new Set([
+    "urn:ró:bird:apus-apus",
+    "urn:ró:bird:corvus-corvus", // doesn't exist, will be filtered out
+  ]);
+
+  const parsed = database.parseThings(birdParser, urnSet, { qs: true });
+
+  assertEquals(parsed.length, 1); // Only apus-apus exists in test data
+
+  const apus = parsed.find((p) => p.id && p.id.includes("apus-apus"));
+  assertEquals(apus !== undefined, true);
+  assertEquals(apus!.species, "apus_apus");
+  assertEquals(apus!.habitat, undefined);
+});
+
+Deno.test("parseThings returns empty array for non-existent URNs", () => {
+  const database = new TribbleDB(testTriples);
+
+  const simpleParser = (obj: TripleObject) => ({ name: obj.name as string });
+  const parsed = database.parseThings(simpleParser, [
+    "urn:ró:person:nobody",
+    "urn:ró:company:missing",
+  ]);
+
+  assertEquals(parsed.length, 0);
+});
+
+Deno.test("parseThings handles mixed existing and non-existent URNs", () => {
+  const database = new TribbleDB(testTriples);
+
+  const nameParser = (obj: TripleObject) => ({
+    id: obj.id as string,
+    name: obj.name as string,
+  });
+
+  const parsed = database.parseThings(nameParser, [
+    "urn:ró:person:alice", // exists
+    "urn:ró:person:nobody", // doesn't exist
+    "urn:ró:person:bob", // exists
+    "urn:ró:company:missing", // doesn't exist
+  ]);
+
+  assertEquals(parsed.length, 2);
+
+  const ids = parsed.map((p) => p.id).sort();
+  assertEquals(ids, ["urn:ró:person:alice", "urn:ró:person:bob"]);
 });

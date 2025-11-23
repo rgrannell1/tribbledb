@@ -1,1 +1,1 @@
-{"version":3,"file":"metrics.d.ts","sourceRoot":"","sources":["../src/metrics.ts"],"names":[],"mappings":"AAAA,qBAAa,uBAAuB;IAClC,YAAY,EAAE,MAAM,CAAC;;IAMrB,OAAO;CAGR;AAED,qBAAa,2BAA2B;IACtC,aAAa,EAAE,MAAM,CAAC;;IAMtB,QAAQ;CAGT"}
+{"version":3,"file":"metrics.d.ts","sourceRoot":"","sources":["../src/metrics.ts"],"names":[],"mappings":"AAIA,qBAAa,uBAAuB;IAClC,YAAY,EAAE,MAAM,CAAC;;IAMrB,OAAO;IAIP,KAAK;CAKN;AAED,qBAAa,2BAA2B;IACtC,aAAa,EAAE,MAAM,CAAC;;IAMtB,QAAQ;IAIR,KAAK;CAKN"}

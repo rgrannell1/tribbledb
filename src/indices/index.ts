@@ -271,4 +271,35 @@ export class Index {
     this.metrics.mapRead();
     return this.targetQs.get(qsIdx);
   }
+
+  /*
+   * Deep-clone the index
+   */
+  clone() {
+    const newIndex = new Index([]);
+    newIndex.indexedTriples = this.indexedTriples.slice();
+    newIndex.stringIndex = this.stringIndex.clone();
+
+    // Clone all maps
+    const cloneMap = (original: Map<number, Set<number>>): Map<number, Set<number>> => {
+      const newMap = new Map<number, Set<number>>();
+      for (const [key, valueSet] of original.entries()) {
+        newMap.set(key, new Set(valueSet));
+      }
+      return newMap;
+    };
+
+    newIndex.sourceType = cloneMap(this.sourceType);
+    newIndex.sourceId = cloneMap(this.sourceId);
+    newIndex.sourceQs = cloneMap(this.sourceQs);
+    newIndex.relations = cloneMap(this.relations);
+    newIndex.targetType = cloneMap(this.targetType);
+    newIndex.targetId = cloneMap(this.targetId);
+    newIndex.targetQs = cloneMap(this.targetQs);
+
+    newIndex.stringUrn = new Map(this.stringUrn);
+    newIndex.metrics = this.metrics.clone();
+
+    return newIndex;
+  }
 }

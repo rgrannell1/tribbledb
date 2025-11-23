@@ -21,6 +21,7 @@ export declare class IndexedSet {
      * Does this structure have a value?
      */
     has(value: string): boolean;
+    clone(): IndexedSet;
 }
 export declare class Sets {
     static intersection<T>(metrics: TribbleDBPerformanceMetrics, sets: Set<T>[]): Set<T>;

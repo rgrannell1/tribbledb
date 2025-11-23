@@ -75,6 +75,14 @@ export class IndexedSet {
   has(value: string): boolean {
     return this.#map.has(value);
   }
+
+  clone(): IndexedSet {
+    const newSet = new IndexedSet();
+    for (const [key, value] of this.#map.entries()) {
+      newSet.setIndex(key, value);
+    }
+    return newSet;
+  }
 }
 
 export class Sets {
@@ -116,6 +124,10 @@ export class Sets {
     return acc;
   }
 
+  /*
+   * Union two sets, and store the results in the left-hand-side set.
+   *
+   */
   static append<T>(set0: Set<T>, set1: Set<T>): Set<T> {
     for (const item of set1) {
       set0.add(item);

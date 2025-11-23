@@ -20,7 +20,10 @@ export class TribbleParser {
     this.stringIndex = new IndexedSet();
   }
 
-  parseTriple(line: string): Triple | undefined {
+  /*
+   * Parse a triple-line of tribble format text, and return a triple
+   */
+  parseTriple(line: string): Triple {
     const match = line.match(/^(\d+) (\d+) (\d+)$/);
     if (!match) {
       throw new SyntaxError(`Invalid format for triple line: ${line}`);
@@ -37,6 +40,10 @@ export class TribbleParser {
     return [src, rel, tgt];
   }
 
+  /*
+   * Parse a declaration line of tribble format text, and
+   * update the index.
+   */
   parseDeclaration(line: string): void {
     const match = line.match(/^(\d+) "(.*)"$/);
     if (!match) {
@@ -49,6 +56,10 @@ export class TribbleParser {
     this.stringIndex.setIndex(value, parseInt(id, 10));
   }
 
+  /*
+   * Parse a line of tribble format text, and return a triple when possible. Otherwise
+   * update the index.
+   */
   parse(line: string): Triple | undefined {
     const isTriple = /^(\d+)\s(\d+)\s(\d+)$/;
 

@@ -9,7 +9,7 @@ import type {
   RelationSearch,
   Search,
   SearchObject,
-} from "../input-types.ts";
+} from "../types.ts";
 
 import { asUrn } from "../urn.ts";
 
@@ -47,7 +47,7 @@ export function parseNodeSearch(search: NodeSearch): NodeObjectQuery[] {
 }
 
 /*
- * Parse the shorthand relationsearch into the internally used
+ * Parse the shorthand relation search into the internally used
  * RelationObjectQuery type.
  */
 export function parseRelation(search: RelationSearch): RelationObjectQuery {

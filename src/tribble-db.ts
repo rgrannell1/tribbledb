@@ -1,37 +1,18 @@
 import type {
-  NodeSearch,
-  RelationSearch,
+Parser,
+ReadOpts,
   TargetValidator,
+  TribbleDBMetrics,
   Triple,
   TripleObject,
 } from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { Triples } from "./triples.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
-import type { IndexPerformanceMetrics } from "./metrics.ts";
 import { asUrn } from "./urn.ts";
 import { findMatchingRows, validateInput } from "./db/search.ts";
-import type { Search } from "./input-types.ts";
+import type { Search } from "./types.ts";
 import { parseSearch } from "./db/inputs.ts";
-
-export type TribbleDBMetrics = {
-  index: IndexPerformanceMetrics;
-  db: TribbleDBPerformanceMetrics;
-};
-
-export type SearchParamsObject = {
-  source?: NodeSearch | string;
-  relation?: string | string[] | RelationSearch;
-  target?: NodeSearch | string | string[];
-};
-
-export type SearchParamsArray = [
-  NodeSearch | string | undefined,
-  string | string[] | RelationSearch | undefined,
-  NodeSearch | string | undefined,
-];
-
-export type SearchParams = SearchParamsObject | SearchParamsArray;
 
 /*
  * A searchable triple database
@@ -167,14 +148,23 @@ export class TribbleDB {
   }
 
   /**
-   * Flat map over the triples in the database.
+   * Flatmap over the triples in the database. This can be used to add new triples
+   * to a copy of the database.
    *
    * @param fn - A mapping function.
    * @returns A new TribbleDB instance containing the flat-mapped triples.
    */
   flatMap(fn: (triple: Triple) => Triple[]): TribbleDB {
     const flatMappedTriples = this.index.triples().flatMap(fn) as Triple[];
-    return new TribbleDB(flatMappedTriples);
+
+    // The flatmapped database may benefit from reusing the index structure
+    // of the original database
+    const newDb = new TribbleDB([]);
+    newDb.index = this.index.clone();
+
+    newDb.add(flatMappedTriples);
+
+    return newDb;
   }
 
   /**
@@ -242,7 +232,7 @@ export class TribbleDB {
       }
     }
 
-    return obj;
+    return Object.keys(obj).length > 0 ? obj : undefined;
   }
 
   /*
@@ -332,51 +322,6 @@ export class TribbleDB {
   }
 
   /*
-   * Parse a source / target node input.
-   */
-  parseNodeString(node: string) {
-    return { type: "unknown", id: node };
-  }
-
-  /*
-   * Convert a node to a node DSL object.
-   */
-  nodeAsDSL(node: unknown): NodeSearch | undefined {
-    if (typeof node === "undefined") {
-      return undefined;
-    }
-
-    if (typeof node === "string") {
-      return this.parseNodeString(node);
-    }
-
-    if (Array.isArray(node)) {
-      return { type: "unknown", id: node };
-    }
-
-    return node as NodeSearch;
-  }
-
-  /*
-   * Convert a relation input to a relation DSL object
-   */
-  relationAsDSL(relation: unknown): RelationSearch | undefined {
-    if (typeof relation === "undefined") {
-      return undefined;
-    }
-
-    if (typeof relation === "string") {
-      return { relation: [relation] };
-    }
-
-    if (Array.isArray(relation)) {
-      return { relation };
-    }
-
-    return relation as RelationSearch;
-  }
-
-  /*
    * Search across all triples in the database. There are two forms of query possible:
    *
    * - Object: { source?, relation?, target }
@@ -415,5 +360,78 @@ export class TribbleDB {
       index: this.index.metrics,
       db: this.metrics,
     };
+  }
+
+  /*
+   * Read a single object from the data by urn. If not a urn, the
+   * value is used as an id and the type is the default type `unknown`. By default,
+   * query-strings are disregarded.
+   */
+  readThing(
+    urn: string,
+    opts: ReadOpts = { qs: false },
+  ): TripleObject | undefined {
+    if (opts.qs) {
+      const { type, id } = asUrn(urn);
+      return this.search({ source: { type, id } }).firstObject();
+    } else {
+      return this.search({ source: urn }).firstObject();
+    }
+  }
+
+  /*
+   * Read a set of URNs, and return any matching results. Ordered but not guaranteed to
+   * return a match for all provided URNs.
+   */
+  readThings(
+    urns: Set<string> | string[],
+    opts: ReadOpts = { qs: false },
+  ): TripleObject[] {
+    const results: TripleObject[] = [];
+
+    for (const urn of urns) {
+      const thing = this.readThing(urn, opts);
+      if (thing !== undefined) {
+        results.push(thing);
+      }
+    }
+
+    return results;
+  }
+
+  /*
+   * Read and parse a triple object. On missing data or parse failure return undefined (or throw an exception)
+   */
+  parseThing<T>(
+    parser: Parser<T>,
+    urn: string,
+    opts: ReadOpts = { qs: false },
+  ): T | undefined {
+    const thing = this.readThing(urn, opts);
+    if (thing) {
+      return parser(thing);
+    } else {
+      return undefined;
+    }
+  }
+
+  /*
+   * Read and parse a collection of triple objects. Skip over missing data or parse failures.
+   */
+  parseThings<T>(
+    parser: Parser<T>,
+    urns: Set<string> | string[],
+    opts: ReadOpts = { qs: false },
+  ): T[] {
+    const results: T[] = [];
+
+    for (const urn of urns) {
+      const res = this.parseThing(parser, urn, opts);
+      if (res) {
+        results.push(res);
+      }
+    }
+
+    return results;
   }
 }

@@ -26,5 +26,6 @@ export declare class Index {
     getTargetTypeSet(type: string): Set<number> | undefined;
     getTargetIdSet(id: string): Set<number> | undefined;
     getTargetQsSet(key: string, val: string): Set<number> | undefined;
+    clone(): Index;
 }
 //# sourceMappingURL=index.d.ts.map

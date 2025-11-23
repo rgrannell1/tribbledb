@@ -3,8 +3,8 @@
  */
 
 import type { Index } from "../indices/index.ts";
-import type { NodeObjectQuery, SearchObject } from "../input-types.ts";
-import type { RelationObjectQuery } from "../input-types.ts";
+import type { NodeObjectQuery, SearchObject } from "../types.ts";
+import type { RelationObjectQuery } from "../types.ts";
 import type { TribbleDBPerformanceMetrics } from "../metrics.ts";
 import { Sets } from "../sets.ts";
 

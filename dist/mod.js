@@ -1,5 +1,5 @@
 // src/sets.ts
-var IndexedSet = class {
+var IndexedSet = class _IndexedSet {
   #idx;
   #map;
   #reverseMap;
@@ -57,6 +57,13 @@ var IndexedSet = class {
   has(value) {
     return this.#map.has(value);
   }
+  clone() {
+    const newSet = new _IndexedSet();
+    for (const [key, value] of this.#map.entries()) {
+      newSet.setIndex(key, value);
+    }
+    return newSet;
+  }
 };
 var Sets = class {
   /*
@@ -87,6 +94,10 @@ var Sets = class {
     }
     return acc;
   }
+  /*
+   * Union two sets, and store the results in the left-hand-side set.
+   *
+   */
   static append(set0, set1) {
     for (const item of set1) {
       set0.add(item);
@@ -101,6 +112,9 @@ var TribbleParser = class {
   constructor() {
     this.stringIndex = new IndexedSet();
   }
+  /*
+   * Parse a triple-line of tribble format text, and return a triple
+   */
   parseTriple(line) {
     const match = line.match(/^(\d+) (\d+) (\d+)$/);
     if (!match) {
@@ -114,6 +128,10 @@ var TribbleParser = class {
     }
     return [src, rel, tgt];
   }
+  /*
+   * Parse a declaration line of tribble format text, and
+   * update the index.
+   */
   parseDeclaration(line) {
     const match = line.match(/^(\d+) "(.*)"$/);
     if (!match) {
@@ -123,6 +141,10 @@ var TribbleParser = class {
     const value = match[2];
     this.stringIndex.setIndex(value, parseInt(id, 10));
   }
+  /*
+   * Parse a line of tribble format text, and return a triple when possible. Otherwise
+   * update the index.
+   */
   parse(line) {
     const isTriple = /^(\d+)\s(\d+)\s(\d+)$/;
     if (isTriple.test(line)) {
@@ -140,10 +162,13 @@ var TribbleStringifier = class {
   constructor() {
     this.stringIndex = new IndexedSet();
   }
+  /*
+   * Convert a triple to tribble format and return the encoding.
+   */
   stringify(triple) {
     const message = [];
     const [source, relation, target] = triple;
-    for (const value of [source, relation, target]) {
+    for (const value of triple) {
       if (!this.stringIndex.has(value)) {
         const newId = this.stringIndex.add(value);
         const stringifiedValue = value === "null" || value === null ? JSON.stringify("null") : JSON.stringify(value.toString());
@@ -186,7 +211,7 @@ function asUrn(value, namespace = "r\xF3") {
 }
 
 // src/metrics.ts
-var IndexPerformanceMetrics = class {
+var IndexPerformanceMetrics = class _IndexPerformanceMetrics {
   mapReadCount;
   constructor() {
     this.mapReadCount = 0;
@@ -194,8 +219,13 @@ var IndexPerformanceMetrics = class {
   mapRead() {
     this.mapReadCount++;
   }
+  clone() {
+    const clone = new _IndexPerformanceMetrics();
+    clone.mapReadCount = this.mapReadCount;
+    return clone;
+  }
 };
-var TribbleDBPerformanceMetrics = class {
+var TribbleDBPerformanceMetrics = class _TribbleDBPerformanceMetrics {
   setCheckCount;
   constructor() {
     this.setCheckCount = 0;
@@ -203,10 +233,15 @@ var TribbleDBPerformanceMetrics = class {
   setCheck() {
     this.setCheckCount++;
   }
+  clone() {
+    const clone = new _TribbleDBPerformanceMetrics();
+    clone.setCheckCount = this.setCheckCount;
+    return clone;
+  }
 };
 
 // src/indices/index.ts
-var Index = class {
+var Index = class _Index {
   // Internal indexed representation for memory efficiency
   indexedTriples;
   // String indexing sets for memory efficiency
@@ -407,6 +442,31 @@ var Index = class {
     this.metrics.mapRead();
     return this.targetQs.get(qsIdx);
   }
+  /*
+   * Deep-clone the index
+   */
+  clone() {
+    const newIndex = new _Index([]);
+    newIndex.indexedTriples = this.indexedTriples.slice();
+    newIndex.stringIndex = this.stringIndex.clone();
+    const cloneMap = (original) => {
+      const newMap = /* @__PURE__ */ new Map();
+      for (const [key, valueSet] of original.entries()) {
+        newMap.set(key, new Set(valueSet));
+      }
+      return newMap;
+    };
+    newIndex.sourceType = cloneMap(this.sourceType);
+    newIndex.sourceId = cloneMap(this.sourceId);
+    newIndex.sourceQs = cloneMap(this.sourceQs);
+    newIndex.relations = cloneMap(this.relations);
+    newIndex.targetType = cloneMap(this.targetType);
+    newIndex.targetId = cloneMap(this.targetId);
+    newIndex.targetQs = cloneMap(this.targetQs);
+    newIndex.stringUrn = new Map(this.stringUrn);
+    newIndex.metrics = this.metrics.clone();
+    return newIndex;
+  }
 };
 
 // src/triples.ts
@@ -421,6 +481,216 @@ var Triples = class {
     return triple[2];
   }
 };
+
+// src/db/search.ts
+function validateInput(params) {
+  const { source, relation, target } = params;
+  if (source === void 0 && relation === void 0 && target === void 0) {
+    throw new Error("At least one search parameter must be defined");
+  }
+  const allowedKeys = ["source", "relation", "target"];
+  if (!Array.isArray(params)) {
+    for (const key of Object.keys(params)) {
+      if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
+      if (!allowedKeys.includes(key)) {
+        throw new Error(`Unexpected search parameter: ${key}`);
+      }
+    }
+  }
+}
+function nodeTypeMatches(type, source, index) {
+  const matches = source ? index.getSourceTypeSet(type) : index.getTargetTypeSet(type);
+  if (matches === void 0 || matches.size === 0) {
+    return /* @__PURE__ */ new Set();
+  }
+  return matches;
+}
+function nodeIdMatches(id, source, index) {
+  const matches = /* @__PURE__ */ new Set();
+  const ids = Array.isArray(id) ? id : [id];
+  for (const subid of ids) {
+    const subidRows = source ? index.getSourceIdSet(subid) : index.getTargetIdSet(subid);
+    if (subidRows) {
+      Sets.append(matches, subidRows);
+    }
+  }
+  if (matches.size === 0) {
+    return /* @__PURE__ */ new Set();
+  }
+  return matches;
+}
+function nodeQsMatches(qs, source, index, metrics) {
+  const matches = [];
+  for (const [key, val] of Object.entries(qs)) {
+    const qsSet = source ? index.getSourceQsSet(key, val) : index.getTargetQsSet(key, val);
+    if (typeof qsSet === "undefined") {
+      return /* @__PURE__ */ new Set();
+    }
+    matches.push(qsSet);
+  }
+  return Sets.intersection(metrics, matches);
+}
+function nodeMatches(query, source, index, metrics, cursorIndices) {
+  let typeRows = void 0;
+  if (query.type) {
+    typeRows = nodeTypeMatches(query.type, source, index);
+    if (typeRows.size === 0) {
+      return /* @__PURE__ */ new Set();
+    }
+  }
+  let idRows = void 0;
+  if (query.id) {
+    idRows = nodeIdMatches(query.id, source, index);
+    if (idRows.size === 0) {
+      return /* @__PURE__ */ new Set();
+    }
+  }
+  let qsRows = void 0;
+  if (query.qs && Object.keys(query.qs).length > 0) {
+    qsRows = nodeQsMatches(query.qs, source, index, metrics);
+    if (qsRows.size === 0) {
+      return /* @__PURE__ */ new Set();
+    }
+  }
+  if (typeRows === void 0 && idRows === void 0 && qsRows === void 0) {
+    const pred2 = query.predicate;
+    if (!pred2) {
+      return cursorIndices;
+    }
+    const indexCopy = /* @__PURE__ */ new Set([...cursorIndices]);
+    for (const idx of indexCopy) {
+      const triple = index.getTriple(idx);
+      if (!pred2(source ? triple[0] : triple[2])) {
+        indexCopy.delete(idx);
+      }
+    }
+    return indexCopy;
+  }
+  const matches = [cursorIndices];
+  if (typeRows !== void 0) {
+    matches.push(typeRows);
+  }
+  if (idRows !== void 0) {
+    matches.push(idRows);
+  }
+  if (qsRows !== void 0) {
+    matches.push(qsRows);
+  }
+  const matchingRows = Sets.intersection(metrics, matches);
+  if (!query.predicate) {
+    return matchingRows;
+  }
+  const pred = query.predicate;
+  for (const idx of matchingRows) {
+    const triple = index.getTriple(idx);
+    if (!pred(source ? triple[0] : triple[2])) {
+      matchingRows.delete(idx);
+    }
+  }
+  return matchingRows;
+}
+function findMatchingNodes(query, source, index, metrics, cursorIndices) {
+  const matches = /* @__PURE__ */ new Set();
+  for (const subquery of query) {
+    Sets.append(
+      matches,
+      nodeMatches(subquery, source, index, metrics, cursorIndices)
+    );
+  }
+  return matches;
+}
+function findMatchingRelations(query, index) {
+  const relations = Array.isArray(query.relation) ? query.relation : [query.relation];
+  const matches = /* @__PURE__ */ new Set();
+  for (const rel of relations) {
+    const relationSet = index.getRelationSet(rel);
+    if (relationSet) {
+      Sets.append(matches, relationSet);
+    }
+  }
+  if (!query.predicate) {
+    return matches;
+  }
+  const pred = query.predicate;
+  for (const idx of matches) {
+    const triple = index.getTriple(idx);
+    if (!pred(triple[1])) {
+      matches.delete(idx);
+    }
+  }
+  return matches;
+}
+function findMatchingRows(params, index, cursorIndices, metrics) {
+  const { source, relation, target } = params;
+  const matchingRowSets = [];
+  if (source) {
+    const input = Array.isArray(source) ? source : [source];
+    const matches = findMatchingNodes(
+      input,
+      true,
+      index,
+      metrics,
+      cursorIndices
+    );
+    matchingRowSets.push(matches);
+  }
+  if (relation) {
+    matchingRowSets.push(findMatchingRelations(relation, index));
+  }
+  if (target) {
+    const input = Array.isArray(target) ? target : [target];
+    const matches = findMatchingNodes(
+      input,
+      false,
+      index,
+      metrics,
+      cursorIndices
+    );
+    matchingRowSets.push(matches);
+  }
+  return Sets.intersection(metrics, matchingRowSets);
+}
+
+// src/db/inputs.ts
+function isUrn(value) {
+  return value.startsWith(`urn:`);
+}
+function parseNodeSearch(search) {
+  if (typeof search === "string") {
+    return isUrn(search) ? [asUrn(search)] : [{
+      type: "unknown",
+      id: search
+    }];
+  }
+  if (Array.isArray(search)) {
+    return search.map((subsearch) => {
+      return isUrn(subsearch) ? asUrn(subsearch) : {
+        type: "unknown",
+        id: subsearch
+      };
+    });
+  }
+  return [search];
+}
+function parseRelation(search) {
+  return typeof search === "string" || Array.isArray(search) ? { relation: search } : search;
+}
+function parseSearch(search) {
+  const source = Array.isArray(search) ? search[0] : search.source;
+  const relation = Array.isArray(search) ? search[1] : search.relation;
+  const target = Array.isArray(search) ? search[2] : search.target;
+  const out = {};
+  if (source) {
+    out.source = parseNodeSearch(source);
+  }
+  if (relation) {
+    out.relation = parseRelation(relation);
+  }
+  if (target) {
+    out.target = parseNodeSearch(target);
+  }
+  return out;
+}
 
 // src/tribble-db.ts
 var TribbleDB = class _TribbleDB {
@@ -484,6 +754,9 @@ var TribbleDB = class _TribbleDB {
     }
     return new _TribbleDB(triples);
   }
+  /*
+   * Validate triples against the provided validation functions.
+   */
   validateTriples(triples) {
     const messages = [];
     for (const [source, relation, target] of triples) {
@@ -526,14 +799,18 @@ var TribbleDB = class _TribbleDB {
     return new _TribbleDB(this.index.triples().map(fn));
   }
   /**
-   * Flat map over the triples in the database.
+   * Flatmap over the triples in the database. This can be used to add new triples
+   * to a copy of the database.
    *
    * @param fn - A mapping function.
    * @returns A new TribbleDB instance containing the flat-mapped triples.
    */
   flatMap(fn) {
     const flatMappedTriples = this.index.triples().flatMap(fn);
-    return new _TribbleDB(flatMappedTriples);
+    const newDb = new _TribbleDB([]);
+    newDb.index = this.index.clone();
+    newDb.add(flatMappedTriples);
+    return newDb;
   }
   /**
    * Get the first triple in the database.
@@ -588,7 +865,7 @@ var TribbleDB = class _TribbleDB {
         obj[relation] = obj[relation] === target ? obj[relation] : [obj[relation], target];
       }
     }
-    return obj;
+    return Object.keys(obj).length > 0 ? obj : void 0;
   }
   /*
    * Get all triples in the database.
@@ -666,176 +943,6 @@ var TribbleDB = class _TribbleDB {
     return objs;
   }
   /*
-   * Convert a node to a node DSL object.
-   */
-  nodeAsDSL(node) {
-    if (typeof node === "undefined") {
-      return void 0;
-    }
-    if (typeof node === "string") {
-      return { type: "unknown", id: node };
-    }
-    if (Array.isArray(node)) {
-      return { type: "unknown", id: node };
-    }
-    return node;
-  }
-  /*
-   * Convert a relation input to a relation DSL object
-   */
-  relationAsDSL(relation) {
-    if (typeof relation === "undefined") {
-      return void 0;
-    }
-    if (typeof relation === "string") {
-      return { relation: [relation] };
-    }
-    if (Array.isArray(relation)) {
-      return { relation };
-    }
-    return relation;
-  }
-  searchParamsToObject(params) {
-    if (!Array.isArray(params)) {
-      return params;
-    }
-    const [source, relation, target] = params;
-    return {
-      source: this.nodeAsDSL(source),
-      relation: this.relationAsDSL(relation),
-      target: this.nodeAsDSL(target)
-    };
-  }
-  #findMatchingRows(params) {
-    const matchingRowSets = [
-      this.cursorIndices
-    ];
-    const { source, relation, target } = this.searchParamsToObject(params);
-    if (typeof source === "undefined" && typeof target === "undefined" && typeof relation === "undefined") {
-      throw new Error("At least one search parameter must be defined");
-    }
-    const allowedKeys = ["source", "relation", "target"];
-    if (!Array.isArray(params)) {
-      for (const key of Object.keys(params)) {
-        if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
-        if (!allowedKeys.includes(key)) {
-          throw new Error(`Unexpected search parameter: ${key}`);
-        }
-      }
-    }
-    const expandedSource = this.nodeAsDSL(source);
-    const expandedRelation = this.relationAsDSL(relation);
-    const expandedTarget = this.nodeAsDSL(target);
-    if (expandedSource) {
-      if (expandedSource.type) {
-        const sourceTypeSet = this.index.getSourceTypeSet(expandedSource.type);
-        if (sourceTypeSet) {
-          matchingRowSets.push(sourceTypeSet);
-        } else {
-          return /* @__PURE__ */ new Set();
-        }
-      }
-      if (expandedSource.id) {
-        const ids = Array.isArray(expandedSource.id) ? expandedSource.id : [expandedSource.id];
-        const idSet = /* @__PURE__ */ new Set();
-        for (const id of ids) {
-          const sourceIdSet = this.index.getSourceIdSet(id);
-          if (sourceIdSet) {
-            Sets.append(idSet, sourceIdSet);
-          } else {
-            return /* @__PURE__ */ new Set();
-          }
-        }
-        matchingRowSets.push(idSet);
-      }
-      if (expandedSource.qs) {
-        for (const [key, val] of Object.entries(expandedSource.qs)) {
-          const sourceQsSet = this.index.getSourceQsSet(key, val);
-          if (sourceQsSet) {
-            matchingRowSets.push(sourceQsSet);
-          } else {
-            return /* @__PURE__ */ new Set();
-          }
-        }
-      }
-    }
-    if (expandedTarget) {
-      if (expandedTarget.type) {
-        const targetTypeSet = this.index.getTargetTypeSet(expandedTarget.type);
-        if (targetTypeSet) {
-          matchingRowSets.push(targetTypeSet);
-        } else {
-          return /* @__PURE__ */ new Set();
-        }
-      }
-      if (expandedTarget.id) {
-        const ids = Array.isArray(expandedTarget.id) ? expandedTarget.id : [expandedTarget.id];
-        const idSet = /* @__PURE__ */ new Set();
-        for (const id of ids) {
-          const targetIdSet = this.index.getTargetIdSet(id);
-          if (targetIdSet) {
-            Sets.append(idSet, targetIdSet);
-          } else {
-            return /* @__PURE__ */ new Set();
-          }
-        }
-        matchingRowSets.push(idSet);
-      }
-      if (expandedTarget.qs) {
-        for (const [key, val] of Object.entries(expandedTarget.qs)) {
-          const targetQsSet = this.index.getTargetQsSet(key, val);
-          if (targetQsSet) {
-            matchingRowSets.push(targetQsSet);
-          } else {
-            return /* @__PURE__ */ new Set();
-          }
-        }
-      }
-    }
-    if (expandedRelation && expandedRelation.relation) {
-      const unionedRelations = /* @__PURE__ */ new Set();
-      for (const rel of expandedRelation.relation) {
-        const relationSet = this.index.getRelationSet(rel);
-        if (relationSet) {
-          for (const elem of relationSet) {
-            unionedRelations.add(elem);
-          }
-        }
-      }
-      if (unionedRelations.size > 0) {
-        matchingRowSets.push(unionedRelations);
-      } else {
-        return /* @__PURE__ */ new Set();
-      }
-    }
-    const intersection = Sets.intersection(this.metrics, matchingRowSets);
-    const matchingTriples = /* @__PURE__ */ new Set();
-    const hasSourcePredicate = expandedSource?.predicate !== void 0;
-    const hasTargetPredicate = expandedTarget?.predicate !== void 0;
-    const hasRelationPredicate = typeof expandedRelation === "object" && expandedRelation.predicate !== void 0;
-    for (const index of intersection) {
-      const triple = this.index.getTriple(index);
-      if (!hasSourcePredicate && !hasTargetPredicate && !hasRelationPredicate) {
-        matchingTriples.add(index);
-        continue;
-      }
-      let isValid = true;
-      if (hasSourcePredicate) {
-        isValid = isValid && expandedSource.predicate(Triples.source(triple));
-      }
-      if (hasTargetPredicate && isValid) {
-        isValid = isValid && expandedTarget.predicate(Triples.target(triple));
-      }
-      if (hasRelationPredicate && isValid) {
-        isValid = isValid && expandedRelation.predicate(Triples.relation(triple));
-      }
-      if (isValid) {
-        matchingTriples.add(index);
-      }
-    }
-    return matchingTriples;
-  }
-  /*
    * Search across all triples in the database. There are two forms of query possible:
    *
    * - Object: { source?, relation?, target }
@@ -845,12 +952,16 @@ var TribbleDB = class _TribbleDB {
    * @returns A new TribbleDB instance containing the matching triples.
    */
   search(params) {
+    const parsed = parseSearch(params);
+    validateInput(parsed);
     const matchingTriples = [];
-    for (const rowIdx of this.#findMatchingRows(params)) {
-      const triple = this.index.getTriple(rowIdx);
-      if (triple) {
-        matchingTriples.push(triple);
-      }
+    for (const rowIdx of findMatchingRows(
+      parsed,
+      this.index,
+      this.cursorIndices,
+      this.metrics
+    )) {
+      matchingTriples.push(this.index.getTriple(rowIdx));
     }
     return new _TribbleDB(matchingTriples);
   }
@@ -862,6 +973,57 @@ var TribbleDB = class _TribbleDB {
       index: this.index.metrics,
       db: this.metrics
     };
+  }
+  /*
+   * Read a single object from the data by urn. If not a urn, the
+   * value is used as an id and the type is the default type `unknown`. By default,
+   * query-strings are disregarded.
+   */
+  readThing(urn, opts = { qs: false }) {
+    if (opts.qs) {
+      const { type, id } = asUrn(urn);
+      return this.search({ source: { type, id } }).firstObject();
+    } else {
+      return this.search({ source: urn }).firstObject();
+    }
+  }
+  /*
+   * Read a set of URNs, and return any matching results. Ordered but not guaranteed to
+   * return a match for all provided URNs.
+   */
+  readThings(urns, opts = { qs: false }) {
+    const results = [];
+    for (const urn of urns) {
+      const thing = this.readThing(urn, opts);
+      if (thing !== void 0) {
+        results.push(thing);
+      }
+    }
+    return results;
+  }
+  /*
+   * Read and parse a triple object. On missing data or parse failure return undefined (or throw an exception)
+   */
+  parseThing(parser, urn, opts = { qs: false }) {
+    const thing = this.readThing(urn, opts);
+    if (thing) {
+      return parser(thing);
+    } else {
+      return void 0;
+    }
+  }
+  /*
+   * Read and parse a collection of triple objects. Skip over missing data or parse failures.
+   */
+  parseThings(parser, urns, opts = { qs: false }) {
+    const results = [];
+    for (const urn of urns) {
+      const res = this.parseThing(parser, urn, opts);
+      if (res) {
+        results.push(res);
+      }
+    }
+    return results;
   }
 };
 export {

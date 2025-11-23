@@ -1,22 +1,7 @@
-import type { NodeSearch, RelationSearch, TargetValidator, Triple, TripleObject } from "./types.ts";
+import type { Parser, ReadOpts, TargetValidator, TribbleDBMetrics, Triple, TripleObject } from "./types.ts";
 import { Index } from "./indices/index.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
-import type { IndexPerformanceMetrics } from "./metrics.ts";
-export type TribbleDBMetrics = {
-    index: IndexPerformanceMetrics;
-    db: TribbleDBPerformanceMetrics;
-};
-export type SearchParamsObject = {
-    source?: NodeSearch | string;
-    relation?: string | string[] | RelationSearch;
-    target?: NodeSearch | string | string[];
-};
-export type SearchParamsArray = [
-    NodeSearch | string | undefined,
-    string | string[] | RelationSearch | undefined,
-    NodeSearch | string | undefined
-];
-export type SearchParams = SearchParamsObject | SearchParamsArray;
+import type { Search } from "./types.ts";
 export declare class TribbleDB {
     #private;
     index: Index;
@@ -43,7 +28,8 @@ export declare class TribbleDB {
      */
     map(fn: (triple: Triple) => Triple): TribbleDB;
     /**
-     * Flat map over the triples in the database.
+     * Flatmap over the triples in the database. This can be used to add new triples
+     * to a copy of the database.
      *
      * @param fn - A mapping function.
      * @returns A new TribbleDB instance containing the flat-mapped triples.
@@ -85,10 +71,11 @@ export declare class TribbleDB {
      */
     targets(): Set<string>;
     objects(listOnly?: boolean): TripleObject[];
-    nodeAsDSL(node: unknown): NodeSearch | undefined;
-    relationAsDSL(relation: unknown): RelationSearch | undefined;
-    searchParamsToObject(params: SearchParams): SearchParamsObject;
-    search(params: SearchParams): TribbleDB;
+    search(params: Search): TribbleDB;
     getMetrics(): TribbleDBMetrics;
+    readThing(urn: string, opts?: ReadOpts): TripleObject | undefined;
+    readThings(urns: Set<string> | string[], opts?: ReadOpts): TripleObject[];
+    parseThing<T>(parser: Parser<T>, urn: string, opts?: ReadOpts): T | undefined;
+    parseThings<T>(parser: Parser<T>, urns: Set<string> | string[], opts?: ReadOpts): T[];
 }
 //# sourceMappingURL=tribble-db.d.ts.map

@@ -1,3 +1,7 @@
+/*
+ * Metrics describing how many operations TribbleDB performed.
+ */
+
 export class IndexPerformanceMetrics {
   mapReadCount: number;
 
@@ -7,6 +11,12 @@ export class IndexPerformanceMetrics {
 
   mapRead() {
     this.mapReadCount++;
+  }
+
+  clone() {
+    const clone = new IndexPerformanceMetrics();
+    clone.mapReadCount = this.mapReadCount;
+    return clone;
   }
 }
 
@@ -19,5 +29,11 @@ export class TribbleDBPerformanceMetrics {
 
   setCheck() {
     this.setCheckCount++;
+  }
+
+  clone() {
+    const clone = new TribbleDBPerformanceMetrics();
+    clone.setCheckCount = this.setCheckCount;
+    return clone;
   }
 }

@@ -20,11 +20,14 @@ export class TribbleStringifier {
     this.stringIndex = new IndexedSet();
   }
 
+  /*
+   * Convert a triple to tribble format and return the encoding.
+   */
   stringify(triple: Triple): string {
     const message: string[] = [];
     const [source, relation, target] = triple;
 
-    for (const value of [source, relation, target]) {
+    for (const value of triple) {
       if (!this.stringIndex.has(value)) {
         const newId = this.stringIndex.add(value);
         const stringifiedValue = value === "null" || value === null
