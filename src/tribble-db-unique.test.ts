@@ -375,7 +375,7 @@ Deno.test("TribbleDB.merge() with empty database", () => {
   ]);
 
   const emptyDb = new TribbleDB([]);
-  
+
   const initialCount = db1.triplesCount;
   db1.merge(emptyDb);
 
@@ -416,7 +416,7 @@ Deno.test("TribbleDB.merge() preserves original database state on other database
   ]);
 
   const db2InitialCount = db2.triplesCount;
-  
+
   db1.merge(db2);
 
   // db2 should remain unchanged
@@ -488,7 +488,7 @@ Deno.test("TribbleDB.merge() with special characters and edge cases", () => {
   assertEquals(db1.triplesCount, 4); // 2 original + 2 new (1 duplicate filtered out)
 
   const allTriples = db1.triples();
-  
+
   // Verify special character triple was added
   const specialTriple = allTriples.find(t => t[2] === "!@#$%^&*()");
   assertEquals(specialTriple !== undefined, true);
@@ -509,12 +509,12 @@ Deno.test("TribbleDB.merge() performance with large datasets", () => {
     db1Triples.push([`entity:${idx}`, "type", "original"]);
   }
 
-  // db2: entities 50-149, with entities 50-99 being duplicates (same value) 
+  // db2: entities 50-149, with entities 50-99 being duplicates (same value)
   // and entities 100-149 being new
-  for (let idx = 50; idx < 100; idx++) { 
+  for (let idx = 50; idx < 100; idx++) {
     db2Triples.push([`entity:${idx}`, "type", "original"]); // exact duplicates
   }
-  for (let idx = 100; idx < 150; idx++) { 
+  for (let idx = 100; idx < 150; idx++) {
     db2Triples.push([`entity:${idx}`, "type", "second"]); // new entities
   }
 

@@ -77,5 +77,6 @@ export declare class TribbleDB {
     readThings(urns: Set<string> | string[], opts?: ReadOpts): TripleObject[];
     parseThing<T>(parser: Parser<T>, urn: string, opts?: ReadOpts): T | undefined;
     parseThings<T>(parser: Parser<T>, urns: Set<string> | string[], opts?: ReadOpts): T[];
+    merge(other: TribbleDB): TribbleDB;
 }
 //# sourceMappingURL=tribble-db.d.ts.map
