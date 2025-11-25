@@ -18,6 +18,7 @@ export class Index {
 
   // String indexing sets for memory efficiency
   stringIndex: IndexedSet;
+  tripleHashes: Set<string>;
 
   sourceType: Map<number, Set<number>>;
   sourceId: Map<number, Set<number>>;
@@ -36,6 +37,7 @@ export class Index {
   constructor(triples: Triple[]) {
     this.indexedTriples = [];
     this.stringIndex = new IndexedSet();
+    this.tripleHashes = new Set();
 
     this.sourceType = new Map();
     this.sourceId = new Map();
@@ -53,14 +55,43 @@ export class Index {
   }
 
   /*
+   * Return the triples that are absent from the index
+   *
+   */
+  difference(triples: Triple[]): Triple[] {
+    return triples.filter((triple) => !this.hasTriple(triple));
+  }
+
+  /*
+   * Check if a triple is present in the index
+   *
+   */
+  hasTriple(triple: Triple): boolean {
+    return this.tripleHashes.has(this.hashTriple(triple));
+  }
+
+  /*
+   * Generate a simple hash for a triple
+   *
+   */
+  hashTriple(triple: Triple): string {
+    const str = `${triple[0]}${triple[1]}${triple[2]}`;
+
+    let hash = 0;
+    for (let i = 0, len = str.length; i < len; i++) {
+        const chr = str.charCodeAt(i);
+        hash = (hash << 5) - hash + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash.toString();
+  }
+
+  /*
    * Add new triples to the index incrementally
    */
   add(triples: Triple[]) {
-    const startIdx = this.indexedTriples.length;
-
     // Index the new triples
     for (let jdx = 0; jdx < triples.length; jdx++) {
-      const idx = startIdx + jdx;
       const triple = triples[jdx];
 
       const source = triple[0];
@@ -85,6 +116,15 @@ export class Index {
       const relationIdx = this.stringIndex.add(relation);
       const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
+
+      // Already present, and no need to add twice.
+      if (this.tripleHashes.has(this.hashTriple(triple))) {
+        continue;
+      }
+      this.tripleHashes.add(this.hashTriple(triple));
+
+      // Get the actual index where this triple will be stored
+      const idx = this.indexedTriples.length;
 
       // Store the indexed triple
       this.indexedTriples.push([
@@ -173,6 +213,7 @@ export class Index {
 
   /*
    * Get a specific triple by index
+   *
    */
   getTriple(index: number): Triple | undefined {
     if (index < 0 || index >= this.indexedTriples.length) {
@@ -187,6 +228,10 @@ export class Index {
     ];
   }
 
+  /*
+   * Get the string indices for a specific triple by triple index
+   *
+   */
   getTripleIndices(index: number): [number, number, number] | undefined {
     if (index < 0 || index >= this.indexedTriples.length) {
       return undefined;
@@ -279,9 +324,12 @@ export class Index {
     const newIndex = new Index([]);
     newIndex.indexedTriples = this.indexedTriples.slice();
     newIndex.stringIndex = this.stringIndex.clone();
+    newIndex.tripleHashes = new Set(this.tripleHashes);
 
     // Clone all maps
-    const cloneMap = (original: Map<number, Set<number>>): Map<number, Set<number>> => {
+    const cloneMap = (
+      original: Map<number, Set<number>>,
+    ): Map<number, Set<number>> => {
       const newMap = new Map<number, Set<number>>();
       for (const [key, valueSet] of original.entries()) {
         newMap.set(key, new Set(valueSet));

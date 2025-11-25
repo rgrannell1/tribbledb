@@ -126,7 +126,6 @@ export class Sets {
 
   /*
    * Union two sets, and store the results in the left-hand-side set.
-   *
    */
   static append<T>(set0: Set<T>, set1: Set<T>): Set<T> {
     for (const item of set1) {

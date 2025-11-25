@@ -1,4 +1,7 @@
-import type { IndexPerformanceMetrics, TribbleDBPerformanceMetrics } from "./metrics.ts";
+import type {
+  IndexPerformanceMetrics,
+  TribbleDBPerformanceMetrics,
+} from "./metrics.ts";
 
 /*
  * ++++ Node search parameters

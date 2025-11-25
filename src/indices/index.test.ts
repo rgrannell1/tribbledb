@@ -919,7 +919,6 @@ Deno.test("search with relation 'name' and array of targets", () => {
     relation: "name",
     target: ["Alice Smith", "Charlie Brown"],
   });
-  console.log(simpleTestTriples);
 
   assertEquals(results.triplesCount, 2);
   const triples = results.triples();
@@ -1506,7 +1505,9 @@ Deno.test("parseThing with qs option finds object by parsed URN", () => {
     species: obj.species as string,
   });
 
-  const parsed = database.parseThing(fullIdParser, "urn:ró:bird:apus-apus", { qs: true });
+  const parsed = database.parseThing(fullIdParser, "urn:ró:bird:apus-apus", {
+    qs: true,
+  });
 
   assertEquals(parsed !== undefined, true);
   assertEquals(parsed!.fullId, "urn:ró:bird:apus-apus");

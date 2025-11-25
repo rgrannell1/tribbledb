@@ -1,6 +1,6 @@
 import type {
-Parser,
-ReadOpts,
+  Parser,
+  ReadOpts,
   TargetValidator,
   TribbleDBMetrics,
   Triple,
@@ -433,5 +433,18 @@ export class TribbleDB {
     }
 
     return results;
+  }
+
+  /*
+   * Merge another TribbleDB into this one.
+   *
+   * @param other - The other TribbleDB to merge.
+   * @returns This TribbleDB instance.
+   */
+  merge(other: TribbleDB): TribbleDB {
+    // deduplicating the index will prevent double-triple writes.
+    this.add(other.triples());
+
+    return this;
   }
 }
