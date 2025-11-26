@@ -548,3 +548,73 @@ Deno.test("TribbleDB.merge() performance with large datasets", () => {
     assertEquals(entityResults.firstTriple()![2], "second");
   }
 });
+
+Deno.test("TribbleDB.delete() basic functionality", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:alice", "age", "30"],
+    ["person:bob", "name", "Bob Jones"],
+  ]);
+
+  assertEquals(database.triplesCount, 3);
+
+  database.delete([["person:alice", "age", "30"]]);
+
+  assertEquals(database.triplesCount, 2);
+
+  // Verify remaining triples
+  const aliceResults = database.search({ source: "person:alice" });
+  assertEquals(aliceResults.triplesCount, 1);
+  assertEquals(aliceResults.firstTriple()![1], "name");
+
+  const bobResults = database.search({ source: "person:bob" });
+  assertEquals(bobResults.triplesCount, 1);
+});
+
+Deno.test("TribbleDB.delete() returns this for chaining", () => {
+  const database = new TribbleDB([["person:alice", "name", "Alice"]]);
+
+  const result = database.delete([["person:alice", "name", "Alice"]]);
+  assertEquals(result, database);
+});
+
+Deno.test("TribbleDB.delete() with non-existent triples does nothing", () => {
+  const database = new TribbleDB([["person:alice", "name", "Alice"]]);
+
+  const initialCount = database.triplesCount;
+  database.delete([["person:bob", "name", "Bob"]]);
+
+  assertEquals(database.triplesCount, initialCount);
+});
+
+Deno.test("TribbleDB.delete() removes all creates empty database", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+    ["person:bob", "age", "25"],
+  ]);
+
+  database.delete([
+    ["person:alice", "name", "Alice"],
+    ["person:bob", "age", "25"],
+  ]);
+
+  assertEquals(database.triplesCount, 0);
+  assertEquals(database.firstTriple(), undefined);
+});
+
+Deno.test("TribbleDB.delete() followed by add works correctly", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+    ["person:bob", "name", "Bob"],
+  ]);
+
+  database.delete([["person:alice", "name", "Alice"]]);
+  assertEquals(database.triplesCount, 1);
+
+  database.add([["person:charlie", "name", "Charlie"]]);
+  assertEquals(database.triplesCount, 2);
+
+  // Add the deleted triple back
+  database.add([["person:alice", "name", "Alice"]]);
+  assertEquals(database.triplesCount, 3);
+});

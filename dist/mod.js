@@ -246,6 +246,7 @@ var Index = class _Index {
   // String indexing sets for memory efficiency
   stringIndex;
   tripleHashes;
+  hashIndices;
   sourceType;
   sourceId;
   // note: QS uses a composite key: <key>=<value>
@@ -260,6 +261,7 @@ var Index = class _Index {
     this.indexedTriples = [];
     this.stringIndex = new IndexedSet();
     this.tripleHashes = /* @__PURE__ */ new Set();
+    this.hashIndices = /* @__PURE__ */ new Map();
     this.sourceType = /* @__PURE__ */ new Map();
     this.sourceId = /* @__PURE__ */ new Map();
     this.sourceQs = /* @__PURE__ */ new Map();
@@ -270,6 +272,21 @@ var Index = class _Index {
     this.stringUrn = /* @__PURE__ */ new Map();
     this.add(triples);
     this.metrics = new IndexPerformanceMetrics();
+  }
+  /*
+   * Delete triples from the index
+   */
+  delete(triples) {
+    for (let idx = 0; idx < triples.length; idx++) {
+      const triple = triples[idx];
+      const tripleIndex = this.getTripleIndex(triple);
+      if (tripleIndex !== void 0) {
+        const tripleHash = this.hashTriple(triple);
+        this.tripleHashes.delete(tripleHash);
+        this.hashIndices.delete(tripleHash);
+        delete this.indexedTriples[tripleIndex];
+      }
+    }
   }
   /*
    * Return the triples that are absent from the index
@@ -300,6 +317,14 @@ var Index = class _Index {
     return hash.toString();
   }
   /*
+   * Get the index of a specific triple
+   *
+   */
+  getTripleIndex(triple) {
+    const hash = this.hashTriple(triple);
+    return this.hashIndices.get(hash);
+  }
+  /*
    * Add new triples to the index incrementally
    */
   add(triples) {
@@ -326,8 +351,10 @@ var Index = class _Index {
       if (this.tripleHashes.has(this.hashTriple(triple))) {
         continue;
       }
-      this.tripleHashes.add(this.hashTriple(triple));
+      const hash = this.hashTriple(triple);
+      this.tripleHashes.add(hash);
       const idx = this.indexedTriples.length;
+      this.hashIndices.set(hash, idx);
       this.indexedTriples.push([
         this.stringIndex.add(source),
         relationIdx,
@@ -383,13 +410,13 @@ var Index = class _Index {
    * Get the number of triples in the index
    */
   get length() {
-    return this.indexedTriples.length;
+    return this.tripleHashes.size;
   }
   /*
    * Reconstruct the original triples from the indexed representation
    */
   triples() {
-    return this.indexedTriples.map(([sourceIdx, relationIdx, targetIdx]) => [
+    return this.indexedTriples.filter((triple) => triple !== void 0).map(([sourceIdx, relationIdx, targetIdx]) => [
       this.stringIndex.getValue(sourceIdx),
       this.stringIndex.getValue(relationIdx),
       this.stringIndex.getValue(targetIdx)
@@ -403,7 +430,11 @@ var Index = class _Index {
     if (index < 0 || index >= this.indexedTriples.length) {
       return void 0;
     }
-    const [sourceIdx, relationIdx, targetIdx] = this.indexedTriples[index];
+    const indexedTriple = this.indexedTriples[index];
+    if (!indexedTriple) {
+      return void 0;
+    }
+    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
     return [
       this.stringIndex.getValue(sourceIdx),
       this.stringIndex.getValue(relationIdx),
@@ -794,6 +825,8 @@ var TribbleDB = class _TribbleDB {
   }
   /*
    * Validate triples against the provided validation functions.
+   *
+   * @param triples - An array of triples to validate.
    */
   validateTriples(triples) {
     const messages = [];
@@ -1071,6 +1104,28 @@ var TribbleDB = class _TribbleDB {
    */
   merge(other) {
     this.add(other.triples());
+    return this;
+  }
+  /*
+   * Delete triples from the database.
+   *
+   * @param triples - An array of triples to delete.
+   * @returns This TribbleDB instance.
+   *
+   */
+  delete(triples) {
+    const indicesToDelete = /* @__PURE__ */ new Set();
+    for (const triple of triples) {
+      const tripleIndex = this.index.getTripleIndex(triple);
+      if (tripleIndex !== void 0) {
+        indicesToDelete.add(tripleIndex);
+      }
+    }
+    this.index.delete(triples);
+    this.triplesCount = this.index.length;
+    for (const idx of indicesToDelete) {
+      this.cursorIndices.delete(idx);
+    }
     return this;
   }
 };

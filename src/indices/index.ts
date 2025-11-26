@@ -19,6 +19,7 @@ export class Index {
   // String indexing sets for memory efficiency
   stringIndex: IndexedSet;
   tripleHashes: Set<string>;
+  hashIndices: Map<string, number>;
 
   sourceType: Map<number, Set<number>>;
   sourceId: Map<number, Set<number>>;
@@ -38,6 +39,7 @@ export class Index {
     this.indexedTriples = [];
     this.stringIndex = new IndexedSet();
     this.tripleHashes = new Set();
+    this.hashIndices = new Map();
 
     this.sourceType = new Map();
     this.sourceId = new Map();
@@ -52,6 +54,25 @@ export class Index {
     this.add(triples);
 
     this.metrics = new IndexPerformanceMetrics();
+  }
+
+  /*
+   * Delete triples from the index
+   */
+  delete(triples: Triple[]) {
+    for (let idx = 0; idx < triples.length; idx++) {
+      const triple = triples[idx];
+      const tripleIndex = this.getTripleIndex(triple);
+
+      if (tripleIndex !== undefined) {
+        const tripleHash = this.hashTriple(triple);
+        this.tripleHashes.delete(tripleHash);
+        this.hashIndices.delete(tripleHash);
+
+        // Mark the entry as deleted by setting it to undefined
+        delete this.indexedTriples[tripleIndex];
+      }
+    }
   }
 
   /*
@@ -84,6 +105,15 @@ export class Index {
         hash |= 0; // Convert to 32bit integer
     }
     return hash.toString();
+  }
+
+  /*
+   * Get the index of a specific triple
+   *
+   */
+  getTripleIndex(triple: Triple): number | undefined {
+    const hash = this.hashTriple(triple);
+    return this.hashIndices.get(hash)
   }
 
   /*
@@ -121,10 +151,14 @@ export class Index {
       if (this.tripleHashes.has(this.hashTriple(triple))) {
         continue;
       }
-      this.tripleHashes.add(this.hashTriple(triple));
+      const hash = this.hashTriple(triple);
+      this.tripleHashes.add(hash);
 
       // Get the actual index where this triple will be stored
       const idx = this.indexedTriples.length;
+
+      // add it to a map of hashes to indices
+      this.hashIndices.set(hash, idx);
 
       // Store the indexed triple
       this.indexedTriples.push([
@@ -197,18 +231,20 @@ export class Index {
    * Get the number of triples in the index
    */
   get length(): number {
-    return this.indexedTriples.length;
+    return this.tripleHashes.size;
   }
 
   /*
    * Reconstruct the original triples from the indexed representation
    */
   triples(): Triple[] {
-    return this.indexedTriples.map(([sourceIdx, relationIdx, targetIdx]) => [
-      this.stringIndex.getValue(sourceIdx)!,
-      this.stringIndex.getValue(relationIdx)!,
-      this.stringIndex.getValue(targetIdx)!,
-    ]);
+    return this.indexedTriples
+      .filter(triple => triple !== undefined)
+      .map(([sourceIdx, relationIdx, targetIdx]) => [
+        this.stringIndex.getValue(sourceIdx)!,
+        this.stringIndex.getValue(relationIdx)!,
+        this.stringIndex.getValue(targetIdx)!,
+      ]);
   }
 
   /*
@@ -220,7 +256,12 @@ export class Index {
       return undefined;
     }
 
-    const [sourceIdx, relationIdx, targetIdx] = this.indexedTriples[index];
+    const indexedTriple = this.indexedTriples[index];
+    if (!indexedTriple) {
+      return undefined;
+    }
+
+    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
     return [
       this.stringIndex.getValue(sourceIdx)!,
       this.stringIndex.getValue(relationIdx)!,

@@ -96,6 +96,8 @@ export class TribbleDB {
 
   /*
    * Validate triples against the provided validation functions.
+   *
+   * @param triples - An array of triples to validate.
    */
   validateTriples(triples: Triple[]): void {
     const messages: string[] = [];
@@ -444,6 +446,34 @@ export class TribbleDB {
   merge(other: TribbleDB): TribbleDB {
     // deduplicating the index will prevent double-triple writes.
     this.add(other.triples());
+
+    return this;
+  }
+
+  /*
+   * Delete triples from the database.
+   *
+   * @param triples - An array of triples to delete.
+   * @returns This TribbleDB instance.
+   *
+   */
+  delete(triples: Triple[]): TribbleDB {
+    const indicesToDelete = new Set<number>();
+
+    for (const triple of triples) {
+      const tripleIndex = this.index.getTripleIndex(triple);
+      if (tripleIndex !== undefined) {
+        indicesToDelete.add(tripleIndex);
+      }
+    }
+
+    this.index.delete(triples);
+    this.triplesCount = this.index.length;
+
+    // Update cursorIndices to reflect deleted triples
+    for (const idx of indicesToDelete) {
+      this.cursorIndices.delete(idx);
+    }
 
     return this;
   }
