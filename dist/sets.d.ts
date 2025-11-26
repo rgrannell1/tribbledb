@@ -26,5 +26,6 @@ export declare class IndexedSet {
 export declare class Sets {
     static intersection<T>(metrics: TribbleDBPerformanceMetrics, sets: Set<T>[]): Set<T>;
     static append<T>(set0: Set<T>, set1: Set<T>): Set<T>;
+    static difference<T>(set0: Set<T>, set1: Set<T>): Set<T>;
 }
 //# sourceMappingURL=sets.d.ts.map

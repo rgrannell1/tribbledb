@@ -68,6 +68,7 @@ export class Index {
         const tripleHash = this.hashTriple(triple);
         this.tripleHashes.delete(tripleHash);
         this.hashIndices.delete(tripleHash);
+        this.cleanupSearchMaps(tripleIndex);
 
         // Mark the entry as deleted by setting it to undefined
         delete this.indexedTriples[tripleIndex];
@@ -76,6 +77,74 @@ export class Index {
   }
 
   /*
+   * Remove a triple index from all search maps
+   */
+  private cleanupSearchMaps(tripleIndex: number) {
+    const indexedTriple = this.indexedTriples[tripleIndex];
+    if (!indexedTriple) {
+      return
+    };
+
+    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
+
+    // Convert indices back to strings
+    const source = this.stringIndex.getValue(sourceIdx);
+    const relation = this.stringIndex.getValue(relationIdx);
+    const target = this.stringIndex.getValue(targetIdx);
+
+    if (typeof source === "undefined" || typeof relation === "undefined" || typeof target === "undefined") {
+      return
+    };
+
+    // Parse source and target to get their components (use cached if available)
+    let parsedSource = this.stringUrn.get(source);
+    if (!parsedSource) {
+      parsedSource = asUrn(source);
+      this.stringUrn.set(source, parsedSource);
+    }
+
+    let parsedTarget = this.stringUrn.get(target);
+    if (!parsedTarget) {
+      parsedTarget = asUrn(target);
+      this.stringUrn.set(target, parsedTarget);
+    }
+
+    // Get string indices for precise removal
+    const sourceTypeIdx = this.stringIndex.getIndex(parsedSource.type);
+    const sourceIdIdx = this.stringIndex.getIndex(parsedSource.id);
+    const targetTypeIdx = this.stringIndex.getIndex(parsedTarget.type);
+    const targetIdIdx = this.stringIndex.getIndex(parsedTarget.id);
+
+    // Remove from specific sets only
+    if (sourceTypeIdx !== undefined) {
+      this.sourceType.get(sourceTypeIdx)?.delete(tripleIndex);
+    }
+    if (sourceIdIdx !== undefined) {
+      this.sourceId.get(sourceIdIdx)?.delete(tripleIndex);
+    }
+    this.relations.get(relationIdx)?.delete(tripleIndex);
+    if (targetTypeIdx !== undefined) {
+      this.targetType.get(targetTypeIdx)?.delete(tripleIndex);
+    }
+    if (targetIdIdx !== undefined) {
+      this.targetId.get(targetIdIdx)?.delete(tripleIndex);
+    }
+
+    // Clean up query string maps
+    for (const [key, value] of Object.entries(parsedSource.qs)) {
+      const keyValueIdx = this.stringIndex.getIndex(`${key}=${value}`);
+      if (keyValueIdx !== undefined) {
+        this.sourceQs.get(keyValueIdx)?.delete(tripleIndex);
+      }
+    }
+
+    for (const [key, value] of Object.entries(parsedTarget.qs)) {
+      const keyValueIdx = this.stringIndex.getIndex(`${key}=${value}`);
+      if (keyValueIdx !== undefined) {
+        this.targetQs.get(keyValueIdx)?.delete(tripleIndex);
+      }
+    }
+  }  /*
    * Return the triples that are absent from the index
    *
    */

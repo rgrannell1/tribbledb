@@ -103,6 +103,18 @@ var Sets = class {
     }
     return set0;
   }
+  /*
+   * Compute the difference of two sets (set0 - set1)
+   */
+  static difference(set0, set1) {
+    const result = /* @__PURE__ */ new Set();
+    for (const item of set0) {
+      if (!set1.has(item)) {
+        result.add(item);
+      }
+    }
+    return result;
+  }
 };
 
 // src/tribble/parse.ts
@@ -284,14 +296,72 @@ var Index = class _Index {
         const tripleHash = this.hashTriple(triple);
         this.tripleHashes.delete(tripleHash);
         this.hashIndices.delete(tripleHash);
+        this.cleanupSearchMaps(tripleIndex);
         delete this.indexedTriples[tripleIndex];
       }
     }
   }
   /*
-   * Return the triples that are absent from the index
-   *
+   * Remove a triple index from all search maps
    */
+  cleanupSearchMaps(tripleIndex) {
+    const indexedTriple = this.indexedTriples[tripleIndex];
+    if (!indexedTriple) {
+      return;
+    }
+    ;
+    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
+    const source = this.stringIndex.getValue(sourceIdx);
+    const relation = this.stringIndex.getValue(relationIdx);
+    const target = this.stringIndex.getValue(targetIdx);
+    if (typeof source === "undefined" || typeof relation === "undefined" || typeof target === "undefined") {
+      return;
+    }
+    ;
+    let parsedSource = this.stringUrn.get(source);
+    if (!parsedSource) {
+      parsedSource = asUrn(source);
+      this.stringUrn.set(source, parsedSource);
+    }
+    let parsedTarget = this.stringUrn.get(target);
+    if (!parsedTarget) {
+      parsedTarget = asUrn(target);
+      this.stringUrn.set(target, parsedTarget);
+    }
+    const sourceTypeIdx = this.stringIndex.getIndex(parsedSource.type);
+    const sourceIdIdx = this.stringIndex.getIndex(parsedSource.id);
+    const targetTypeIdx = this.stringIndex.getIndex(parsedTarget.type);
+    const targetIdIdx = this.stringIndex.getIndex(parsedTarget.id);
+    if (sourceTypeIdx !== void 0) {
+      this.sourceType.get(sourceTypeIdx)?.delete(tripleIndex);
+    }
+    if (sourceIdIdx !== void 0) {
+      this.sourceId.get(sourceIdIdx)?.delete(tripleIndex);
+    }
+    this.relations.get(relationIdx)?.delete(tripleIndex);
+    if (targetTypeIdx !== void 0) {
+      this.targetType.get(targetTypeIdx)?.delete(tripleIndex);
+    }
+    if (targetIdIdx !== void 0) {
+      this.targetId.get(targetIdIdx)?.delete(tripleIndex);
+    }
+    for (const [key, value] of Object.entries(parsedSource.qs)) {
+      const keyValueIdx = this.stringIndex.getIndex(`${key}=${value}`);
+      if (keyValueIdx !== void 0) {
+        this.sourceQs.get(keyValueIdx)?.delete(tripleIndex);
+      }
+    }
+    for (const [key, value] of Object.entries(parsedTarget.qs)) {
+      const keyValueIdx = this.stringIndex.getIndex(`${key}=${value}`);
+      if (keyValueIdx !== void 0) {
+        this.targetQs.get(keyValueIdx)?.delete(tripleIndex);
+      }
+    }
+  }
+  /*
+  * Return the triples that are absent from the index
+  *
+  */
   difference(triples) {
     return triples.filter((triple) => !this.hasTriple(triple));
   }
@@ -883,6 +953,59 @@ var TribbleDB = class _TribbleDB {
     newDb.add(flatMappedTriples);
     return newDb;
   }
+  /*
+   * Deduplicate an array of triples using hash-based comparison.
+   *
+   * @param triples - An array of triples that may contain duplicates.
+   * @returns A new array with duplicate triples removed.
+   */
+  deduplicateTriples(triples) {
+    const seen = /* @__PURE__ */ new Set();
+    const result = [];
+    for (const triple of triples) {
+      const hash = this.index.hashTriple(triple);
+      if (!seen.has(hash)) {
+        seen.add(hash);
+        result.push(triple);
+      }
+    }
+    return result;
+  }
+  /*
+   * Perform an in-place flatmap over this database. This works by:
+   * - Searching the database to get a subset of triples
+   * - Flatmapping those triples
+   * - Deleting any triples from the original subset that are no longer present after the flatmap
+   * - Adding all new triples to the database
+   *
+   * @param search - The search parameters to subset the database.
+   * @param fn - A mapping function to apply to each triple in the search result.
+   *
+   * @returns This TribbleDB instance.
+   */
+  searchFlatmap(search, fn) {
+    const searchResults = this.search(search);
+    const matchingTriples = searchResults.triples();
+    const transformedTriples = matchingTriples.flatMap(fn);
+    const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
+    const originalHashes = new Set(matchingTriples.map((triple) => this.index.hashTriple(triple)));
+    const transformedHashes = new Set(deduplicatedTransformed.map((triple) => this.index.hashTriple(triple)));
+    const triplesToDelete = [];
+    const triplesToAdd = [];
+    for (const triple of matchingTriples) {
+      if (!transformedHashes.has(this.index.hashTriple(triple))) {
+        triplesToDelete.push(triple);
+      }
+    }
+    for (const triple of deduplicatedTransformed) {
+      if (!originalHashes.has(this.index.hashTriple(triple))) {
+        triplesToAdd.push(triple);
+      }
+    }
+    this.delete(triplesToDelete);
+    this.add(triplesToAdd);
+    return this;
+  }
   /**
    * Get the first triple in the database.
    *
@@ -1032,7 +1155,10 @@ var TribbleDB = class _TribbleDB {
       this.cursorIndices,
       this.metrics
     )) {
-      matchingTriples.push(this.index.getTriple(rowIdx));
+      const triple = this.index.getTriple(rowIdx);
+      if (triple !== void 0) {
+        matchingTriples.push(triple);
+      }
     }
     return new _TribbleDB(matchingTriples);
   }

@@ -134,4 +134,17 @@ export class Sets {
 
     return set0;
   }
+
+  /*
+   * Compute the difference of two sets (set0 - set1)
+   */
+  static difference<T>(set0: Set<T>, set1: Set<T>): Set<T> {
+    const result = new Set<T>();
+    for (const item of set0) {
+      if (!set1.has(item)) {
+        result.add(item);
+      }
+    }
+    return result;
+  }
 }

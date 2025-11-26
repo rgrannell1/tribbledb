@@ -14,6 +14,7 @@ import { findMatchingRows, validateInput } from "./db/search.ts";
 import type { Search } from "./types.ts";
 import { parseSearch } from "./db/inputs.ts";
 
+
 /*
  * A searchable triple database
  *
@@ -167,6 +168,71 @@ export class TribbleDB {
     newDb.add(flatMappedTriples);
 
     return newDb;
+  }
+
+  /*
+   * Deduplicate an array of triples using hash-based comparison.
+   *
+   * @param triples - An array of triples that may contain duplicates.
+   * @returns A new array with duplicate triples removed.
+   */
+  deduplicateTriples(triples: Triple[]): Triple[] {
+    const seen = new Set<string>();
+    const result: Triple[] = [];
+
+    for (const triple of triples) {
+      const hash = this.index.hashTriple(triple);
+      if (!seen.has(hash)) {
+        seen.add(hash);
+        result.push(triple);
+      }
+    }
+
+    return result;
+  }
+
+  /*
+   * Perform an in-place flatmap over this database. This works by:
+   * - Searching the database to get a subset of triples
+   * - Flatmapping those triples
+   * - Deleting any triples from the original subset that are no longer present after the flatmap
+   * - Adding all new triples to the database
+   *
+   * @param search - The search parameters to subset the database.
+   * @param fn - A mapping function to apply to each triple in the search result.
+   *
+   * @returns This TribbleDB instance.
+   */
+  searchFlatmap(search: Search, fn: (triple: Triple) => Triple[]): TribbleDB {
+    const searchResults = this.search(search);
+    const matchingTriples = searchResults.triples();
+    const transformedTriples = matchingTriples.flatMap(fn);
+    const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
+
+    // Get hashes for comparison
+    const originalHashes = new Set(matchingTriples.map(triple => this.index.hashTriple(triple)));
+    const transformedHashes = new Set(deduplicatedTransformed.map(triple => this.index.hashTriple(triple)));
+
+    const triplesToDelete: Triple[] = [];
+    const triplesToAdd: Triple[] = [];
+
+    for (const triple of matchingTriples) {
+      if (!transformedHashes.has(this.index.hashTriple(triple))) {
+        triplesToDelete.push(triple);
+      }
+    }
+
+    for (const triple of deduplicatedTransformed) {
+      if (!originalHashes.has(this.index.hashTriple(triple))) {
+        triplesToAdd.push(triple);
+      }
+    }
+
+    // Apply the changes
+    this.delete(triplesToDelete);
+    this.add(triplesToAdd);
+
+    return this;
   }
 
   /**
@@ -348,7 +414,10 @@ export class TribbleDB {
         this.metrics,
       )
     ) {
-      matchingTriples.push(this.index.getTriple(rowIdx)!);
+      const triple = this.index.getTriple(rowIdx);
+      if (triple !== undefined) {
+        matchingTriples.push(triple);
+      }
     }
 
     return new TribbleDB(matchingTriples);

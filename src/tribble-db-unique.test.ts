@@ -618,3 +618,414 @@ Deno.test("TribbleDB.delete() followed by add works correctly", () => {
   database.add([["person:alice", "name", "Alice"]]);
   assertEquals(database.triplesCount, 3);
 });
+
+Deno.test("TribbleDB.searchFlatmap() debug simple case", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+  ]);
+
+  console.log("Before:", database.triples());
+
+  // Use the actual searchFlatmap method
+  database.searchFlatmap(
+    { relation: "name" },
+    (triple) => {
+      console.log("Transforming:", triple);
+      return [
+        [triple[0], triple[1], "ALICE"] as Triple,
+      ];
+    }
+  );
+
+  console.log("After:", database.triples());
+  assertEquals(database.triplesCount, 1);
+
+  const result = database.search({ relation: "name" });
+  assertEquals(result.firstTriple()![2], "ALICE");
+});
+
+Deno.test("TribbleDB.searchFlatmap() debug adding triples", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+  ]);
+
+  console.log("Before:", database.triples());
+  console.log("Before count:", database.triplesCount);
+
+  // Add a greeting while keeping the name
+  database.searchFlatmap(
+    { relation: "name" },
+    (triple) => {
+      console.log("Processing:", triple);
+      return [
+        triple, // Keep original
+        [triple[0], "greeting", "Hello"] as Triple, // Add new
+      ];
+    }
+  );
+
+  console.log("After:", database.triples());
+  console.log("After count:", database.triplesCount);
+
+  // Check name still exists
+  const nameResult = database.search({ relation: "name" });
+  console.log("Name search result:", nameResult.triples());
+
+  // Check greeting exists
+  const greetingResult = database.search({ relation: "greeting" });
+  console.log("Greeting search result:", greetingResult.triples());
+});
+
+Deno.test("TribbleDB.searchFlatmap() debug multiple people", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:alice", "age", "30"],
+    ["person:bob", "name", "Bob Jones"],
+    ["person:bob", "age", "25"],
+  ]);
+
+  console.log("Before:", database.triples());
+  console.log("Before count:", database.triplesCount);
+
+  // Add titles for both people
+  database.searchFlatmap(
+    { relation: "name" },
+    (triple) => {
+      console.log("Processing:", triple);
+      return [
+        triple, // Keep original name
+        [triple[0], "title", `Mr/Ms ${triple[2]}`] as Triple, // Add title
+      ];
+    }
+  );
+
+  console.log("After:", database.triples());
+  console.log("After count:", database.triplesCount);
+  console.log("Expected count: 6");
+
+  // Check Alice
+  const aliceTitle = database.search({ source: "person:alice", relation: "title" });
+  console.log("Alice title search:", aliceTitle.triples());
+
+  // Check Bob
+  const bobTitle = database.search({ source: "person:bob", relation: "title" });
+  console.log("Bob title search:", bobTitle.triples());
+
+  if (aliceTitle.triples().length === 0) {
+    console.log("Alice title missing! Checking all Alice data:");
+    const allAlice = database.search({ source: "person:alice" });
+    console.log("All Alice:", allAlice.triples());
+  }
+
+  if (bobTitle.triples().length === 0) {
+    console.log("Bob title missing! Checking all Bob data:");
+    const allBob = database.search({ source: "person:bob" });
+    console.log("All Bob:", allBob.triples());
+  }
+});
+
+Deno.test("TribbleDB.searchFlatmap() debug search issue", () => {
+  const database = new TribbleDB([
+    ["person:alice", "status", "student"],
+    ["person:bob", "status", "teacher"],
+  ]);
+
+  console.log("Before transformation:", database.triples());
+
+  // Simple replacement transformation
+  database.searchFlatmap(
+    { relation: "status" },
+    (triple) => {
+      console.log("Transforming:", triple);
+      return [[triple[0], triple[1], triple[2].toUpperCase()] as Triple];
+    }
+  );
+
+  console.log("After transformation:", database.triples());
+  console.log("Database count:", database.triplesCount);
+
+  // Try to find the transformed status
+  console.log("Searching for Alice status...");
+  const aliceStatus = database.search({ source: "person:alice", relation: "status" });
+  console.log("Alice status result:", aliceStatus.triples());
+
+  console.log("Searching for all status relations...");
+  const allStatus = database.search({ relation: "status" });
+  console.log("All status results:", allStatus.triples());
+});
+
+Deno.test("TribbleDB.searchFlatmap() debug index tracking", () => {
+  const database = new TribbleDB([
+    ["person:alice", "status", "student"],
+  ]);
+
+  console.log("Before transformation:");
+  console.log("  tripleHashes size:", database.index.tripleHashes.size);
+  console.log("  triplesCount:", database.triplesCount);
+  console.log("  All triples:", database.triples());
+
+  // Transform
+  database.searchFlatmap(
+    { relation: "status" },
+    (triple) => {
+      console.log("Transforming:", triple);
+      return [[triple[0], triple[1], "TRANSFORMED"] as Triple];
+    }
+  );
+
+  console.log("After transformation:");
+  console.log("  tripleHashes size:", database.index.tripleHashes.size);
+  console.log("  triplesCount:", database.triplesCount);
+  console.log("  All triples:", database.triples());
+
+  // Test individual searches
+  console.log("Testing searches:");
+
+  const bySource = database.search({ source: "person:alice" });
+  console.log("  By source 'person:alice':", bySource.triples());
+
+  const byRelation = database.search({ relation: "status" });
+  console.log("  By relation 'status':", byRelation.triples());
+
+  const byBoth = database.search({ source: "person:alice", relation: "status" });
+  console.log("  By both:", byBoth.triples());
+});
+
+Deno.test("TribbleDB.searchFlatmap() basic functionality", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:alice", "age", "30"],
+    ["person:bob", "name", "Bob Jones"],
+    ["person:bob", "age", "25"],
+  ]);
+
+  // Transform names to add a "title" attribute for each person
+  const result = database.searchFlatmap(
+    { relation: "name" },
+    (triple) => [
+      triple, // Keep the original name triple
+      [triple[0], "title", `Mr/Ms ${triple[2]}`], // Add title
+    ]
+  );
+
+  assertEquals(result, database); // Should return this
+  assertEquals(database.triplesCount, 6); // 2 original names + 2 new titles + 2 ages
+
+  console.log("Debug: All triples after searchFlatmap:", database.triples());
+
+  // Verify titles were added
+  const aliceTitle = database.search({ source: "person:alice", relation: "title" });
+  console.log("Debug: Alice title search result:", aliceTitle.triples());
+  if (aliceTitle.firstTriple()) {
+    assertEquals(aliceTitle.firstTriple()![2], "Mr/Ms Alice Smith");
+  } else {
+    console.log("ERROR: Alice title not found!");
+  }
+
+  const bobTitle = database.search({ source: "person:bob", relation: "title" });
+  console.log("Debug: Bob title search result:", bobTitle.triples());
+  if (bobTitle.firstTriple()) {
+    assertEquals(bobTitle.firstTriple()![2], "Mr/Ms Bob Jones");
+  } else {
+    console.log("ERROR: Bob title not found!");
+  }
+
+  // Verify original triples still exist
+  assertEquals(database.search({ relation: "name" }).triplesCount, 2);
+  assertEquals(database.search({ relation: "age" }).triplesCount, 2);
+});
+
+Deno.test("TribbleDB.searchFlatmap() replacing triples", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:alice", "status", "student"],
+    ["person:bob", "name", "Bob Jones"],
+    ["person:bob", "status", "teacher"],
+  ]);
+
+  // Replace all status values with uppercase versions
+  database.searchFlatmap(
+    { relation: "status" },
+    (triple) => [
+      [triple[0], triple[1], triple[2].toUpperCase()], // Replace with uppercase
+    ]
+  );
+
+  assertEquals(database.triplesCount, 4); // Same count, but status values changed
+
+  const aliceStatus = database.search({ source: "person:alice", relation: "status" });
+  if (aliceStatus.firstTriple()) {
+    assertEquals(aliceStatus.firstTriple()![2], "STUDENT");
+  } else {
+    console.log("ERROR: Alice status not found!");
+    console.log("All triples:", database.triples());
+  }
+
+  const bobStatus = database.search({ source: "person:bob", relation: "status" });
+  if (bobStatus.firstTriple()) {
+    assertEquals(bobStatus.firstTriple()![2], "TEACHER");
+  } else {
+    console.log("ERROR: Bob status not found!");
+    console.log("All triples:", database.triples());
+  }
+
+  // Names should be unchanged
+  const aliceName = database.search({ source: "person:alice", relation: "name" });
+  assertEquals(aliceName.firstTriple()![2], "Alice Smith");
+});
+
+Deno.test("TribbleDB.searchFlatmap() removing triples", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:alice", "temp", "temp_value"],
+    ["person:bob", "name", "Bob Jones"],
+    ["person:bob", "temp", "another_temp"],
+  ]);
+
+  // Remove all "temp" relations by returning empty array
+  database.searchFlatmap(
+    { relation: "temp" },
+    () => [] // Remove these triples
+  );
+
+  assertEquals(database.triplesCount, 2); // Only names should remain
+
+  // Verify temp triples are gone
+  const tempResults = database.search({ relation: "temp" });
+  assertEquals(tempResults.triplesCount, 0);
+
+  // Verify names still exist
+  const nameResults = database.search({ relation: "name" });
+  assertEquals(nameResults.triplesCount, 2);
+});
+
+Deno.test("TribbleDB.searchFlatmap() with complex search", () => {
+  const database = new TribbleDB([
+    ["urn:ró:person:alice", "name", "Alice Smith"],
+    ["urn:ró:person:alice", "age", "30"],
+    ["urn:ró:company:acme", "name", "Acme Corp"],
+    ["urn:ró:company:acme", "size", "large"],
+  ]);
+
+  // Only transform person entities
+  database.searchFlatmap(
+    { source: { type: "person" } },
+    (triple) => {
+      if (triple[1] === "name") {
+        return [
+          triple,
+          [triple[0], "display_name", `Person: ${triple[2]}`],
+        ];
+      }
+      return [triple]; // Keep other person triples unchanged
+    }
+  );
+
+  assertEquals(database.triplesCount, 5); // 4 original + 1 new display_name  // Verify person got display_name
+  const aliceDisplay = database.search({ source: "urn:ró:person:alice", relation: "display_name" });
+  if (aliceDisplay.firstTriple()) {
+    assertEquals(aliceDisplay.firstTriple()![2], "Person: Alice Smith");
+  } else {
+    console.log("ERROR: Alice display_name not found!");
+    console.log("All triples:", database.triples());
+  }
+
+  // Verify company data unchanged
+  const companyResults = database.search({ source: { type: "company" } });
+  assertEquals(companyResults.triplesCount, 2);
+});
+
+Deno.test("TribbleDB.searchFlatmap() with empty search results", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:bob", "age", "25"],
+  ]);
+
+  const initialCount = database.triplesCount;
+
+  // Search for non-existent relation
+  database.searchFlatmap(
+    { relation: "nonexistent" },
+    (triple) => [[triple[0], "processed", "true"]]
+  );
+
+  // Nothing should change
+  assertEquals(database.triplesCount, initialCount);
+});
+
+Deno.test("TribbleDB.searchFlatmap() prevents duplicates", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:bob", "name", "Bob Jones"],
+  ]);
+
+  // Transform that tries to create duplicates
+  database.searchFlatmap(
+    { relation: "name" },
+    (triple) => [
+      triple, // Keep original
+      triple, // Try to duplicate
+      [triple[0], "greeting", "Hello"],
+    ]
+  );
+
+  assertEquals(database.triplesCount, 4); // 2 original names + 2 greetings (no duplicates)
+
+  // Verify only one of each name exists
+  const nameResults = database.search({ relation: "name" });
+  assertEquals(nameResults.triplesCount, 2);
+});
+
+Deno.test("TribbleDB.searchFlatmap() chain with other operations", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+    ["person:bob", "name", "Bob"],
+  ]);
+
+  // Chain searchFlatmap with other operations
+  const result = database
+    .searchFlatmap(
+      { relation: "name" },
+      (triple) => [
+        triple,
+        [triple[0], "processed", "true"],
+      ]
+    )
+    .delete([["person:alice", "name", "Alice"]]);
+
+  assertEquals(result, database);
+  assertEquals(database.triplesCount, 3); // Alice name deleted, but Bob name + both processed remain
+
+  const processedResults = database.search({ relation: "processed" });
+  assertEquals(processedResults.triplesCount, 2);
+});
+
+Deno.test("TribbleDB.searchFlatmap() with constant triple transformation", () => {
+  const database = new TribbleDB([
+    ["urn:ró:person:alice", "name", "Alice"],
+    ["urn:ró:person:alice", "age", "30"],
+    ["urn:ró:person:bob", "name", "Bob"],
+    ["urn:ró:person:bob", "age", "25"],
+    ["urn:ró:company:acme", "name", "Acme Corp"],
+  ]);
+
+  // Transform all person triples to the same constant triple
+  database.searchFlatmap(
+    { source: { type: "person" } },
+    () => [["const", "const", "const"]]
+  );
+
+  // Should have: 1 company triple + 1 constant triple (deduplicated)
+  assertEquals(database.triplesCount, 2);
+
+  const allTriples = database.triples();
+  const hasConstTriple = allTriples.some(t =>
+    t[0] === "const" && t[1] === "const" && t[2] === "const"
+  );
+  const hasCompanyTriple = allTriples.some(t =>
+    t[0] === "urn:ró:company:acme" && t[1] === "name" && t[2] === "Acme Corp"
+  );
+
+  assertEquals(hasConstTriple, true);
+  assertEquals(hasCompanyTriple, true);
+});

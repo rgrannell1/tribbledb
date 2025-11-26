@@ -17,6 +17,7 @@ export declare class Index {
     stringUrn: Map<string, ParsedUrn>;
     constructor(triples: Triple[]);
     delete(triples: Triple[]): void;
+    private cleanupSearchMaps;
     difference(triples: Triple[]): Triple[];
     hasTriple(triple: Triple): boolean;
     hashTriple(triple: Triple): string;

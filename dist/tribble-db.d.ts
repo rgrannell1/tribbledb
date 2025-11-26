@@ -35,6 +35,8 @@ export declare class TribbleDB {
      * @returns A new TribbleDB instance containing the flat-mapped triples.
      */
     flatMap(fn: (triple: Triple) => Triple[]): TribbleDB;
+    deduplicateTriples(triples: Triple[]): Triple[];
+    searchFlatmap(search: Search, fn: (triple: Triple) => Triple[]): TribbleDB;
     /**
      * Get the first triple in the database.
      *
