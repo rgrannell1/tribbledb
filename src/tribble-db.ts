@@ -129,13 +129,13 @@ export class TribbleDB {
    * @param triples - An array of triples to add.
    */
   add(triples: Triple[]): void {
-    const oldLength = this.index.length;
+    const oldLength = this.index.arrayLength;
     this.validateTriples(triples);
 
     this.index.add(triples);
     this.triplesCount = this.index.length;
 
-    for (let idx = oldLength; idx < this.triplesCount; idx++) {
+    for (let idx = oldLength; idx < this.index.arrayLength; idx++) {
       this.cursorIndices.add(idx);
     }
   }

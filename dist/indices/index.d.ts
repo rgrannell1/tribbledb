@@ -24,6 +24,7 @@ export declare class Index {
     getTripleIndex(triple: Triple): number | undefined;
     add(triples: Triple[]): void;
     get length(): number;
+    get arrayLength(): number;
     triples(): Triple[];
     getTriple(index: number): Triple | undefined;
     getTripleIndices(index: number): [number, number, number] | undefined;

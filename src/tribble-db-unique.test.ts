@@ -1029,3 +1029,122 @@ Deno.test("TribbleDB.searchFlatmap() with constant triple transformation", () =>
   assertEquals(hasConstTriple, true);
   assertEquals(hasCompanyTriple, true);
 });
+
+Deno.test("TribbleDB searchFlatmap with target modifications handles indices correctly", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice Smith"],
+    ["person:alice", "age", "30"],
+    ["person:alice", "works_at", "company:acme"],
+    ["person:bob", "name", "Bob Jones"],
+    ["person:bob", "age", "25"],
+    ["person:bob", "works_at", "company:acme"],
+    ["company:acme", "name", "Acme Corp"],
+  ]);
+
+  const initialCount = database.triplesCount;
+
+  // Modify all "works_at" relations to point to a different company
+  database.searchFlatmap(
+    { relation: "works_at" },
+    (triple) => {
+      return [[triple[0], triple[1], "company:newcorp"]];
+    }
+  );
+
+  // Should have same number of triples (2 deleted, 2 added)
+  assertEquals(database.triplesCount, initialCount);
+
+  // Verify the modifications worked
+  const worksAtTriples = database.search({ relation: "works_at" }).triples();
+  assertEquals(worksAtTriples.length, 2);
+
+  for (const triple of worksAtTriples) {
+    assertEquals(triple[2], "company:newcorp");
+  }
+
+  // Verify we can still search for other relations
+  const nameTriples = database.search({ relation: "name" }).triples();
+  assertEquals(nameTriples.length, 3); // alice, bob, company names
+
+  // Verify the old company references are gone
+  const oldCompanyRefs = database.search({ target: "company:acme" }).triples();
+  assertEquals(oldCompanyRefs.length, 0);
+
+  // Test that getTriple doesn't return undefined for valid searches
+  const allResults = database.triples(); // Use triples() instead of empty search
+  assertEquals(allResults.length, database.triplesCount);
+
+  // Every triple should be valid (no undefined values)
+  for (const triple of allResults) {
+    assertEquals(typeof triple[0], "string");
+    assertEquals(typeof triple[1], "string");
+    assertEquals(typeof triple[2], "string");
+  }
+});
+
+Deno.test("TribbleDB searchFlatmap with aggressive modifications stress test", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+    ["person:alice", "age", "30"],
+    ["person:alice", "department", "engineering"],
+    ["person:bob", "name", "Bob"],
+    ["person:bob", "age", "25"],
+    ["person:bob", "department", "sales"],
+    ["person:charlie", "name", "Charlie"],
+    ["person:charlie", "age", "35"],
+    ["person:charlie", "department", "engineering"],
+  ]);
+
+  // First modification: change all ages by appending " years"
+  database.searchFlatmap(
+    { relation: "age" },
+    (triple) => [[triple[0], triple[1], `${triple[2]} years`]]
+  );
+
+  // Second modification: change department names
+  database.searchFlatmap(
+    { relation: "department" },
+    (triple) => [[triple[0], triple[1], `dept_${triple[2]}`]]
+  );  // Third modification: duplicate some people with modified names
+  database.searchFlatmap(
+    { relation: "name" },
+    (triple) => [
+      triple, // keep original
+      [triple[0].replace("person:", "employee:"), triple[1], `${triple[2]} Employee`]
+    ]
+  );
+
+  // Verify data integrity after multiple modifications
+  const ageTriples = database.search({ relation: "age" }).triples();
+  assertEquals(ageTriples.length, 3);
+  for (const triple of ageTriples) {
+    assertEquals(triple[2].endsWith(" years"), true);
+  }
+
+  const deptTriples = database.search({ relation: "department" }).triples();
+  assertEquals(deptTriples.length, 3);
+  for (const triple of deptTriples) {
+    assertEquals(triple[2].startsWith("dept_"), true);
+  }
+
+  const nameTriples = database.search({ relation: "name" }).triples();
+  assertEquals(nameTriples.length, 6); // 3 original + 3 employee copies
+
+  // Test that all search operations still work correctly
+  const aliceData = database.search({ source: "person:alice" }).triples();
+  assertEquals(aliceData.length, 3); // name, age, department
+
+  const employeeData = database.search({ relation: "name", target: "Alice Employee" }).triples();
+  assertEquals(employeeData.length, 1);
+  assertEquals(employeeData[0][0], "employee:alice");
+
+  // Ensure no undefined values leaked through
+  for (const triple of database.triples()) {
+    assertEquals(typeof triple[0], "string");
+    assertEquals(typeof triple[1], "string");
+    assertEquals(typeof triple[2], "string");
+    assertEquals(triple[0].length > 0, true);
+    assertEquals(triple[1].length > 0, true);
+    assertEquals(triple[2].length > 0, true);
+  }
+});

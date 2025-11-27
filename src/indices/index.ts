@@ -304,6 +304,13 @@ export class Index {
   }
 
   /*
+   * Get the actual array length including gaps (for cursor index management)
+   */
+  get arrayLength(): number {
+    return this.indexedTriples.length;
+  }
+
+  /*
    * Reconstruct the original triples from the indexed representation
    */
   triples(): Triple[] {

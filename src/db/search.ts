@@ -166,7 +166,12 @@ export function nodeMatches(
     const indexCopy = new Set([...cursorIndices]);
 
     for (const idx of indexCopy) {
-      const triple = index.getTriple(idx)!;
+      // Handle gaps: getTriple might return undefined for deleted indices
+      const triple = index.getTriple(idx);
+      if (!triple) {
+        indexCopy.delete(idx);
+        continue;
+      }
 
       if (!pred(source ? triple[0] : triple[2])) {
         indexCopy.delete(idx); // Safe in JS
@@ -264,7 +269,12 @@ export function findMatchingRelations(
   const pred = query.predicate;
 
   for (const idx of matches) {
-    const triple = index.getTriple(idx)!;
+    // Handle gaps: getTriple might return undefined for deleted indices
+    const triple = index.getTriple(idx);
+    if (!triple) {
+      matches.delete(idx);
+      continue;
+    }
 
     if (!pred(triple[1])) {
       matches.delete(idx);

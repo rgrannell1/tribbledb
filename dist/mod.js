@@ -483,6 +483,12 @@ var Index = class _Index {
     return this.tripleHashes.size;
   }
   /*
+   * Get the actual array length including gaps (for cursor index management)
+   */
+  get arrayLength() {
+    return this.indexedTriples.length;
+  }
+  /*
    * Reconstruct the original triples from the indexed representation
    */
   triples() {
@@ -699,6 +705,10 @@ function nodeMatches(query, source, index, metrics, cursorIndices) {
     const indexCopy = /* @__PURE__ */ new Set([...cursorIndices]);
     for (const idx of indexCopy) {
       const triple = index.getTriple(idx);
+      if (!triple) {
+        indexCopy.delete(idx);
+        continue;
+      }
       if (!pred2(source ? triple[0] : triple[2])) {
         indexCopy.delete(idx);
       }
@@ -753,6 +763,10 @@ function findMatchingRelations(query, index) {
   const pred = query.predicate;
   for (const idx of matches) {
     const triple = index.getTriple(idx);
+    if (!triple) {
+      matches.delete(idx);
+      continue;
+    }
     if (!pred(triple[1])) {
       matches.delete(idx);
     }
@@ -922,11 +936,11 @@ var TribbleDB = class _TribbleDB {
    * @param triples - An array of triples to add.
    */
   add(triples) {
-    const oldLength = this.index.length;
+    const oldLength = this.index.arrayLength;
     this.validateTriples(triples);
     this.index.add(triples);
     this.triplesCount = this.index.length;
-    for (let idx = oldLength; idx < this.triplesCount; idx++) {
+    for (let idx = oldLength; idx < this.index.arrayLength; idx++) {
       this.cursorIndices.add(idx);
     }
   }
