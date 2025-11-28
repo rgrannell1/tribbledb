@@ -208,25 +208,33 @@ export class TribbleDB {
     const transformedTriples = matchingTriples.flatMap(fn);
     const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
 
-    // Get hashes for comparison
-    const originalHashes = new Set(
-      matchingTriples.map((triple) => this.index.hashTriple(triple)),
-    );
-    const transformedHashes = new Set(
-      deduplicatedTransformed.map((triple) => this.index.hashTriple(triple)),
-    );
+    // Pre-compute hashes once for efficiency
+    const originalHashMap = new Map<string, Triple>();
+    for (const triple of matchingTriples) {
+      const hash = this.index.hashTriple(triple);
+      originalHashMap.set(hash, triple);
+    }
 
+    const transformedHashMap = new Map<string, Triple>();
+    for (const triple of deduplicatedTransformed) {
+      const hash = this.index.hashTriple(triple);
+      transformedHashMap.set(hash, triple);
+    }
+
+    // Find differences efficiently using single pass
     const triplesToDelete: Triple[] = [];
     const triplesToAdd: Triple[] = [];
 
-    for (const triple of matchingTriples) {
-      if (!transformedHashes.has(this.index.hashTriple(triple))) {
+    // Find triples to delete (in original but not in transformed)
+    for (const [hash, triple] of originalHashMap) {
+      if (!transformedHashMap.has(hash)) {
         triplesToDelete.push(triple);
       }
     }
 
-    for (const triple of deduplicatedTransformed) {
-      if (!originalHashes.has(this.index.hashTriple(triple))) {
+    // Find triples to add (in transformed but not in original)
+    for (const [hash, triple] of transformedHashMap) {
+      if (!originalHashMap.has(hash)) {
         triplesToAdd.push(triple);
       }
     }

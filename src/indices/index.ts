@@ -180,7 +180,7 @@ export class Index {
       const sourceIdx = this.stringIndex.add(source);
       const relationIdx = this.stringIndex.add(relation);
       const targetIdx = this.stringIndex.add(target);
-      
+
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
       const sourceIdIdx = this.stringIndex.add(parsedSource.id);
       const targetTypeIdx = this.stringIndex.add(parsedTarget.type);

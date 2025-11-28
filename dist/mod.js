@@ -370,9 +370,11 @@ var Index = class _Index {
         parsedTarget = asUrn(target);
         this.stringUrn.set(target, parsedTarget);
       }
+      const sourceIdx = this.stringIndex.add(source);
+      const relationIdx = this.stringIndex.add(relation);
+      const targetIdx = this.stringIndex.add(target);
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
       const sourceIdIdx = this.stringIndex.add(parsedSource.id);
-      const relationIdx = this.stringIndex.add(relation);
       const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
       const hash = this.hashTriple(triple);
@@ -382,11 +384,7 @@ var Index = class _Index {
       this.tripleHashes.add(hash);
       const idx = this.indexedTriples.length;
       this.hashIndices.set(hash, idx);
-      this.indexedTriples.push([
-        this.stringIndex.add(source),
-        relationIdx,
-        this.stringIndex.add(target)
-      ]);
+      this.indexedTriples.push([sourceIdx, relationIdx, targetIdx]);
       const sourceQsIndices = [];
       const targetQsIndices = [];
       let sourceTypeSet = this.sourceType.get(sourceTypeIdx);
@@ -404,10 +402,12 @@ var Index = class _Index {
       for (const [key, val] of Object.entries(parsedSource.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
         sourceQsIndices.push(qsIdx);
-        if (!this.sourceQs.has(qsIdx)) {
-          this.sourceQs.set(qsIdx, /* @__PURE__ */ new Set());
+        let sourceQsSet = this.sourceQs.get(qsIdx);
+        if (!sourceQsSet) {
+          sourceQsSet = /* @__PURE__ */ new Set();
+          this.sourceQs.set(qsIdx, sourceQsSet);
         }
-        this.sourceQs.get(qsIdx).add(idx);
+        sourceQsSet.add(idx);
       }
       let relationSet = this.relations.get(relationIdx);
       if (!relationSet) {
@@ -430,10 +430,12 @@ var Index = class _Index {
       for (const [key, val] of Object.entries(parsedTarget.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
         targetQsIndices.push(qsIdx);
-        if (!this.targetQs.has(qsIdx)) {
-          this.targetQs.set(qsIdx, /* @__PURE__ */ new Set());
+        let targetQsSet = this.targetQs.get(qsIdx);
+        if (!targetQsSet) {
+          targetQsSet = /* @__PURE__ */ new Set();
+          this.targetQs.set(qsIdx, targetQsSet);
         }
-        this.targetQs.get(qsIdx).add(idx);
+        targetQsSet.add(idx);
       }
       this.tripleMetadata.set(idx, {
         sourceTypeIdx,
@@ -972,21 +974,25 @@ var TribbleDB = class _TribbleDB {
     const matchingTriples = searchResults.triples();
     const transformedTriples = matchingTriples.flatMap(fn);
     const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
-    const originalHashes = new Set(
-      matchingTriples.map((triple) => this.index.hashTriple(triple))
-    );
-    const transformedHashes = new Set(
-      deduplicatedTransformed.map((triple) => this.index.hashTriple(triple))
-    );
+    const originalHashMap = /* @__PURE__ */ new Map();
+    for (const triple of matchingTriples) {
+      const hash = this.index.hashTriple(triple);
+      originalHashMap.set(hash, triple);
+    }
+    const transformedHashMap = /* @__PURE__ */ new Map();
+    for (const triple of deduplicatedTransformed) {
+      const hash = this.index.hashTriple(triple);
+      transformedHashMap.set(hash, triple);
+    }
     const triplesToDelete = [];
     const triplesToAdd = [];
-    for (const triple of matchingTriples) {
-      if (!transformedHashes.has(this.index.hashTriple(triple))) {
+    for (const [hash, triple] of originalHashMap) {
+      if (!transformedHashMap.has(hash)) {
         triplesToDelete.push(triple);
       }
     }
-    for (const triple of deduplicatedTransformed) {
-      if (!originalHashes.has(this.index.hashTriple(triple))) {
+    for (const [hash, triple] of transformedHashMap) {
+      if (!originalHashMap.has(hash)) {
         triplesToAdd.push(triple);
       }
     }
