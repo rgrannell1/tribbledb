@@ -177,9 +177,12 @@ export class Index {
       }
 
       // Convert strings to indices using the IndexedSet
+      const sourceIdx = this.stringIndex.add(source);
+      const relationIdx = this.stringIndex.add(relation);
+      const targetIdx = this.stringIndex.add(target);
+      
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
       const sourceIdIdx = this.stringIndex.add(parsedSource.id);
-      const relationIdx = this.stringIndex.add(relation);
       const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
 
@@ -196,12 +199,8 @@ export class Index {
       // add it to a map of hashes to indices
       this.hashIndices.set(hash, idx);
 
-      // Store the indexed triple
-      this.indexedTriples.push([
-        this.stringIndex.add(source),
-        relationIdx,
-        this.stringIndex.add(target),
-      ]);
+      // Store the indexed triple (reuse already computed indices)
+      this.indexedTriples.push([sourceIdx, relationIdx, targetIdx]);
 
       // Collect query string indices for metadata
       const sourceQsIndices: number[] = [];
@@ -227,13 +226,15 @@ export class Index {
       for (const [key, val] of Object.entries(parsedSource.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
         sourceQsIndices.push(qsIdx);
-        if (!this.sourceQs.has(qsIdx)) {
-          this.sourceQs.set(qsIdx, new Set());
+        let sourceQsSet = this.sourceQs.get(qsIdx);
+        if (!sourceQsSet) {
+          sourceQsSet = new Set();
+          this.sourceQs.set(qsIdx, sourceQsSet);
         }
-
-        this.sourceQs.get(qsIdx)!.add(idx);
+        sourceQsSet.add(idx);
       }
 
+      // relations
       let relationSet = this.relations.get(relationIdx);
       if (!relationSet) {
         relationSet = new Set();
@@ -261,11 +262,12 @@ export class Index {
       for (const [key, val] of Object.entries(parsedTarget.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
         targetQsIndices.push(qsIdx);
-        if (!this.targetQs.has(qsIdx)) {
-          this.targetQs.set(qsIdx, new Set());
+        let targetQsSet = this.targetQs.get(qsIdx);
+        if (!targetQsSet) {
+          targetQsSet = new Set();
+          this.targetQs.set(qsIdx, targetQsSet);
         }
-
-        this.targetQs.get(qsIdx)!.add(idx);
+        targetQsSet.add(idx);
       }
 
       // Store metadata for efficient deletion
