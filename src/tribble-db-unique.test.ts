@@ -36,7 +36,7 @@ Deno.test("TribbleDB constructor only stores unique triples", () => {
 
   const actualTriples = database.triples();
   for (const expectedTriple of expectedTriples) {
-    const found = actualTriples.some(actualTriple =>
+    const found = actualTriples.some((actualTriple) =>
       actualTriple[0] === expectedTriple[0] &&
       actualTriple[1] === expectedTriple[1] &&
       actualTriple[2] === expectedTriple[2]
@@ -68,8 +68,8 @@ Deno.test("TribbleDB.add() only adds unique triples", () => {
   assertEquals(charlieResults.triplesCount, 2);
 
   const charlieTriples = charlieResults.triples();
-  const charlieNames = charlieTriples.filter(triple => triple[1] === "name");
-  const charlieAges = charlieTriples.filter(triple => triple[1] === "age");
+  const charlieNames = charlieTriples.filter((triple) => triple[1] === "name");
+  const charlieAges = charlieTriples.filter((triple) => triple[1] === "age");
 
   assertEquals(charlieNames.length, 1);
   assertEquals(charlieNames[0][2], "Charlie Brown");
@@ -130,7 +130,9 @@ Deno.test("TribbleDB uniqueness works with URN format", () => {
   assertEquals(database.triplesCount, 3);
 
   // Verify we can find all the unique data
-  const aliceResults = database.search({ source: { type: "person", id: "alice" } });
+  const aliceResults = database.search({
+    source: { type: "person", id: "alice" },
+  });
   assertEquals(aliceResults.triplesCount, 2); // name and age
 
   const bobResults = database.search({ source: { type: "person", id: "bob" } });
@@ -155,9 +157,9 @@ Deno.test("TribbleDB uniqueness with whitespace and special characters", () => {
   assertEquals(results.triplesCount, 3);
 
   const triples = results.triples();
-  const descriptions = triples.filter(t => t[1] === "description");
-  const values = triples.filter(t => t[1] === "value");
-  const specials = triples.filter(t => t[1] === "special");
+  const descriptions = triples.filter((t) => t[1] === "description");
+  const values = triples.filter((t) => t[1] === "value");
+  const specials = triples.filter((t) => t[1] === "special");
 
   assertEquals(descriptions.length, 1);
   assertEquals(descriptions[0][2], "Text with spaces");
@@ -188,10 +190,12 @@ Deno.test("TribbleDB uniqueness with empty strings and edge cases", () => {
   assertEquals(allTriples.length, 4);
 
   // Check that we have one of each type
-  const emptySourceTriples = allTriples.filter(t => t[0] === "");
-  const emptyRelationTriples = allTriples.filter(t => t[1] === "");
-  const emptyTargetTriples = allTriples.filter(t => t[2] === "");
-  const normalTriples = allTriples.filter(t => t[0] !== "" && t[1] !== "" && t[2] !== "");
+  const emptySourceTriples = allTriples.filter((t) => t[0] === "");
+  const emptyRelationTriples = allTriples.filter((t) => t[1] === "");
+  const emptyTargetTriples = allTriples.filter((t) => t[2] === "");
+  const normalTriples = allTriples.filter((t) =>
+    t[0] !== "" && t[1] !== "" && t[2] !== ""
+  );
 
   assertEquals(emptySourceTriples.length, 1);
   assertEquals(emptyRelationTriples.length, 1);
@@ -206,7 +210,7 @@ Deno.test("TribbleDB.flatMap maintains uniqueness", () => {
   ]);
 
   // FlatMap that creates duplicates
-  const result = database.flatMap(triple => {
+  const result = database.flatMap((triple) => {
     if (triple[1] === "skill") {
       return [
         triple, // original
@@ -228,11 +232,11 @@ Deno.test("TribbleDB.flatMap maintains uniqueness", () => {
   assertEquals(expertiseTriples.length, 2);
 
   // Verify no duplicates in skills
-  const skillTargets = skillTriples.map(t => `${t[0]}:${t[2]}`);
+  const skillTargets = skillTriples.map((t) => `${t[0]}:${t[2]}`);
   assertEquals(new Set(skillTargets).size, skillTargets.length);
 
   // Verify no duplicates in expertise
-  const expertiseTargets = expertiseTriples.map(t => `${t[0]}:${t[2]}`);
+  const expertiseTargets = expertiseTriples.map((t) => `${t[0]}:${t[2]}`);
   assertEquals(new Set(expertiseTargets).size, expertiseTargets.length);
 });
 
@@ -269,7 +273,7 @@ Deno.test("TribbleDB.from() with overlapping object data maintains uniqueness", 
 
   // Verify skill uniqueness
   const skillTriples = skillResults.triples();
-  const skillValues = skillTriples.map(t => t[2]);
+  const skillValues = skillTriples.map((t) => t[2]);
   assertEquals(skillValues.includes("typescript"), true);
   assertEquals(skillValues.includes("python"), true);
   assertEquals(new Set(skillValues).size, skillValues.length); // No duplicates
@@ -447,7 +451,9 @@ Deno.test("TribbleDB.merge() with URN format maintains uniqueness", () => {
   const aliceResults = db1.search({ source: { type: "person", id: "alice" } });
   assertEquals(aliceResults.triplesCount, 3);
 
-  const companyResults = db1.search({ source: { type: "company", id: "acme" } });
+  const companyResults = db1.search({
+    source: { type: "company", id: "acme" },
+  });
   assertEquals(companyResults.triplesCount, 1);
 });
 
@@ -490,12 +496,14 @@ Deno.test("TribbleDB.merge() with special characters and edge cases", () => {
   const allTriples = db1.triples();
 
   // Verify special character triple was added
-  const specialTriple = allTriples.find(t => t[2] === "!@#$%^&*()");
+  const specialTriple = allTriples.find((t) => t[2] === "!@#$%^&*()");
   assertEquals(specialTriple !== undefined, true);
   assertEquals(specialTriple![0], "special");
 
   // Verify empty target triple was added
-  const emptyTargetTriple = allTriples.find(t => t[2] === "" && t[0] === "source");
+  const emptyTargetTriple = allTriples.find((t) =>
+    t[2] === "" && t[0] === "source"
+  );
   assertEquals(emptyTargetTriple !== undefined, true);
 });
 
@@ -634,7 +642,7 @@ Deno.test("TribbleDB.searchFlatmap() debug simple case", () => {
       return [
         [triple[0], triple[1], "ALICE"] as Triple,
       ];
-    }
+    },
   );
 
   console.log("After:", database.triples());
@@ -661,7 +669,7 @@ Deno.test("TribbleDB.searchFlatmap() debug adding triples", () => {
         triple, // Keep original
         [triple[0], "greeting", "Hello"] as Triple, // Add new
       ];
-    }
+    },
   );
 
   console.log("After:", database.triples());
@@ -696,7 +704,7 @@ Deno.test("TribbleDB.searchFlatmap() debug multiple people", () => {
         triple, // Keep original name
         [triple[0], "title", `Mr/Ms ${triple[2]}`] as Triple, // Add title
       ];
-    }
+    },
   );
 
   console.log("After:", database.triples());
@@ -704,7 +712,10 @@ Deno.test("TribbleDB.searchFlatmap() debug multiple people", () => {
   console.log("Expected count: 6");
 
   // Check Alice
-  const aliceTitle = database.search({ source: "person:alice", relation: "title" });
+  const aliceTitle = database.search({
+    source: "person:alice",
+    relation: "title",
+  });
   console.log("Alice title search:", aliceTitle.triples());
 
   // Check Bob
@@ -738,7 +749,7 @@ Deno.test("TribbleDB.searchFlatmap() debug search issue", () => {
     (triple) => {
       console.log("Transforming:", triple);
       return [[triple[0], triple[1], triple[2].toUpperCase()] as Triple];
-    }
+    },
   );
 
   console.log("After transformation:", database.triples());
@@ -746,7 +757,10 @@ Deno.test("TribbleDB.searchFlatmap() debug search issue", () => {
 
   // Try to find the transformed status
   console.log("Searching for Alice status...");
-  const aliceStatus = database.search({ source: "person:alice", relation: "status" });
+  const aliceStatus = database.search({
+    source: "person:alice",
+    relation: "status",
+  });
   console.log("Alice status result:", aliceStatus.triples());
 
   console.log("Searching for all status relations...");
@@ -770,7 +784,7 @@ Deno.test("TribbleDB.searchFlatmap() debug index tracking", () => {
     (triple) => {
       console.log("Transforming:", triple);
       return [[triple[0], triple[1], "TRANSFORMED"] as Triple];
-    }
+    },
   );
 
   console.log("After transformation:");
@@ -787,7 +801,10 @@ Deno.test("TribbleDB.searchFlatmap() debug index tracking", () => {
   const byRelation = database.search({ relation: "status" });
   console.log("  By relation 'status':", byRelation.triples());
 
-  const byBoth = database.search({ source: "person:alice", relation: "status" });
+  const byBoth = database.search({
+    source: "person:alice",
+    relation: "status",
+  });
   console.log("  By both:", byBoth.triples());
 });
 
@@ -805,7 +822,7 @@ Deno.test("TribbleDB.searchFlatmap() basic functionality", () => {
     (triple) => [
       triple, // Keep the original name triple
       [triple[0], "title", `Mr/Ms ${triple[2]}`], // Add title
-    ]
+    ],
   );
 
   assertEquals(result, database); // Should return this
@@ -814,7 +831,10 @@ Deno.test("TribbleDB.searchFlatmap() basic functionality", () => {
   console.log("Debug: All triples after searchFlatmap:", database.triples());
 
   // Verify titles were added
-  const aliceTitle = database.search({ source: "person:alice", relation: "title" });
+  const aliceTitle = database.search({
+    source: "person:alice",
+    relation: "title",
+  });
   console.log("Debug: Alice title search result:", aliceTitle.triples());
   if (aliceTitle.firstTriple()) {
     assertEquals(aliceTitle.firstTriple()![2], "Mr/Ms Alice Smith");
@@ -848,12 +868,15 @@ Deno.test("TribbleDB.searchFlatmap() replacing triples", () => {
     { relation: "status" },
     (triple) => [
       [triple[0], triple[1], triple[2].toUpperCase()], // Replace with uppercase
-    ]
+    ],
   );
 
   assertEquals(database.triplesCount, 4); // Same count, but status values changed
 
-  const aliceStatus = database.search({ source: "person:alice", relation: "status" });
+  const aliceStatus = database.search({
+    source: "person:alice",
+    relation: "status",
+  });
   if (aliceStatus.firstTriple()) {
     assertEquals(aliceStatus.firstTriple()![2], "STUDENT");
   } else {
@@ -861,7 +884,10 @@ Deno.test("TribbleDB.searchFlatmap() replacing triples", () => {
     console.log("All triples:", database.triples());
   }
 
-  const bobStatus = database.search({ source: "person:bob", relation: "status" });
+  const bobStatus = database.search({
+    source: "person:bob",
+    relation: "status",
+  });
   if (bobStatus.firstTriple()) {
     assertEquals(bobStatus.firstTriple()![2], "TEACHER");
   } else {
@@ -870,7 +896,10 @@ Deno.test("TribbleDB.searchFlatmap() replacing triples", () => {
   }
 
   // Names should be unchanged
-  const aliceName = database.search({ source: "person:alice", relation: "name" });
+  const aliceName = database.search({
+    source: "person:alice",
+    relation: "name",
+  });
   assertEquals(aliceName.firstTriple()![2], "Alice Smith");
 });
 
@@ -885,7 +914,7 @@ Deno.test("TribbleDB.searchFlatmap() removing triples", () => {
   // Remove all "temp" relations by returning empty array
   database.searchFlatmap(
     { relation: "temp" },
-    () => [] // Remove these triples
+    () => [], // Remove these triples
   );
 
   assertEquals(database.triplesCount, 2); // Only names should remain
@@ -918,11 +947,14 @@ Deno.test("TribbleDB.searchFlatmap() with complex search", () => {
         ];
       }
       return [triple]; // Keep other person triples unchanged
-    }
+    },
   );
 
   assertEquals(database.triplesCount, 5); // 4 original + 1 new display_name  // Verify person got display_name
-  const aliceDisplay = database.search({ source: "urn:ró:person:alice", relation: "display_name" });
+  const aliceDisplay = database.search({
+    source: "urn:ró:person:alice",
+    relation: "display_name",
+  });
   if (aliceDisplay.firstTriple()) {
     assertEquals(aliceDisplay.firstTriple()![2], "Person: Alice Smith");
   } else {
@@ -946,7 +978,7 @@ Deno.test("TribbleDB.searchFlatmap() with empty search results", () => {
   // Search for non-existent relation
   database.searchFlatmap(
     { relation: "nonexistent" },
-    (triple) => [[triple[0], "processed", "true"]]
+    (triple) => [[triple[0], "processed", "true"]],
   );
 
   // Nothing should change
@@ -966,7 +998,7 @@ Deno.test("TribbleDB.searchFlatmap() prevents duplicates", () => {
       triple, // Keep original
       triple, // Try to duplicate
       [triple[0], "greeting", "Hello"],
-    ]
+    ],
   );
 
   assertEquals(database.triplesCount, 4); // 2 original names + 2 greetings (no duplicates)
@@ -989,7 +1021,7 @@ Deno.test("TribbleDB.searchFlatmap() chain with other operations", () => {
       (triple) => [
         triple,
         [triple[0], "processed", "true"],
-      ]
+      ],
     )
     .delete([["person:alice", "name", "Alice"]]);
 
@@ -1012,17 +1044,17 @@ Deno.test("TribbleDB.searchFlatmap() with constant triple transformation", () =>
   // Transform all person triples to the same constant triple
   database.searchFlatmap(
     { source: { type: "person" } },
-    () => [["const", "const", "const"]]
+    () => [["const", "const", "const"]],
   );
 
   // Should have: 1 company triple + 1 constant triple (deduplicated)
   assertEquals(database.triplesCount, 2);
 
   const allTriples = database.triples();
-  const hasConstTriple = allTriples.some(t =>
+  const hasConstTriple = allTriples.some((t) =>
     t[0] === "const" && t[1] === "const" && t[2] === "const"
   );
-  const hasCompanyTriple = allTriples.some(t =>
+  const hasCompanyTriple = allTriples.some((t) =>
     t[0] === "urn:ró:company:acme" && t[1] === "name" && t[2] === "Acme Corp"
   );
 
@@ -1048,7 +1080,7 @@ Deno.test("TribbleDB searchFlatmap with target modifications handles indices cor
     { relation: "works_at" },
     (triple) => {
       return [[triple[0], triple[1], "company:newcorp"]];
-    }
+    },
   );
 
   // Should have same number of triples (2 deleted, 2 added)
@@ -1098,20 +1130,24 @@ Deno.test("TribbleDB searchFlatmap with aggressive modifications stress test", (
   // First modification: change all ages by appending " years"
   database.searchFlatmap(
     { relation: "age" },
-    (triple) => [[triple[0], triple[1], `${triple[2]} years`]]
+    (triple) => [[triple[0], triple[1], `${triple[2]} years`]],
   );
 
   // Second modification: change department names
   database.searchFlatmap(
     { relation: "department" },
-    (triple) => [[triple[0], triple[1], `dept_${triple[2]}`]]
-  );  // Third modification: duplicate some people with modified names
+    (triple) => [[triple[0], triple[1], `dept_${triple[2]}`]],
+  ); // Third modification: duplicate some people with modified names
   database.searchFlatmap(
     { relation: "name" },
     (triple) => [
       triple, // keep original
-      [triple[0].replace("person:", "employee:"), triple[1], `${triple[2]} Employee`]
-    ]
+      [
+        triple[0].replace("person:", "employee:"),
+        triple[1],
+        `${triple[2]} Employee`,
+      ],
+    ],
   );
 
   // Verify data integrity after multiple modifications
@@ -1134,7 +1170,10 @@ Deno.test("TribbleDB searchFlatmap with aggressive modifications stress test", (
   const aliceData = database.search({ source: "person:alice" }).triples();
   assertEquals(aliceData.length, 3); // name, age, department
 
-  const employeeData = database.search({ relation: "name", target: "Alice Employee" }).triples();
+  const employeeData = database.search({
+    relation: "name",
+    target: "Alice Employee",
+  }).triples();
   assertEquals(employeeData.length, 1);
   assertEquals(employeeData[0][0], "employee:alice");
 

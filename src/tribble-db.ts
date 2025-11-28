@@ -14,7 +14,6 @@ import { findMatchingRows, validateInput } from "./db/search.ts";
 import type { Search } from "./types.ts";
 import { parseSearch } from "./db/inputs.ts";
 
-
 /*
  * A searchable triple database
  *
@@ -210,8 +209,12 @@ export class TribbleDB {
     const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
 
     // Get hashes for comparison
-    const originalHashes = new Set(matchingTriples.map(triple => this.index.hashTriple(triple)));
-    const transformedHashes = new Set(deduplicatedTransformed.map(triple => this.index.hashTriple(triple)));
+    const originalHashes = new Set(
+      matchingTriples.map((triple) => this.index.hashTriple(triple)),
+    );
+    const transformedHashes = new Set(
+      deduplicatedTransformed.map((triple) => this.index.hashTriple(triple)),
+    );
 
     const triplesToDelete: Triple[] = [];
     const triplesToAdd: Triple[] = [];
@@ -524,7 +527,6 @@ export class TribbleDB {
    *
    * @param triples - An array of triples to delete.
    * @returns This TribbleDB instance.
-   *
    */
   delete(triples: Triple[]): TribbleDB {
     const indicesToDelete = new Set<number>();

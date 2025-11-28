@@ -12,9 +12,24 @@ import { IndexPerformanceMetrics } from "../metrics.ts";
  * This implementation uses IndexedSet to map strings to numbers
  * internally for better memory efficiency with long strings.
  */
+/*
+ * Metadata for efficient deletion - stores all indices needed to remove a triple
+ */
+type TripleMetadata = {
+  sourceTypeIdx: number;
+  sourceIdIdx: number;
+  sourceQsIndices: number[];
+  relationIdx: number;
+  targetTypeIdx: number;
+  targetIdIdx: number;
+  targetQsIndices: number[];
+};
+
 export class Index {
   // Internal indexed representation for memory efficiency
   private indexedTriples: IndexedTriple[];
+  // Metadata cache for efficient deletion
+  private tripleMetadata: Map<number, TripleMetadata>;
 
   // String indexing sets for memory efficiency
   stringIndex: IndexedSet;
@@ -37,6 +52,7 @@ export class Index {
 
   constructor(triples: Triple[]) {
     this.indexedTriples = [];
+    this.tripleMetadata = new Map();
     this.stringIndex = new IndexedSet();
     this.tripleHashes = new Set();
     this.hashIndices = new Map();
@@ -62,91 +78,45 @@ export class Index {
   delete(triples: Triple[]) {
     for (let idx = 0; idx < triples.length; idx++) {
       const triple = triples[idx];
-      const tripleIndex = this.getTripleIndex(triple);
+      const tripleHash = this.hashTriple(triple);
+      const tripleIndex = this.hashIndices.get(tripleHash);
 
-      if (tripleIndex !== undefined) {
-        const tripleHash = this.hashTriple(triple);
-        this.tripleHashes.delete(tripleHash);
-        this.hashIndices.delete(tripleHash);
-        this.cleanupSearchMaps(tripleIndex);
-
-        // Mark the entry as deleted by setting it to undefined
-        delete this.indexedTriples[tripleIndex];
+      if (tripleIndex === undefined) {
+        continue;
       }
+
+      // Remove hashes first
+      this.tripleHashes.delete(tripleHash);
+      this.hashIndices.delete(tripleHash);
+
+      // Fast cleanup using cached metadata
+      const metadata = this.tripleMetadata.get(tripleIndex);
+      if (metadata) {
+        // Remove from all index maps using cached metadata - no conditionals needed
+        this.sourceType.get(metadata.sourceTypeIdx)?.delete(tripleIndex);
+        this.sourceId.get(metadata.sourceIdIdx)?.delete(tripleIndex);
+        this.relations.get(metadata.relationIdx)?.delete(tripleIndex);
+        this.targetType.get(metadata.targetTypeIdx)?.delete(tripleIndex);
+        this.targetId.get(metadata.targetIdIdx)?.delete(tripleIndex);
+
+        // Clean up query strings in batch
+        for (const qsIdx of metadata.sourceQsIndices) {
+          this.sourceQs.get(qsIdx)?.delete(tripleIndex);
+        }
+        for (const qsIdx of metadata.targetQsIndices) {
+          this.targetQs.get(qsIdx)?.delete(tripleIndex);
+        }
+
+        this.tripleMetadata.delete(tripleIndex);
+      }
+
+      // mark the triple index as undefined
+      delete this.indexedTriples[tripleIndex];
     }
   }
 
   /*
-   * Remove a triple index from all search maps
-   */
-  private cleanupSearchMaps(tripleIndex: number) {
-    const indexedTriple = this.indexedTriples[tripleIndex];
-    if (!indexedTriple) {
-      return
-    };
-
-    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
-
-    // Convert indices back to strings
-    const source = this.stringIndex.getValue(sourceIdx);
-    const relation = this.stringIndex.getValue(relationIdx);
-    const target = this.stringIndex.getValue(targetIdx);
-
-    if (typeof source === "undefined" || typeof relation === "undefined" || typeof target === "undefined") {
-      return
-    };
-
-    // Parse source and target to get their components (use cached if available)
-    let parsedSource = this.stringUrn.get(source);
-    if (!parsedSource) {
-      parsedSource = asUrn(source);
-      this.stringUrn.set(source, parsedSource);
-    }
-
-    let parsedTarget = this.stringUrn.get(target);
-    if (!parsedTarget) {
-      parsedTarget = asUrn(target);
-      this.stringUrn.set(target, parsedTarget);
-    }
-
-    // Get string indices for precise removal
-    const sourceTypeIdx = this.stringIndex.getIndex(parsedSource.type);
-    const sourceIdIdx = this.stringIndex.getIndex(parsedSource.id);
-    const targetTypeIdx = this.stringIndex.getIndex(parsedTarget.type);
-    const targetIdIdx = this.stringIndex.getIndex(parsedTarget.id);
-
-    // Remove from specific sets only
-    if (sourceTypeIdx !== undefined) {
-      this.sourceType.get(sourceTypeIdx)?.delete(tripleIndex);
-    }
-    if (sourceIdIdx !== undefined) {
-      this.sourceId.get(sourceIdIdx)?.delete(tripleIndex);
-    }
-    this.relations.get(relationIdx)?.delete(tripleIndex);
-    if (targetTypeIdx !== undefined) {
-      this.targetType.get(targetTypeIdx)?.delete(tripleIndex);
-    }
-    if (targetIdIdx !== undefined) {
-      this.targetId.get(targetIdIdx)?.delete(tripleIndex);
-    }
-
-    // Clean up query string maps
-    for (const [key, value] of Object.entries(parsedSource.qs)) {
-      const keyValueIdx = this.stringIndex.getIndex(`${key}=${value}`);
-      if (keyValueIdx !== undefined) {
-        this.sourceQs.get(keyValueIdx)?.delete(tripleIndex);
-      }
-    }
-
-    for (const [key, value] of Object.entries(parsedTarget.qs)) {
-      const keyValueIdx = this.stringIndex.getIndex(`${key}=${value}`);
-      if (keyValueIdx !== undefined) {
-        this.targetQs.get(keyValueIdx)?.delete(tripleIndex);
-      }
-    }
-  }  /*
    * Return the triples that are absent from the index
-   *
    */
   difference(triples: Triple[]): Triple[] {
     return triples.filter((triple) => !this.hasTriple(triple));
@@ -154,7 +124,6 @@ export class Index {
 
   /*
    * Check if a triple is present in the index
-   *
    */
   hasTriple(triple: Triple): boolean {
     return this.tripleHashes.has(this.hashTriple(triple));
@@ -162,27 +131,25 @@ export class Index {
 
   /*
    * Generate a simple hash for a triple
-   *
    */
   hashTriple(triple: Triple): string {
     const str = `${triple[0]}${triple[1]}${triple[2]}`;
 
     let hash = 0;
     for (let i = 0, len = str.length; i < len; i++) {
-        const chr = str.charCodeAt(i);
-        hash = (hash << 5) - hash + chr;
-        hash |= 0; // Convert to 32bit integer
+      const chr = str.charCodeAt(i);
+      hash = (hash << 5) - hash + chr;
+      hash |= 0; // Convert to 32bit integer
     }
     return hash.toString();
   }
 
   /*
    * Get the index of a specific triple
-   *
    */
   getTripleIndex(triple: Triple): number | undefined {
     const hash = this.hashTriple(triple);
-    return this.hashIndices.get(hash)
+    return this.hashIndices.get(hash);
   }
 
   /*
@@ -217,10 +184,10 @@ export class Index {
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
 
       // Already present, and no need to add twice.
-      if (this.tripleHashes.has(this.hashTriple(triple))) {
+      const hash = this.hashTriple(triple);
+      if (this.tripleHashes.has(hash)) {
         continue;
       }
-      const hash = this.hashTriple(triple);
       this.tripleHashes.add(hash);
 
       // Get the actual index where this triple will be stored
@@ -235,6 +202,10 @@ export class Index {
         relationIdx,
         this.stringIndex.add(target),
       ]);
+
+      // Collect query string indices for metadata
+      const sourceQsIndices: number[] = [];
+      const targetQsIndices: number[] = [];
 
       // source.type
       let sourceTypeSet = this.sourceType.get(sourceTypeIdx);
@@ -255,6 +226,7 @@ export class Index {
       // source.qs
       for (const [key, val] of Object.entries(parsedSource.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
+        sourceQsIndices.push(qsIdx);
         if (!this.sourceQs.has(qsIdx)) {
           this.sourceQs.set(qsIdx, new Set());
         }
@@ -288,12 +260,24 @@ export class Index {
       // target.qs
       for (const [key, val] of Object.entries(parsedTarget.qs)) {
         const qsIdx = this.stringIndex.add(`${key}=${val}`);
+        targetQsIndices.push(qsIdx);
         if (!this.targetQs.has(qsIdx)) {
           this.targetQs.set(qsIdx, new Set());
         }
 
         this.targetQs.get(qsIdx)!.add(idx);
       }
+
+      // Store metadata for efficient deletion
+      this.tripleMetadata.set(idx, {
+        sourceTypeIdx,
+        sourceIdIdx,
+        sourceQsIndices,
+        relationIdx,
+        targetTypeIdx,
+        targetIdIdx,
+        targetQsIndices,
+      });
     }
   }
   /*
@@ -315,7 +299,7 @@ export class Index {
    */
   triples(): Triple[] {
     return this.indexedTriples
-      .filter(triple => triple !== undefined)
+      .filter((triple) => triple !== undefined)
       .map(([sourceIdx, relationIdx, targetIdx]) => [
         this.stringIndex.getValue(sourceIdx)!,
         this.stringIndex.getValue(relationIdx)!,
@@ -325,7 +309,6 @@ export class Index {
 
   /*
    * Get a specific triple by index
-   *
    */
   getTriple(index: number): Triple | undefined {
     if (index < 0 || index >= this.indexedTriples.length) {
@@ -347,7 +330,6 @@ export class Index {
 
   /*
    * Get the string indices for a specific triple by triple index
-   *
    */
   getTripleIndices(index: number): [number, number, number] | undefined {
     if (index < 0 || index >= this.indexedTriples.length) {
@@ -440,8 +422,10 @@ export class Index {
   clone() {
     const newIndex = new Index([]);
     newIndex.indexedTriples = this.indexedTriples.slice();
+    newIndex.tripleMetadata = new Map(this.tripleMetadata);
     newIndex.stringIndex = this.stringIndex.clone();
     newIndex.tripleHashes = new Set(this.tripleHashes);
+    newIndex.hashIndices = new Map(this.hashIndices);
 
     // Clone all maps
     const cloneMap = (

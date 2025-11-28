@@ -3,6 +3,7 @@ import { IndexedSet } from "../sets.ts";
 import { IndexPerformanceMetrics } from "../metrics.ts";
 export declare class Index {
     private indexedTriples;
+    private tripleMetadata;
     stringIndex: IndexedSet;
     tripleHashes: Set<string>;
     hashIndices: Map<string, number>;
@@ -17,7 +18,6 @@ export declare class Index {
     stringUrn: Map<string, ParsedUrn>;
     constructor(triples: Triple[]);
     delete(triples: Triple[]): void;
-    private cleanupSearchMaps;
     difference(triples: Triple[]): Triple[];
     hasTriple(triple: Triple): boolean;
     hashTriple(triple: Triple): string;
