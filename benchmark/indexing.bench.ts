@@ -1,5 +1,8 @@
 /*
- * Benchmark TribbleDB on representative workloads
+ * Benchmark TribbleDB indexing performance with:
+ * - different sizes of input data.
+ * - different amounts of uniqueness / duplication in the data.
+ * - different node ID formats.
  */
 
 import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
@@ -19,8 +22,9 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
       const RELATION_LENGTH = 5;
       const sampleData = TriplesNodeId(samples, ID_LENGTH, RELATION_LENGTH)
 
+      const data = unwrap(sampleData);
       bench.start();
-      new TribbleDB(unwrap(sampleData) as [string, string, string][]);
+      new TribbleDB(data as [string, string, string][]);
     }
   })
 }
@@ -34,8 +38,9 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
       const RELATION_LENGTH = 3;
       const sampleData = TriplesNodeId(samples, ID_LENGTH, RELATION_LENGTH)
 
+      const data = unwrap(sampleData);
       bench.start();
-      new TribbleDB(unwrap(sampleData) as [string, string, string][]);
+      new TribbleDB(data as [string, string, string][]);
     }
   })
 }
@@ -50,8 +55,9 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
       const RELATION_LENGTH = 5;
       const sampleData = TriplesNodeIdType(samples, ID_LENGTH, TYPE_LENGTH, RELATION_LENGTH)
 
+      const data = unwrap(sampleData);
       bench.start();
-      new TribbleDB(unwrap(sampleData) as [string, string, string][]);
+      new TribbleDB(data as [string, string, string][]);
     }
   })
 }
@@ -66,8 +72,9 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
       const RELATION_LENGTH = 3;
       const sampleData = TriplesNodeIdType(samples, ID_LENGTH, TYPE_LENGTH, RELATION_LENGTH)
 
+      const data = unwrap(sampleData);
       bench.start();
-      new TribbleDB(unwrap(sampleData) as [string, string, string][]);
+      new TribbleDB(data as [string, string, string][]);
     }
   })
 }
@@ -86,8 +93,9 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
 
       const sampleData = TriplesNodeIdTypeQS(samples, ID_LENGTH, TYPE_LENGTH, NUM_QS, KEY_LENGTH, VALUE_LENGTH, RELATION_LENGTH)
 
+      const data = unwrap(sampleData);
       bench.start();
-      new TribbleDB(unwrap(sampleData) as [string, string, string][]);
+      new TribbleDB(data as [string, string, string][]);
     }
   })
 }
@@ -106,8 +114,9 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
 
       const sampleData = TriplesNodeIdTypeQS(samples, ID_LENGTH, TYPE_LENGTH, NUM_QS, KEY_LENGTH, VALUE_LENGTH, RELATION_LENGTH)
 
+      const data = unwrap(sampleData);
       bench.start();
-      new TribbleDB(unwrap(sampleData) as [string, string, string][]);
+      new TribbleDB(data as [string, string, string][]);
     }
   })
 }
