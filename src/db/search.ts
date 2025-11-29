@@ -12,12 +12,6 @@ import { Sets } from "../sets.ts";
  * At runtime, validate the user provided a sensible search definition.
  */
 export function validateInput(params: SearchObject) {
-  const { source, relation, target } = params;
-
-  if (source === undefined && relation === undefined && target === undefined) {
-    throw new Error("At least one search parameter must be defined");
-  }
-
   const allowedKeys = ["source", "relation", "target"];
   if (!Array.isArray(params)) {
     for (const key of Object.keys(params)) {
@@ -328,6 +322,11 @@ export function findMatchingRows(
     );
 
     matchingRowSets.push(matches);
+  }
+
+  // If no filters are provided, return all cursor indices
+  if (matchingRowSets.length === 0) {
+    return cursorIndices;
   }
 
   return Sets.intersection(metrics, matchingRowSets);

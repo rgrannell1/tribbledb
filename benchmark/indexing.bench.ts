@@ -12,8 +12,9 @@ import {
   TriplesNodeIdType,
   TriplesNodeIdTypeQS,
 } from "./fuzzers.ts";
+import { SAMPLE_SIZES } from "./constants.ts";
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   Deno.bench({
     name: `Insert ${samples} triples (NodeID format, high uniqueness)`,
     group: "TribbleDB Insertion (NodeID)",
@@ -29,7 +30,7 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
   });
 }
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   Deno.bench({
     name: `Insert ${samples} triples (NodeID format, high duplicates)`,
     group: "TribbleDB Insertion (NodeID)",
@@ -45,7 +46,7 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
   });
 }
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   Deno.bench({
     name: `Insert ${samples} triples (NodeIDType format, high uniqueness)`,
     group: "TribbleDB Insertion (NodeIDType)",
@@ -67,7 +68,7 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
   });
 }
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   Deno.bench({
     name: `Insert ${samples} triples (NodeIDType format, high duplicates)`,
     group: "TribbleDB Insertion (NodeIDType)",

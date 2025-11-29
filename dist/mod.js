@@ -601,10 +601,6 @@ var Triples = class {
 
 // src/db/search.ts
 function validateInput(params) {
-  const { source, relation, target } = params;
-  if (source === void 0 && relation === void 0 && target === void 0) {
-    throw new Error("At least one search parameter must be defined");
-  }
   const allowedKeys = ["source", "relation", "target"];
   if (!Array.isArray(params)) {
     for (const key of Object.keys(params)) {
@@ -772,6 +768,9 @@ function findMatchingRows(params, index, cursorIndices, metrics) {
       cursorIndices
     );
     matchingRowSets.push(matches);
+  }
+  if (matchingRowSets.length === 0) {
+    return cursorIndices;
   }
   return Sets.intersection(metrics, matchingRowSets);
 }

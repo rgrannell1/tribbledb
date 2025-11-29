@@ -49,6 +49,24 @@ Deno.test("search by source type returns all matching triples", () => {
   );
 });
 
+Deno.test("search with no parameters returns all triples", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({});
+
+  assertEquals(results.triplesCount, testTriples.length);
+
+  // Verify all original triples are included
+  const resultTriples = results.triples();
+  for (const originalTriple of testTriples) {
+    const found = resultTriples.some(resultTriple =>
+      resultTriple[0] === originalTriple[0] &&
+      resultTriple[1] === originalTriple[1] &&
+      resultTriple[2] === originalTriple[2]
+    );
+    assertEquals(found, true, `Triple ${JSON.stringify(originalTriple)} should be in results`);
+  }
+});
+
 Deno.test("search by source id returns all matching triples", () => {
   const database = new TribbleDB(testTriples);
   const results = database.search({ source: { id: "alice" } });
@@ -891,27 +909,6 @@ Deno.test("search with array params non-existent values returns empty", () => {
   assertEquals(results.triplesCount, 0);
 });
 
-Deno.test("search with array params all undefined throws error", () => {
-  const database = new TribbleDB(simpleTestTriples);
-
-  let threwError = false;
-  try {
-    database.search(
-      [undefined, undefined, undefined] as unknown as Parameters<
-        typeof database.search
-      >[0],
-    );
-  } catch (err) {
-    threwError = String(err).includes(
-      "At least one search parameter must be defined",
-    );
-  }
-
-  if (!threwError) {
-    throw new Error("Expected error for all undefined parameters");
-  }
-});
-
 // New tests: relation 'name' with an array of target ids should match any
 Deno.test("search with relation 'name' and array of targets", () => {
   const database = new TribbleDB(simpleTestTriples);
@@ -1043,6 +1040,19 @@ Deno.test("search with non-existent URN string source returns empty", () => {
   const results = database.search({ source: "urn:ró:bird:penguin" });
 
   assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with all undefined array format returns all triples", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search(
+    [undefined, undefined, undefined] as unknown as Parameters<typeof database.search>[0]
+  );
+
+  assertEquals(results.triplesCount, testTriples.length);
+
+  // Verify all original triples are included
+  const resultTriples = results.triples();
+  assertEquals(resultTriples.length, testTriples.length);
 });
 
 Deno.test("search with URN string source using array format", () => {
