@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 if [[ "$*" == *"--json"* ]]; then
-  deno bench --allow-env bench.js --json
+  deno bench --allow-read  --json
 else
-  deno bench --allow-env bench.js
+  deno bench --allow-read
 fi
