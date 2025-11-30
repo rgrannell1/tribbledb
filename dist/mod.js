@@ -194,15 +194,13 @@ var TribbleStringifier = class {
 };
 
 // src/urn.ts
-function parseUrn(urn, namespace = "r\xF3") {
-  if (!urn.startsWith(`urn:${namespace}:`)) {
-    throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
-  }
-  const delimited = urn.split(":");
+function parseUrn(urn) {
+  const delimited = urn.split(":", 4);
   const type = delimited[2];
-  const idx = urn.indexOf("?");
-  const queryString = idx !== -1 ? urn.slice(idx + 1) : "";
-  const id = idx !== -1 ? delimited[3].slice(0, delimited[3].indexOf("?")) : delimited[3];
+  const remainder = delimited[3];
+  const idx = remainder.indexOf("?");
+  const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
+  const id = idx !== -1 ? remainder.slice(0, idx) : remainder;
   const qs = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
   return {
     type,
@@ -218,7 +216,7 @@ function asUrn(value, namespace = "r\xF3") {
       qs: {}
     };
   }
-  return parseUrn(value, namespace);
+  return parseUrn(value);
 }
 
 // src/metrics.ts

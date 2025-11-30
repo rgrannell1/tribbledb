@@ -33,20 +33,16 @@ import type { ParsedUrn } from "./types.ts";
  * @param namespace - The namespace to use (default: "ró").
  * @returns The parsed URN components.
  */
-export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
-  if (!urn.startsWith(`urn:${namespace}:`)) {
-    throw new Error(`Invalid URN for namespace ${namespace}: ${urn}`);
-  }
-
-  const delimited = urn.split(":");
-
+export function parseUrn(urn: string): ParsedUrn {
+  const delimited = urn.split(":", 4);
   const type = delimited[2];
+  const remainder = delimited[3];
 
-  const idx = urn.indexOf("?");
-  const queryString = idx !== -1 ? urn.slice(idx + 1) : "";
+  const idx = remainder.indexOf("?");
+  const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
   const id = idx !== -1
-    ? delimited[3].slice(0, delimited[3].indexOf("?"))
-    : delimited[3];
+    ? remainder.slice(0, idx)
+    : remainder;
 
   const qs = queryString
     ? Object.fromEntries(new URLSearchParams(queryString))
@@ -58,6 +54,8 @@ export function parseUrn(urn: string, namespace: string = "ró"): ParsedUrn {
     qs,
   };
 }
+
+
 
 /*
  * Converts a string value to a URN.
@@ -76,5 +74,5 @@ export function asUrn(value: string, namespace: string = "ró"): ParsedUrn {
     };
   }
 
-  return parseUrn(value, namespace);
+  return parseUrn(value);
 }
