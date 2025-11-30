@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TribbleDB Browser Benchmarks</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status.ready {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status.running {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status.complete {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #1565c0;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .results {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .benchmark {
+            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+        }
+
+        .benchmark:last-child {
+            border-bottom: none;
+        }
+
+        .benchmark-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .benchmark-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-weight: 500;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+
+        .benchmark-list {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .benchmark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .benchmark-item:last-child {
+            border-bottom: none;
+        }
+
+        .benchmark-item button {
+            padding: 6px 16px;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .benchmark-item button.running {
+            background: #f57c00;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .benchmark-group {
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+
+        .benchmark-group:first-child {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 TribbleDB Browser Benchmarks</h1>
+        <p>Run benchmarks with browser profiling tools</p>
+    </div>
+
+    <div class="instructions">
+        <h3>📊 How to Profile:</h3>
+        <ol>
+            <li>Open Chrome DevTools (F12) → Performance tab</li>
+            <li>Click the record button (or press Cmd/Ctrl+E)</li>
+            <li>Click a "Run" button below to run a specific benchmark</li>
+            <li>Wait for completion, then stop recording</li>
+            <li>Analyze the flame chart to see performance hotspots</li>
+        </ol>
+    </div>
+
+    <div id="status" class="status ready">
+        Ready to run benchmarks
+    </div>
+
+    <div class="controls">
+        <button id="runAllBtn" onclick="runAllBenchmarks()">Run All Benchmarks</button>
+        <button onclick="clearResults()">Clear Results</button>
+        <button onclick="downloadResults()">Download JSON</button>
+    </div>
+
+    <div class="benchmark-list">
+        <h2>Available Benchmarks</h2>
+        <div id="benchmarkList">Loading...</div>
+    </div>
+
+    <div class="results">
+        <h2>Results</h2>
+        <div id="results">No results yet</div>
+    </div>    <script type="module">
+        // Shim Deno.bench for browser environment
+        window.Deno = window.Deno || {};
+        window.registeredBenchmarks = [];
+
+        // Simple bench implementation that just registers benchmarks
+        Deno.bench = function(config) {
+            window.registeredBenchmarks.push({
+                name: config.name,
+                group: config.group,
+                fn: config.fn
+            });
+        };
+
+        // Mock bench object for timing
+        class MockBench {
+            constructor() {
+                this.startTime = null;
+            }
+
+            start() {
+                this.startTime = performance.now();
+            }
+        }
+
+        // Function to run a single benchmark
+        async function runBenchmark(benchmark) {
+            const iterations = 10;
+            const times = [];
+
+            for (let idx = 0; idx < iterations; idx++) {
+                const bench = new MockBench();
+
+                // 2 second delay before the actual benchmark work (so setup is visible in trace)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Run the benchmark function
+                performance.mark(`${benchmark.name}-start`);
+                await benchmark.fn(bench);
+                performance.mark(`${benchmark.name}-end`);
+
+                performance.measure(
+                    benchmark.name,
+                    `${benchmark.name}-start`,
+                    `${benchmark.name}-end`
+                );
+
+                const elapsed = bench.startTime !== null
+                    ? performance.now() - bench.startTime
+                    : 0;
+
+                times.push(elapsed);
+            }
+
+            // Calculate statistics
+            times.sort((a, bch) => a - bch);
+            const avg = times.reduce((sum, tme) => sum + tme, 0) / times.length;
+            const min = times[0];
+            const max = times[times.length - 1];
+            const median = times[Math.floor(times.length / 2)];
+
+            return {
+                name: benchmark.name,
+                group: benchmark.group,
+                iterations,
+                avg: avg * 1_000_000, // Convert to nanoseconds
+                min: min * 1_000_000,
+                max: max * 1_000_000,
+                median: median * 1_000_000
+            };
+        }
+
+        // Run a single benchmark by index
+        window.runSingleBenchmark = async function(index) {
+            const benchmark = window.registeredBenchmarks[index];
+            const statusEl = document.getElementById('status');
+
+            // Get the button and mark as running
+            const buttons = document.querySelectorAll('.benchmark-item button');
+            const button = buttons[index];
+            button.classList.add('running');
+            button.textContent = 'Running...';
+            button.disabled = true;
+
+            statusEl.className = 'status running';
+            statusEl.textContent = `Running: ${benchmark.name.substring(0, 80)}...`;
+
+            // Force a render by yielding to the browser
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            try {
+                const result = await runBenchmark(benchmark);
+
+                // Add to results
+                window.benchmarkResults = window.benchmarkResults || [];
+                window.benchmarkResults.push(result);
+
+                updateResultsDisplay(window.benchmarkResults);
+
+                statusEl.className = 'status complete';
+                statusEl.textContent = `Complete: ${benchmark.group || 'benchmark'}`;
+
+                button.classList.remove('running');
+                button.textContent = '✓ Done';
+                button.disabled = false;
+            } catch (err) {
+                console.error(`Error running benchmark ${benchmark.name}:`, err);
+                statusEl.className = 'status';
+                statusEl.style.background = '#ffebee';
+                statusEl.style.color = '#c62828';
+                statusEl.textContent = `Error: ${err.message}`;
+
+                button.classList.remove('running');
+                button.textContent = '✗ Error';
+                button.disabled = false;
+            }
+        };        // Run all benchmarks
+        window.runAllBenchmarks = async function() {
+            const statusEl = document.getElementById('status');
+            const resultsEl = document.getElementById('results');
+            const runBtn = document.getElementById('runAllBtn');
+
+            runBtn.disabled = true;
+            statusEl.className = 'status running';
+            statusEl.textContent = 'Running benchmarks...';
+            resultsEl.innerHTML = '<p>Running benchmarks, please wait...</p>';
+
+            const results = [];
+
+            for (let idx = 0; idx < window.registeredBenchmarks.length; idx++) {
+                const benchmark = window.registeredBenchmarks[idx];
+
+                statusEl.textContent = `Running ${idx + 1}/${window.registeredBenchmarks.length}: ${benchmark.group || 'benchmark'}`;
+
+                try {
+                    const result = await runBenchmark(benchmark);
+                    results.push(result);
+
+                    // Update results display
+                    updateResultsDisplay(results);
+                } catch (err) {
+                    console.error(`Error running benchmark ${benchmark.name}:`, err);
+                    results.push({
+                        name: benchmark.name,
+                        group: benchmark.group,
+                        error: err.message
+                    });
+                }
+
+                // Small delay between benchmarks
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            statusEl.className = 'status complete';
+            statusEl.textContent = `Complete! Ran ${results.length} benchmarks`;
+            runBtn.disabled = false;
+
+            window.benchmarkResults = results;
+        };
+
+        function updateResultsDisplay(results) {
+            const resultsEl = document.getElementById('results');
+
+            resultsEl.innerHTML = results.map(result => {
+                if (result.error) {
+                    return `
+                        <div class="benchmark">
+                            <div class="benchmark-name">❌ ${result.name}</div>
+                            <div style="color: red;">${result.error}</div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="benchmark">
+                        <div class="benchmark-name">${result.name}</div>
+                        <div class="benchmark-stats">
+                            <div class="stat">
+                                <span class="stat-label">Avg:</span>
+                                <span>${(result.avg / 1_000_000).toFixed(2)}ms</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Min:</span>
+                                <span>${(result.min / 1_000_000).toFixed(2)}ms</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Max:</span>
+                                <span>${(result.max / 1_000_000).toFixed(2)}ms</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Median:</span>
+                                <span>${(result.median / 1_000_000).toFixed(2)}ms</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '<p>No results yet</p>';
+            window.benchmarkResults = [];
+        };
+
+        window.downloadResults = function() {
+            if (!window.benchmarkResults || window.benchmarkResults.length === 0) {
+                alert('No results to download');
+                return;
+            }
+
+            const data = {
+                date: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                results: window.benchmarkResults
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const anc = document.createElement('a');
+            anc.href = url;
+            anc.download = `benchmark-${Date.now()}.json`;
+            anc.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // Display benchmark list
+        function displayBenchmarkList() {
+            const listEl = document.getElementById('benchmarkList');
+
+            if (!window.registeredBenchmarks || window.registeredBenchmarks.length === 0) {
+                listEl.innerHTML = '<p>No benchmarks loaded</p>';
+                return;
+            }
+
+            // Group benchmarks by group
+            const grouped = {};
+            window.registeredBenchmarks.forEach((bench, idx) => {
+                const grp = bench.group || 'Other';
+                if (!grouped[grp]) {
+                    grouped[grp] = [];
+                }
+                grouped[grp].push({ bench, idx });
+            });
+
+            let html = '';
+            for (const [group, items] of Object.entries(grouped)) {
+                html += `<div class="benchmark-group">${group}</div>`;
+                for (const { bench, idx } of items) {
+                    const name = bench.name.length > 100
+                        ? bench.name.substring(0, 97) + '...'
+                        : bench.name;
+                    html += `
+                        <div class="benchmark-item">
+                            <span>${name}</span>
+                            <button onclick="runSingleBenchmark(${idx})">Run</button>
+                        </div>
+                    `;
+                }
+            }
+
+            listEl.innerHTML = html;
+        }
+
+        // Import compiled benchmark modules
+        console.log('Loading benchmark modules...');
+
+        // Import the compiled benchmark bundles
+        Promise.all([
+            import('./dist/indexing.bench.js'),
+            import('./dist/deleting.bench.js'),
+            import('./dist/searchflatmap.bench.js')
+        ]).then(() => {
+            console.log(`Loaded all benchmarks`);
+            console.log(`Registered ${window.registeredBenchmarks.length} benchmarks`);
+            document.getElementById('status').textContent =
+                `Ready to run ${window.registeredBenchmarks.length} benchmarks`;
+            displayBenchmarkList();
+        }).catch(err => {
+            console.error('Error loading benchmarks:', err);
+            document.getElementById('status').textContent = 'Error loading benchmarks - see console';
+            document.getElementById('status').className = 'status';
+            document.getElementById('status').style.background = '#ffebee';
+            document.getElementById('status').style.color = '#c62828';
+        });
+    </script>
+</body>
+</html>
