@@ -13,6 +13,7 @@ import { asUrn } from "./urn.ts";
 import { findMatchingRows, validateInput } from "./db/search.ts";
 import type { Search } from "./types.ts";
 import { parseSearch } from "./db/inputs.ts";
+import { hashTriple } from "./hash.ts";
 
 /*
  * A searchable triple database
@@ -180,7 +181,7 @@ export class TribbleDB {
     const result: Triple[] = [];
 
     for (const triple of triples) {
-      const hash = this.index.hashTriple(triple);
+      const hash = hashTriple(triple);
       if (!seen.has(hash)) {
         seen.add(hash);
         result.push(triple);
@@ -211,14 +212,12 @@ export class TribbleDB {
     // Pre-compute hashes once for efficiency
     const originalHashMap = new Map<string, Triple>();
     for (const triple of matchingTriples) {
-      const hash = this.index.hashTriple(triple);
-      originalHashMap.set(hash, triple);
+      originalHashMap.set(hashTriple(triple), triple);
     }
 
     const transformedHashMap = new Map<string, Triple>();
     for (const triple of deduplicatedTransformed) {
-      const hash = this.index.hashTriple(triple);
-      transformedHashMap.set(hash, triple);
+      transformedHashMap.set(hashTriple(triple), triple);
     }
 
     // Find differences efficiently using single pass

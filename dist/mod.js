@@ -197,7 +197,7 @@ var TribbleStringifier = class {
 function parseUrn(urn) {
   const delimited = urn.split(":", 4);
   const type = delimited[2];
-  const remainder = delimited[3];
+  const remainder = delimited[3] ?? "";
   const idx = remainder.indexOf("?");
   const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
   const id = idx !== -1 ? remainder.slice(0, idx) : remainder;
@@ -249,6 +249,25 @@ var TribbleDBPerformanceMetrics = class _TribbleDBPerformanceMetrics {
   }
 };
 
+// src/hash.ts
+function hashTriple(triple) {
+  const [src, rel, tgt] = triple;
+  let hashValue = 0;
+  for (let i = 0; i < src.length; i++) {
+    hashValue = (hashValue << 5) - hashValue + src.charCodeAt(i);
+    hashValue |= 0;
+  }
+  for (let i = 0; i < rel.length; i++) {
+    hashValue = (hashValue << 5) - hashValue + rel.charCodeAt(i);
+    hashValue |= 0;
+  }
+  for (let i = 0; i < tgt.length; i++) {
+    hashValue = (hashValue << 5) - hashValue + tgt.charCodeAt(i);
+    hashValue |= 0;
+  }
+  return hashValue.toString();
+}
+
 // src/indices/index.ts
 var Index = class _Index {
   // Internal indexed representation for memory efficiency
@@ -292,7 +311,7 @@ var Index = class _Index {
   delete(triples) {
     for (let idx = 0; idx < triples.length; idx++) {
       const triple = triples[idx];
-      const tripleHash = this.hashTriple(triple);
+      const tripleHash = hashTriple(triple);
       const tripleIndex = this.hashIndices.get(tripleHash);
       if (tripleIndex === void 0) {
         continue;
@@ -303,7 +322,7 @@ var Index = class _Index {
       if (metadata) {
         this.sourceType.get(metadata.sourceTypeIdx)?.delete(tripleIndex);
         this.sourceId.get(metadata.sourceIdIdx)?.delete(tripleIndex);
-        this.relations.get(metadata.relationIdx)?.delete(tripleIndex);
+        this.relations.get(metadata.relation)?.delete(tripleIndex);
         this.targetType.get(metadata.targetTypeIdx)?.delete(tripleIndex);
         this.targetId.get(metadata.targetIdIdx)?.delete(tripleIndex);
         for (const qsIdx of metadata.sourceQsIndices) {
@@ -327,26 +346,13 @@ var Index = class _Index {
    * Check if a triple is present in the index
    */
   hasTriple(triple) {
-    return this.tripleHashes.has(this.hashTriple(triple));
-  }
-  /*
-   * Generate a simple hash for a triple
-   */
-  hashTriple(triple) {
-    const str = `${triple[0]}${triple[1]}${triple[2]}`;
-    let hash = 0;
-    for (let i = 0, len = str.length; i < len; i++) {
-      const chr = str.charCodeAt(i);
-      hash = (hash << 5) - hash + chr;
-      hash |= 0;
-    }
-    return hash.toString();
+    return this.tripleHashes.has(hashTriple(triple));
   }
   /*
    * Get the index of a specific triple
    */
   getTripleIndex(triple) {
-    const hash = this.hashTriple(triple);
+    const hash = hashTriple(triple);
     return this.hashIndices.get(hash);
   }
   /*
@@ -369,20 +375,19 @@ var Index = class _Index {
         this.stringUrn.set(target, parsedTarget);
       }
       const sourceIdx = this.stringIndex.add(source);
-      const relationIdx = this.stringIndex.add(relation);
       const targetIdx = this.stringIndex.add(target);
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
       const sourceIdIdx = this.stringIndex.add(parsedSource.id);
       const targetTypeIdx = this.stringIndex.add(parsedTarget.type);
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
-      const hash = this.hashTriple(triple);
+      const hash = hashTriple(triple);
       if (this.tripleHashes.has(hash)) {
         continue;
       }
       this.tripleHashes.add(hash);
       const idx = this.indexedTriples.length;
       this.hashIndices.set(hash, idx);
-      this.indexedTriples.push([sourceIdx, relationIdx, targetIdx]);
+      this.indexedTriples.push([sourceIdx, relation, targetIdx]);
       const sourceQsIndices = [];
       const targetQsIndices = [];
       let sourceTypeSet = this.sourceType.get(sourceTypeIdx);
@@ -407,10 +412,10 @@ var Index = class _Index {
         }
         sourceQsSet.add(idx);
       }
-      let relationSet = this.relations.get(relationIdx);
+      let relationSet = this.relations.get(relation);
       if (!relationSet) {
         relationSet = /* @__PURE__ */ new Set();
-        this.relations.set(relationIdx, relationSet);
+        this.relations.set(relation, relationSet);
       }
       relationSet.add(idx);
       let targetTypeSet = this.targetType.get(targetTypeIdx);
@@ -439,7 +444,7 @@ var Index = class _Index {
         sourceTypeIdx,
         sourceIdIdx,
         sourceQsIndices,
-        relationIdx,
+        relation,
         targetTypeIdx,
         targetIdIdx,
         targetQsIndices
@@ -462,9 +467,9 @@ var Index = class _Index {
    * Reconstruct the original triples from the indexed representation
    */
   triples() {
-    return this.indexedTriples.filter((triple) => triple !== void 0).map(([sourceIdx, relationIdx, targetIdx]) => [
+    return this.indexedTriples.filter((triple) => triple !== void 0).map(([sourceIdx, relation, targetIdx]) => [
       this.stringIndex.getValue(sourceIdx),
-      this.stringIndex.getValue(relationIdx),
+      relation,
       this.stringIndex.getValue(targetIdx)
     ]);
   }
@@ -479,10 +484,10 @@ var Index = class _Index {
     if (!indexedTriple) {
       return void 0;
     }
-    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
+    const [sourceIdx, relation, targetIdx] = indexedTriple;
     return [
       this.stringIndex.getValue(sourceIdx),
-      this.stringIndex.getValue(relationIdx),
+      relation,
       this.stringIndex.getValue(targetIdx)
     ];
   }
@@ -523,12 +528,8 @@ var Index = class _Index {
     return this.sourceQs.get(qsIdx);
   }
   getRelationSet(relation) {
-    const relationIdx = this.stringIndex.getIndex(relation);
-    if (relationIdx === void 0) {
-      return void 0;
-    }
     this.metrics.mapRead();
-    return this.relations.get(relationIdx);
+    return this.relations.get(relation);
   }
   getTargetTypeSet(type) {
     const typeIdx = this.stringIndex.getIndex(type);
@@ -571,10 +572,17 @@ var Index = class _Index {
       }
       return newMap;
     };
+    const cloneRelationMap = (original) => {
+      const newMap = /* @__PURE__ */ new Map();
+      for (const [key, valueSet] of original.entries()) {
+        newMap.set(key, new Set(valueSet));
+      }
+      return newMap;
+    };
     newIndex.sourceType = cloneMap(this.sourceType);
     newIndex.sourceId = cloneMap(this.sourceId);
     newIndex.sourceQs = cloneMap(this.sourceQs);
-    newIndex.relations = cloneMap(this.relations);
+    newIndex.relations = cloneRelationMap(this.relations);
     newIndex.targetType = cloneMap(this.targetType);
     newIndex.targetId = cloneMap(this.targetId);
     newIndex.targetQs = cloneMap(this.targetQs);
@@ -946,7 +954,7 @@ var TribbleDB = class _TribbleDB {
     const seen = /* @__PURE__ */ new Set();
     const result = [];
     for (const triple of triples) {
-      const hash = this.index.hashTriple(triple);
+      const hash = hashTriple(triple);
       if (!seen.has(hash)) {
         seen.add(hash);
         result.push(triple);
@@ -973,13 +981,11 @@ var TribbleDB = class _TribbleDB {
     const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
     const originalHashMap = /* @__PURE__ */ new Map();
     for (const triple of matchingTriples) {
-      const hash = this.index.hashTriple(triple);
-      originalHashMap.set(hash, triple);
+      originalHashMap.set(hashTriple(triple), triple);
     }
     const transformedHashMap = /* @__PURE__ */ new Map();
     for (const triple of deduplicatedTransformed) {
-      const hash = this.index.hashTriple(triple);
-      transformedHashMap.set(hash, triple);
+      transformedHashMap.set(hashTriple(triple), triple);
     }
     const triplesToDelete = [];
     const triplesToAdd = [];

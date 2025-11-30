@@ -10,7 +10,7 @@ export declare class Index {
     sourceType: Map<number, Set<number>>;
     sourceId: Map<number, Set<number>>;
     sourceQs: Map<number, Set<number>>;
-    relations: Map<number, Set<number>>;
+    relations: Map<string, Set<number>>;
     targetType: Map<number, Set<number>>;
     targetId: Map<number, Set<number>>;
     targetQs: Map<number, Set<number>>;
@@ -20,14 +20,13 @@ export declare class Index {
     delete(triples: Triple[]): void;
     difference(triples: Triple[]): Triple[];
     hasTriple(triple: Triple): boolean;
-    hashTriple(triple: Triple): string;
     getTripleIndex(triple: Triple): number | undefined;
     add(triples: Triple[]): void;
     get length(): number;
     get arrayLength(): number;
     triples(): Triple[];
     getTriple(index: number): Triple | undefined;
-    getTripleIndices(index: number): [number, number, number] | undefined;
+    getTripleIndices(index: number): [number, string, number] | undefined;
     getSourceTypeSet(type: string): Set<number> | undefined;
     getSourceIdSet(id: string): Set<number> | undefined;
     getSourceQsSet(key: string, val: string): Set<number> | undefined;

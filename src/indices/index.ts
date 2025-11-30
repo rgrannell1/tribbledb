@@ -2,6 +2,7 @@ import type { IndexedTriple, ParsedUrn, Triple } from "../types.ts";
 import { asUrn } from "../urn.ts";
 import { IndexedSet } from "../sets.ts";
 import { IndexPerformanceMetrics } from "../metrics.ts";
+import { hashTriple } from "../hash.ts";
 
 /*
  * Construct an index to accelerate triple searches. Normally
@@ -19,7 +20,7 @@ type TripleMetadata = {
   sourceTypeIdx: number;
   sourceIdIdx: number;
   sourceQsIndices: number[];
-  relationIdx: number;
+  relation: string;
   targetTypeIdx: number;
   targetIdIdx: number;
   targetQsIndices: number[];
@@ -41,7 +42,7 @@ export class Index {
   // note: QS uses a composite key: <key>=<value>
   sourceQs: Map<number, Set<number>>;
 
-  relations: Map<number, Set<number>>;
+  relations: Map<string, Set<number>>;
 
   targetType: Map<number, Set<number>>;
   targetId: Map<number, Set<number>>;
@@ -78,7 +79,7 @@ export class Index {
   delete(triples: Triple[]) {
     for (let idx = 0; idx < triples.length; idx++) {
       const triple = triples[idx];
-      const tripleHash = this.hashTriple(triple);
+      const tripleHash = hashTriple(triple);
       const tripleIndex = this.hashIndices.get(tripleHash);
 
       if (tripleIndex === undefined) {
@@ -95,7 +96,7 @@ export class Index {
         // Remove from all index maps using cached metadata - no conditionals needed
         this.sourceType.get(metadata.sourceTypeIdx)?.delete(tripleIndex);
         this.sourceId.get(metadata.sourceIdIdx)?.delete(tripleIndex);
-        this.relations.get(metadata.relationIdx)?.delete(tripleIndex);
+        this.relations.get(metadata.relation)?.delete(tripleIndex);
         this.targetType.get(metadata.targetTypeIdx)?.delete(tripleIndex);
         this.targetId.get(metadata.targetIdIdx)?.delete(tripleIndex);
 
@@ -126,29 +127,14 @@ export class Index {
    * Check if a triple is present in the index
    */
   hasTriple(triple: Triple): boolean {
-    return this.tripleHashes.has(this.hashTriple(triple));
-  }
-
-  /*
-   * Generate a simple hash for a triple
-   */
-  hashTriple(triple: Triple): string {
-    const str = `${triple[0]}${triple[1]}${triple[2]}`;
-
-    let hash = 0;
-    for (let i = 0, len = str.length; i < len; i++) {
-      const chr = str.charCodeAt(i);
-      hash = (hash << 5) - hash + chr;
-      hash |= 0; // Convert to 32bit integer
-    }
-    return hash.toString();
+    return this.tripleHashes.has(hashTriple(triple));
   }
 
   /*
    * Get the index of a specific triple
    */
   getTripleIndex(triple: Triple): number | undefined {
-    const hash = this.hashTriple(triple);
+    const hash = hashTriple(triple);
     return this.hashIndices.get(hash);
   }
 
@@ -178,7 +164,6 @@ export class Index {
 
       // Convert strings to indices using the IndexedSet
       const sourceIdx = this.stringIndex.add(source);
-      const relationIdx = this.stringIndex.add(relation);
       const targetIdx = this.stringIndex.add(target);
 
       const sourceTypeIdx = this.stringIndex.add(parsedSource.type);
@@ -187,7 +172,7 @@ export class Index {
       const targetIdIdx = this.stringIndex.add(parsedTarget.id);
 
       // Already present, and no need to add twice.
-      const hash = this.hashTriple(triple);
+      const hash = hashTriple(triple);
       if (this.tripleHashes.has(hash)) {
         continue;
       }
@@ -200,7 +185,7 @@ export class Index {
       this.hashIndices.set(hash, idx);
 
       // Store the indexed triple (reuse already computed indices)
-      this.indexedTriples.push([sourceIdx, relationIdx, targetIdx]);
+      this.indexedTriples.push([sourceIdx, relation, targetIdx]);
 
       // Collect query string indices for metadata
       const sourceQsIndices: number[] = [];
@@ -235,10 +220,10 @@ export class Index {
       }
 
       // relations
-      let relationSet = this.relations.get(relationIdx);
+      let relationSet = this.relations.get(relation);
       if (!relationSet) {
         relationSet = new Set();
-        this.relations.set(relationIdx, relationSet);
+        this.relations.set(relation, relationSet);
       }
       relationSet.add(idx);
 
@@ -275,7 +260,7 @@ export class Index {
         sourceTypeIdx,
         sourceIdIdx,
         sourceQsIndices,
-        relationIdx,
+        relation,
         targetTypeIdx,
         targetIdIdx,
         targetQsIndices,
@@ -302,9 +287,9 @@ export class Index {
   triples(): Triple[] {
     return this.indexedTriples
       .filter((triple) => triple !== undefined)
-      .map(([sourceIdx, relationIdx, targetIdx]) => [
+      .map(([sourceIdx, relation, targetIdx]) => [
         this.stringIndex.getValue(sourceIdx)!,
-        this.stringIndex.getValue(relationIdx)!,
+        relation,
         this.stringIndex.getValue(targetIdx)!,
       ]);
   }
@@ -322,10 +307,10 @@ export class Index {
       return undefined;
     }
 
-    const [sourceIdx, relationIdx, targetIdx] = indexedTriple;
+    const [sourceIdx, relation, targetIdx] = indexedTriple;
     return [
       this.stringIndex.getValue(sourceIdx)!,
-      this.stringIndex.getValue(relationIdx)!,
+      relation,
       this.stringIndex.getValue(targetIdx)!,
     ];
   }
@@ -333,7 +318,7 @@ export class Index {
   /*
    * Get the string indices for a specific triple by triple index
    */
-  getTripleIndices(index: number): [number, number, number] | undefined {
+  getTripleIndices(index: number): [number, string, number] | undefined {
     if (index < 0 || index >= this.indexedTriples.length) {
       return undefined;
     }
@@ -379,14 +364,8 @@ export class Index {
   }
 
   getRelationSet(relation: string): Set<number> | undefined {
-    const relationIdx = this.stringIndex.getIndex(relation);
-
-    if (relationIdx === undefined) {
-      return undefined;
-    }
     this.metrics.mapRead();
-
-    return this.relations.get(relationIdx);
+    return this.relations.get(relation);
   }
 
   getTargetTypeSet(type: string): Set<number> | undefined {
@@ -440,10 +419,20 @@ export class Index {
       return newMap;
     };
 
+    const cloneRelationMap = (
+      original: Map<string, Set<number>>,
+    ): Map<string, Set<number>> => {
+      const newMap = new Map<string, Set<number>>();
+      for (const [key, valueSet] of original.entries()) {
+        newMap.set(key, new Set(valueSet));
+      }
+      return newMap;
+    };
+
     newIndex.sourceType = cloneMap(this.sourceType);
     newIndex.sourceId = cloneMap(this.sourceId);
     newIndex.sourceQs = cloneMap(this.sourceQs);
-    newIndex.relations = cloneMap(this.relations);
+    newIndex.relations = cloneRelationMap(this.relations);
     newIndex.targetType = cloneMap(this.targetType);
     newIndex.targetId = cloneMap(this.targetId);
     newIndex.targetQs = cloneMap(this.targetQs);

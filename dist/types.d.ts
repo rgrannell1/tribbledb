@@ -41,7 +41,7 @@ export type ParsedUrn = {
     id: string;
     qs: Record<string, string>;
 };
-export type IndexedTriple = [number, number, number];
+export type IndexedTriple = [number, string, number];
 export type TargetValidator = (sourceType: string, relation: string, value: string) => string | undefined;
 export type TribbleDBMetrics = {
     index: IndexPerformanceMetrics;

@@ -18,7 +18,7 @@ export function hash(str: string): number {
 /*
  * Compute a hash for a triple
  */
-export function hashTriple(triple: Triple): number {
+export function hashTriple(triple: Triple): string {
   const [src, rel, tgt] = triple;
   let hashValue = 0;
   for (let i = 0; i < src.length; i++) {
@@ -33,5 +33,5 @@ export function hashTriple(triple: Triple): number {
     hashValue = (hashValue << 5) - hashValue + tgt.charCodeAt(i);
     hashValue |= 0;
   }
-  return hashValue;
+  return hashValue.toString();
 }

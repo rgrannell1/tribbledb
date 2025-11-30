@@ -73,7 +73,7 @@ export type ParsedUrn = {
  * Internal indexed triple representation using numeric indices
  * instead of strings for memory efficiency
  */
-export type IndexedTriple = [number, number, number];
+export type IndexedTriple = [number, string, number];
 
 /*
  * Validate that relation targets conform to some expectation. Return a string
