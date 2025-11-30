@@ -36,7 +36,7 @@ import type { ParsedUrn } from "./types.ts";
 export function parseUrn(urn: string): ParsedUrn {
   const delimited = urn.split(":", 4);
   const type = delimited[2];
-  const remainder = delimited[3];
+  const remainder = delimited[3] ?? '';
 
   const idx = remainder.indexOf("?");
   const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
