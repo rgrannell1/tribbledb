@@ -15,12 +15,21 @@ import {
 import { SAMPLE_SIZES } from "./constants.ts";
 
 for (const samples of SAMPLE_SIZES) {
+  const experiment = {
+    experiment: 'Insert Triples',
+    sampleSize: samples,
+    category: 'NodeID, high uniqueness',
+    parameters: {
+      ID_LENGTH: 20,
+      RELATION_LENGTH: 5,
+    }
+  }
+
   Deno.bench({
-    name: `Insert ${samples} triples (NodeID format, high uniqueness)`,
-    group: "TribbleDB Insertion (NodeID)",
+    name: JSON.stringify(experiment),
     fn: (bench) => {
-      const ID_LENGTH = 20;
-      const RELATION_LENGTH = 5;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
       const sampleData = TriplesNodeId(samples, ID_LENGTH, RELATION_LENGTH);
 
       const data = unwrap(sampleData);
@@ -31,12 +40,22 @@ for (const samples of SAMPLE_SIZES) {
 }
 
 for (const samples of SAMPLE_SIZES) {
+  const experiment = {
+    experiment: 'Insert Triples',
+    sampleSize: samples,
+    category: 'NodeID, high duplicates',
+    parameters: {
+      ID_LENGTH: 5,
+      RELATION_LENGTH: 3,
+    }
+  }
+
   Deno.bench({
-    name: `Insert ${samples} triples (NodeID format, high duplicates)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Insertion (NodeID)",
     fn: (bench) => {
-      const ID_LENGTH = 5;
-      const RELATION_LENGTH = 3;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
       const sampleData = TriplesNodeId(samples, ID_LENGTH, RELATION_LENGTH);
 
       const data = unwrap(sampleData);
@@ -47,13 +66,24 @@ for (const samples of SAMPLE_SIZES) {
 }
 
 for (const samples of SAMPLE_SIZES) {
+  const experiment = {
+    experiment: 'Insert Triples',
+    sampleSize: samples,
+    category: 'NodeIDType, high uniqueness',
+    parameters: {
+      ID_LENGTH: 20,
+      TYPE_LENGTH: 20,
+      RELATION_LENGTH: 5,
+    }
+  }
+
   Deno.bench({
-    name: `Insert ${samples} triples (NodeIDType format, high uniqueness)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Insertion (NodeIDType)",
     fn: (bench) => {
-      const ID_LENGTH = 20;
-      const TYPE_LENGTH = 20;
-      const RELATION_LENGTH = 5;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const TYPE_LENGTH = experiment.parameters.TYPE_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
       const sampleData = TriplesNodeIdType(
         samples,
         ID_LENGTH,
@@ -69,13 +99,24 @@ for (const samples of SAMPLE_SIZES) {
 }
 
 for (const samples of SAMPLE_SIZES) {
+  const experiment = {
+    experiment: 'Insert Triples',
+    sampleSize: samples,
+    category: 'NodeIDType, high duplicates',
+    parameters: {
+      ID_LENGTH: 5,
+      TYPE_LENGTH: 5,
+      RELATION_LENGTH: 3,
+    }
+  }
+
   Deno.bench({
-    name: `Insert ${samples} triples (NodeIDType format, high duplicates)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Insertion (NodeIDType)",
     fn: (bench) => {
-      const ID_LENGTH = 5;
-      const TYPE_LENGTH = 5;
-      const RELATION_LENGTH = 3;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const TYPE_LENGTH = experiment.parameters.TYPE_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
       const sampleData = TriplesNodeIdType(
         samples,
         ID_LENGTH,
@@ -91,16 +132,30 @@ for (const samples of SAMPLE_SIZES) {
 }
 
 for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+  const experiment = {
+    experiment: 'Insert Triples',
+    sampleSize: samples,
+    category: 'NodeIDTypeQs, high uniqueness',
+    parameters: {
+      ID_LENGTH: 20,
+      TYPE_LENGTH: 20,
+      RELATION_LENGTH: 5,
+      NUM_QS: 3,
+      KEY_LENGTH: 10,
+      VALUE_LENGTH: 10,
+    }
+  }
+
   Deno.bench({
-    name: `Insert ${samples} triples (NodeIDTypeQs format, high uniqueness)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Insertion (NodeIDTypeQs)",
     fn: (bench) => {
-      const ID_LENGTH = 20;
-      const TYPE_LENGTH = 20;
-      const RELATION_LENGTH = 5;
-      const NUM_QS = 3;
-      const KEY_LENGTH = 10;
-      const VALUE_LENGTH = 10;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const TYPE_LENGTH = experiment.parameters.TYPE_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
+      const NUM_QS = experiment.parameters.NUM_QS;
+      const KEY_LENGTH = experiment.parameters.KEY_LENGTH;
+      const VALUE_LENGTH = experiment.parameters.VALUE_LENGTH;
 
       const sampleData = TriplesNodeIdTypeQS(
         samples,
@@ -120,16 +175,30 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
 }
 
 for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+  const experiment = {
+    experiment: 'Insert Triples',
+    sampleSize: samples,
+    category: 'NodeIDTypeQs, high duplicates',
+    parameters: {
+      ID_LENGTH: 5,
+      TYPE_LENGTH: 5,
+      RELATION_LENGTH: 3,
+      NUM_QS: 3,
+      KEY_LENGTH: 2,
+      VALUE_LENGTH: 2,
+    }
+  }
+
   Deno.bench({
-    name: `Insert ${samples} triples (NodeIDTypeQs format, high duplicates)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Insertion (NodeIDTypeQs)",
     fn: (bench) => {
-      const ID_LENGTH = 5;
-      const TYPE_LENGTH = 5;
-      const RELATION_LENGTH = 3;
-      const NUM_QS = 3;
-      const KEY_LENGTH = 2;
-      const VALUE_LENGTH = 2;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const TYPE_LENGTH = experiment.parameters.TYPE_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
+      const NUM_QS = experiment.parameters.NUM_QS;
+      const KEY_LENGTH = experiment.parameters.KEY_LENGTH;
+      const VALUE_LENGTH = experiment.parameters.VALUE_LENGTH;
 
       const sampleData = TriplesNodeIdTypeQS(
         samples,

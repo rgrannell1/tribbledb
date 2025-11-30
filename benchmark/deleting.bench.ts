@@ -11,12 +11,22 @@ import {
 } from "./fuzzers.ts";
 
 for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+  const experiment = {
+    experiment: 'Delete Triples',
+    sampleSize: samples,
+    category: 'NodeID, high uniqueness',
+    parameters: {
+      ID_LENGTH: 20,
+      RELATION_LENGTH: 5,
+    }
+  }
+
   Deno.bench({
-    name: `Delete ${samples} triples (NodeID format, high uniqueness)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Deletion (NodeID)",
     fn: (bench) => {
-      const ID_LENGTH = 20;
-      const RELATION_LENGTH = 5;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
       const sampleData = TriplesNodeId(samples, ID_LENGTH, RELATION_LENGTH);
 
       const data = unwrap(sampleData);
@@ -29,13 +39,24 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
 }
 
 for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+  const experiment = {
+    experiment: 'Delete Triples',
+    sampleSize: samples,
+    category: 'NodeIDType, high uniqueness',
+    parameters: {
+      ID_LENGTH: 20,
+      TYPE_LENGTH: 20,
+      RELATION_LENGTH: 5,
+    }
+  }
+
   Deno.bench({
-    name: `Delete ${samples} triples (NodeIDType format, high uniqueness)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Deletion (NodeIDType)",
     fn: (bench) => {
-      const ID_LENGTH = 20;
-      const TYPE_LENGTH = 20;
-      const RELATION_LENGTH = 5;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const TYPE_LENGTH = experiment.parameters.TYPE_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
       const sampleData = TriplesNodeIdType(
         samples,
         ID_LENGTH,
@@ -47,22 +68,36 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
       const tdb = new TribbleDB(data as [string, string, string][]);
 
       bench.start();
-      tdb.delete(data as [string, string, string][]);
+      tdb.delete(data as [string, string, string][]);;
     },
   });
 }
 
 for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+  const experiment = {
+    experiment: 'Delete Triples',
+    sampleSize: samples,
+    category: 'NodeIDTypeQs, high uniqueness',
+    parameters: {
+      ID_LENGTH: 20,
+      TYPE_LENGTH: 20,
+      RELATION_LENGTH: 5,
+      NUM_QS: 3,
+      KEY_LENGTH: 10,
+      VALUE_LENGTH: 10,
+    }
+  }
+
   Deno.bench({
-    name: `Delete ${samples} triples (NodeIDTypeQs format, high uniqueness)`,
+    name: JSON.stringify(experiment),
     group: "TribbleDB Deletion (NodeIDTypeQs)",
     fn: (bench) => {
-      const ID_LENGTH = 20;
-      const TYPE_LENGTH = 20;
-      const RELATION_LENGTH = 5;
-      const NUM_QS = 3;
-      const KEY_LENGTH = 10;
-      const VALUE_LENGTH = 10;
+      const ID_LENGTH = experiment.parameters.ID_LENGTH;
+      const TYPE_LENGTH = experiment.parameters.TYPE_LENGTH;
+      const RELATION_LENGTH = experiment.parameters.RELATION_LENGTH;
+      const NUM_QS = experiment.parameters.NUM_QS;
+      const KEY_LENGTH = experiment.parameters.KEY_LENGTH;
+      const VALUE_LENGTH = experiment.parameters.VALUE_LENGTH;
 
       const sampleData = TriplesNodeIdTypeQS(
         samples,

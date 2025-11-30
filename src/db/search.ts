@@ -324,10 +324,5 @@ export function findMatchingRows(
     matchingRowSets.push(matches);
   }
 
-  // If no filters are provided, return all cursor indices
-  if (matchingRowSets.length === 0) {
-    return cursorIndices;
-  }
-
   return Sets.intersection(metrics, matchingRowSets);
 }
