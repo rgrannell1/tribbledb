@@ -1,0 +1,1661 @@
+{
+  "date": "2025-11-30T13:19:48+00:00",
+  "version": "0.0.24",
+  "commit_id": "5a7971a652020d4100ba6d59442c93dfff83b823",
+  "results": {
+    "runtime": "Deno/1.46.3 x86_64-unknown-linux-gnu",
+    "cpu": "AMD Ryzen 7 7840U w/ Radeon  780M Graphics",
+    "benches": [
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeID)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":1000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 120,
+              "min": 672462.0,
+              "max": 3023900.0,
+              "avg": 1104717.0,
+              "p75": 1292016.0,
+              "p99": 2951255.0,
+              "p995": 3023900.0,
+              "p999": 3023900.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeID)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":5000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 28,
+              "min": 4607439.0,
+              "max": 11903863.0,
+              "avg": 7019199.0,
+              "p75": 8545049.0,
+              "p99": 11903863.0,
+              "p995": 11903863.0,
+              "p999": 11903863.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeID)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":10000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 16,
+              "min": 18387350.0,
+              "max": 40615370.0,
+              "avg": 27645955.0,
+              "p75": 33502519.0,
+              "p99": 40615370.0,
+              "p995": 40615370.0,
+              "p999": 40615370.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeID)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":50000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 12,
+              "min": 104113942.0,
+              "max": 142098134.0,
+              "avg": 116238948.0,
+              "p75": 117178672.0,
+              "p99": 142098134.0,
+              "p995": 142098134.0,
+              "p999": 142098134.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeID)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":100000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 199329281.0,
+              "max": 425313738.0,
+              "avg": 272845078.0,
+              "p75": 316790665.0,
+              "p99": 425313738.0,
+              "p995": 425313738.0,
+              "p999": 425313738.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDType)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":1000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 84,
+              "min": 864437.0,
+              "max": 2845510.0,
+              "avg": 1151310.0,
+              "p75": 1184722.0,
+              "p99": 2845510.0,
+              "p995": 2845510.0,
+              "p999": 2845510.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDType)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":5000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 23,
+              "min": 6209132.0,
+              "max": 17363958.0,
+              "avg": 8841948.0,
+              "p75": 10034403.0,
+              "p99": 17363958.0,
+              "p995": 17363958.0,
+              "p999": 17363958.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDType)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":10000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 14,
+              "min": 16979101.0,
+              "max": 38974276.0,
+              "avg": 25916538.0,
+              "p75": 29500707.0,
+              "p99": 38974276.0,
+              "p995": 38974276.0,
+              "p999": 38974276.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDType)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":50000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 12,
+              "min": 95835337.0,
+              "max": 204899799.0,
+              "avg": 129830560.0,
+              "p75": 145789623.0,
+              "p99": 204899799.0,
+              "p995": 204899799.0,
+              "p999": 204899799.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDType)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":100000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 220981986.0,
+              "max": 319081305.0,
+              "avg": 248386771.0,
+              "p75": 262337953.0,
+              "p99": 319081305.0,
+              "p995": 319081305.0,
+              "p999": 319081305.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":1000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 51,
+              "min": 1223803.0,
+              "max": 2166435.0,
+              "avg": 1421636.0,
+              "p75": 1455624.0,
+              "p99": 2166435.0,
+              "p995": 2166435.0,
+              "p999": 2166435.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":5000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 18,
+              "min": 7696968.0,
+              "max": 16575330.0,
+              "avg": 9740238.0,
+              "p75": 10498482.0,
+              "p99": 16575330.0,
+              "p995": 16575330.0,
+              "p999": 16575330.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":10000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 14,
+              "min": 20049482.0,
+              "max": 26313077.0,
+              "avg": 23079907.0,
+              "p75": 23819575.0,
+              "p99": 26313077.0,
+              "p995": 26313077.0,
+              "p999": 26313077.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":50000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 119462852.0,
+              "max": 154236266.0,
+              "avg": 133858046.0,
+              "p75": 151875524.0,
+              "p99": 154236266.0,
+              "p995": 154236266.0,
+              "p999": 154236266.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/deleting.bench.ts",
+        "group": "TribbleDB Deletion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Delete Triples\",\"sampleSize\":100000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 265061476.0,
+              "max": 383176836.0,
+              "avg": 304695697.0,
+              "p75": 331759436.0,
+              "p99": 383176836.0,
+              "p995": 383176836.0,
+              "p999": 383176836.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": null,
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":1000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 164,
+              "min": 1056933.0,
+              "max": 3047338.0,
+              "avg": 1324325.0,
+              "p75": 1294775.0,
+              "p99": 2675008.0,
+              "p995": 3047338.0,
+              "p999": 3047338.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": null,
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":5000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 33,
+              "min": 8168298.0,
+              "max": 15635625.0,
+              "avg": 11040575.0,
+              "p75": 11293020.0,
+              "p99": 15635625.0,
+              "p995": 15635625.0,
+              "p999": 15635625.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": null,
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":10000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 20,
+              "min": 20910118.0,
+              "max": 53161196.0,
+              "avg": 30439574.0,
+              "p75": 32301251.0,
+              "p99": 53161196.0,
+              "p995": 53161196.0,
+              "p999": 53161196.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": null,
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":50000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 12,
+              "min": 199863899.0,
+              "max": 339030066.0,
+              "avg": 255665001.0,
+              "p75": 273214583.0,
+              "p99": 339030066.0,
+              "p995": 339030066.0,
+              "p999": 339030066.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": null,
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":100000,\"category\":\"NodeID, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 502426796.0,
+              "max": 629297084.0,
+              "avg": 570877707.0,
+              "p75": 609653154.0,
+              "p99": 629297084.0,
+              "p995": 629297084.0,
+              "p999": 629297084.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeID)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":1000,\"category\":\"NodeID, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 219,
+              "min": 1000748.0,
+              "max": 4820391.0,
+              "avg": 1546748.0,
+              "p75": 1771048.0,
+              "p99": 3753560.0,
+              "p995": 3942951.0,
+              "p999": 4820391.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeID)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":5000,\"category\":\"NodeID, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 46,
+              "min": 7760740.0,
+              "max": 24410847.0,
+              "avg": 10517588.0,
+              "p75": 11720052.0,
+              "p99": 24410847.0,
+              "p995": 24410847.0,
+              "p999": 24410847.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeID)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":10000,\"category\":\"NodeID, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 23,
+              "min": 22150269.0,
+              "max": 38566121.0,
+              "avg": 27295597.0,
+              "p75": 28930610.0,
+              "p99": 38566121.0,
+              "p995": 38566121.0,
+              "p999": 38566121.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeID)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":50000,\"category\":\"NodeID, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 12,
+              "min": 195836004.0,
+              "max": 234677847.0,
+              "avg": 211227348.0,
+              "p75": 215323240.0,
+              "p99": 234677847.0,
+              "p995": 234677847.0,
+              "p999": 234677847.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeID)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":100000,\"category\":\"NodeID, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 473366492.0,
+              "max": 557996703.0,
+              "avg": 501722374.0,
+              "p75": 514660256.0,
+              "p99": 557996703.0,
+              "p995": 557996703.0,
+              "p999": 557996703.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":1000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 98,
+              "min": 1587418.0,
+              "max": 2920663.0,
+              "avg": 1843950.0,
+              "p75": 1833985.0,
+              "p99": 2920663.0,
+              "p995": 2920663.0,
+              "p999": 2920663.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":5000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 23,
+              "min": 11127712.0,
+              "max": 24819665.0,
+              "avg": 15021658.0,
+              "p75": 16948140.0,
+              "p99": 24819665.0,
+              "p995": 24819665.0,
+              "p999": 24819665.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":10000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 18,
+              "min": 21445150.0,
+              "max": 42536752.0,
+              "avg": 28709737.0,
+              "p75": 31511731.0,
+              "p99": 42536752.0,
+              "p995": 42536752.0,
+              "p999": 42536752.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":50000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 238634184.0,
+              "max": 288239410.0,
+              "avg": 260571051.0,
+              "p75": 273124034.0,
+              "p99": 288239410.0,
+              "p995": 288239410.0,
+              "p999": 288239410.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":100000,\"category\":\"NodeIDType, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 537838423.0,
+              "max": 722075820.0,
+              "avg": 591579090.0,
+              "p75": 621879520.0,
+              "p99": 722075820.0,
+              "p995": 722075820.0,
+              "p999": 722075820.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":1000,\"category\":\"NodeIDType, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 191,
+              "min": 1029391.0,
+              "max": 3094055.0,
+              "avg": 1351288.0,
+              "p75": 1393928.0,
+              "p99": 2976126.0,
+              "p995": 3094055.0,
+              "p999": 3094055.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":5000,\"category\":\"NodeIDType, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 38,
+              "min": 8318556.0,
+              "max": 20719792.0,
+              "avg": 10614541.0,
+              "p75": 10956313.0,
+              "p99": 20719792.0,
+              "p995": 20719792.0,
+              "p999": 20719792.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":10000,\"category\":\"NodeIDType, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 22,
+              "min": 20005155.0,
+              "max": 30770834.0,
+              "avg": 25026298.0,
+              "p75": 27076435.0,
+              "p99": 30770834.0,
+              "p995": 30770834.0,
+              "p999": 30770834.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":50000,\"category\":\"NodeIDType, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 12,
+              "min": 170359437.0,
+              "max": 246524368.0,
+              "avg": 203257751.0,
+              "p75": 218058133.0,
+              "p99": 246524368.0,
+              "p995": 246524368.0,
+              "p999": 246524368.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDType)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":100000,\"category\":\"NodeIDType, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 406166433.0,
+              "max": 550470792.0,
+              "avg": 474770286.0,
+              "p75": 510310665.0,
+              "p99": 550470792.0,
+              "p995": 550470792.0,
+              "p999": 550470792.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":1000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 55,
+              "min": 1566699.0,
+              "max": 3338129.0,
+              "avg": 1803327.0,
+              "p75": 1784493.0,
+              "p99": 3338129.0,
+              "p995": 3338129.0,
+              "p999": 3338129.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":5000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 18,
+              "min": 11032354.0,
+              "max": 17385381.0,
+              "avg": 13391523.0,
+              "p75": 14771827.0,
+              "p99": 17385381.0,
+              "p995": 17385381.0,
+              "p999": 17385381.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":10000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 14,
+              "min": 25446137.0,
+              "max": 45896569.0,
+              "avg": 33614326.0,
+              "p75": 36079591.0,
+              "p99": 45896569.0,
+              "p995": 45896569.0,
+              "p999": 45896569.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":50000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 223512458.0,
+              "max": 306052624.0,
+              "avg": 260741889.0,
+              "p75": 267220863.0,
+              "p99": 306052624.0,
+              "p995": 306052624.0,
+              "p999": 306052624.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":100000,\"category\":\"NodeIDTypeQs, high uniqueness\",\"parameters\":{\"ID_LENGTH\":20,\"TYPE_LENGTH\":20,\"RELATION_LENGTH\":5,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 535901554.0,
+              "max": 814397531.0,
+              "avg": 631128211.0,
+              "p75": 668596195.0,
+              "p99": 814397531.0,
+              "p995": 814397531.0,
+              "p999": 814397531.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":1000,\"category\":\"NodeIDTypeQs, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3,\"NUM_QS\":3,\"KEY_LENGTH\":2,\"VALUE_LENGTH\":2}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 99,
+              "min": 1199166.0,
+              "max": 2683031.0,
+              "avg": 1612848.0,
+              "p75": 1837862.0,
+              "p99": 2683031.0,
+              "p995": 2683031.0,
+              "p999": 2683031.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":5000,\"category\":\"NodeIDTypeQs, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3,\"NUM_QS\":3,\"KEY_LENGTH\":2,\"VALUE_LENGTH\":2}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 25,
+              "min": 10401452.0,
+              "max": 16269398.0,
+              "avg": 12853204.0,
+              "p75": 13898867.0,
+              "p99": 16269398.0,
+              "p995": 16269398.0,
+              "p999": 16269398.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":10000,\"category\":\"NodeIDTypeQs, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3,\"NUM_QS\":3,\"KEY_LENGTH\":2,\"VALUE_LENGTH\":2}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 18,
+              "min": 22701160.0,
+              "max": 32644512.0,
+              "avg": 27269289.0,
+              "p75": 30887090.0,
+              "p99": 32644512.0,
+              "p995": 32644512.0,
+              "p999": 32644512.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":50000,\"category\":\"NodeIDTypeQs, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3,\"NUM_QS\":3,\"KEY_LENGTH\":2,\"VALUE_LENGTH\":2}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 12,
+              "min": 171565574.0,
+              "max": 188548578.0,
+              "avg": 177566289.0,
+              "p75": 179943469.0,
+              "p99": 188548578.0,
+              "p995": 188548578.0,
+              "p999": 188548578.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/indexing.bench.ts",
+        "group": "TribbleDB Insertion (NodeIDTypeQs)",
+        "name": "{\"experiment\":\"Insert Triples\",\"sampleSize\":100000,\"category\":\"NodeIDTypeQs, high duplicates\",\"parameters\":{\"ID_LENGTH\":5,\"TYPE_LENGTH\":5,\"RELATION_LENGTH\":3,\"NUM_QS\":3,\"KEY_LENGTH\":2,\"VALUE_LENGTH\":2}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 396165108.0,
+              "max": 578976763.0,
+              "avg": 490093415.0,
+              "p75": 547196475.0,
+              "p99": 578976763.0,
+              "p995": 578976763.0,
+              "p999": 578976763.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":1000,\"category\":\"NodeID, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 111,
+              "min": 1537965.0,
+              "max": 3482216.0,
+              "avg": 2173395.0,
+              "p75": 2627658.0,
+              "p99": 3228926.0,
+              "p995": 3482216.0,
+              "p999": 3482216.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":5000,\"category\":\"NodeID, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 23,
+              "min": 15565061.0,
+              "max": 23130328.0,
+              "avg": 18710447.0,
+              "p75": 19304043.0,
+              "p99": 23130328.0,
+              "p995": 23130328.0,
+              "p999": 23130328.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":10000,\"category\":\"NodeID, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 16,
+              "min": 33445711.0,
+              "max": 58158175.0,
+              "avg": 46349564.0,
+              "p75": 50892895.0,
+              "p99": 58158175.0,
+              "p995": 58158175.0,
+              "p999": 58158175.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":50000,\"category\":\"NodeID, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 266548663.0,
+              "max": 472623411.0,
+              "avg": 316607672.0,
+              "p75": 373508831.0,
+              "p99": 472623411.0,
+              "p995": 472623411.0,
+              "p999": 472623411.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":100000,\"category\":\"NodeID, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 612202444.0,
+              "max": 669981244.0,
+              "avg": 638616488.0,
+              "p75": 640749458.0,
+              "p99": 669981244.0,
+              "p995": 669981244.0,
+              "p999": 669981244.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":1000,\"category\":\"NodeID, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 113,
+              "min": 1554025.0,
+              "max": 3044743.0,
+              "avg": 2136901.0,
+              "p75": 2544104.0,
+              "p99": 2798696.0,
+              "p995": 3044743.0,
+              "p999": 3044743.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":5000,\"category\":\"NodeID, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 24,
+              "min": 15575079.0,
+              "max": 20746351.0,
+              "avg": 16967921.0,
+              "p75": 17321692.0,
+              "p99": 20746351.0,
+              "p995": 20746351.0,
+              "p999": 20746351.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":10000,\"category\":\"NodeID, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 16,
+              "min": 33394245.0,
+              "max": 47229022.0,
+              "avg": 41670661.0,
+              "p75": 45256269.0,
+              "p99": 47229022.0,
+              "p995": 47229022.0,
+              "p999": 47229022.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":50000,\"category\":\"NodeID, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 259332785.0,
+              "max": 284313207.0,
+              "avg": 267144877.0,
+              "p75": 270066966.0,
+              "p99": 284313207.0,
+              "p995": 284313207.0,
+              "p999": 284313207.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeID)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":100000,\"category\":\"NodeID, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 673428635.0,
+              "max": 751460590.0,
+              "avg": 712517497.0,
+              "p75": 740415332.0,
+              "p99": 751460590.0,
+              "p995": 751460590.0,
+              "p999": 751460590.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":1000,\"category\":\"NodeIDType, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 91,
+              "min": 1722708.0,
+              "max": 4049960.0,
+              "avg": 1957923.0,
+              "p75": 2016104.0,
+              "p99": 4049960.0,
+              "p995": 4049960.0,
+              "p999": 4049960.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":5000,\"category\":\"NodeIDType, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 21,
+              "min": 15843828.0,
+              "max": 27116538.0,
+              "avg": 20469208.0,
+              "p75": 22949542.0,
+              "p99": 27116538.0,
+              "p995": 27116538.0,
+              "p999": 27116538.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":10000,\"category\":\"NodeIDType, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 15,
+              "min": 39478752.0,
+              "max": 64762628.0,
+              "avg": 50135651.0,
+              "p75": 56305795.0,
+              "p99": 64762628.0,
+              "p995": 64762628.0,
+              "p999": 64762628.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":50000,\"category\":\"NodeIDType, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 280540565.0,
+              "max": 505154279.0,
+              "avg": 363950583.0,
+              "p75": 403328876.0,
+              "p99": 505154279.0,
+              "p995": 505154279.0,
+              "p999": 505154279.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":100000,\"category\":\"NodeIDType, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 723638684.0,
+              "max": 897959321.0,
+              "avg": 757458104.0,
+              "p75": 745840435.0,
+              "p99": 897959321.0,
+              "p995": 897959321.0,
+              "p999": 897959321.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":1000,\"category\":\"NodeIDType, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 92,
+              "min": 1709706.0,
+              "max": 3441052.0,
+              "avg": 1979257.0,
+              "p75": 2034933.0,
+              "p99": 3441052.0,
+              "p995": 3441052.0,
+              "p999": 3441052.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":5000,\"category\":\"NodeIDType, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 20,
+              "min": 16369090.0,
+              "max": 36712749.0,
+              "avg": 21000321.0,
+              "p75": 22925024.0,
+              "p99": 36712749.0,
+              "p995": 36712749.0,
+              "p999": 36712749.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":10000,\"category\":\"NodeIDType, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 14,
+              "min": 53336358.0,
+              "max": 100695534.0,
+              "avg": 69974186.0,
+              "p75": 76660106.0,
+              "p99": 100695534.0,
+              "p995": 100695534.0,
+              "p999": 100695534.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":50000,\"category\":\"NodeIDType, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 328448417.0,
+              "max": 395044293.0,
+              "avg": 367052397.0,
+              "p75": 384993444.0,
+              "p99": 395044293.0,
+              "p995": 395044293.0,
+              "p999": 395044293.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDType)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":100000,\"category\":\"NodeIDType, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 830898337.0,
+              "max": 1002586720.0,
+              "avg": 874649863.0,
+              "p75": 879017847.0,
+              "p99": 1002586720.0,
+              "p995": 1002586720.0,
+              "p999": 1002586720.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":1000,\"category\":\"NodeIDTypeQS, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 44,
+              "min": 2789967.0,
+              "max": 3771881.0,
+              "avg": 3123116.0,
+              "p75": 3217834.0,
+              "p99": 3771881.0,
+              "p995": 3771881.0,
+              "p999": 3771881.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":5000,\"category\":\"NodeIDTypeQS, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 16,
+              "min": 22543060.0,
+              "max": 43657961.0,
+              "avg": 29362796.0,
+              "p75": 31277745.0,
+              "p99": 43657961.0,
+              "p995": 43657961.0,
+              "p999": 43657961.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":10000,\"category\":\"NodeIDTypeQS, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 13,
+              "min": 80757089.0,
+              "max": 98849375.0,
+              "avg": 89448824.0,
+              "p75": 94370413.0,
+              "p99": 98849375.0,
+              "p995": 98849375.0,
+              "p999": 98849375.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":50000,\"category\":\"NodeIDTypeQS, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 381148162.0,
+              "max": 565343310.0,
+              "avg": 461974895.0,
+              "p75": 546590497.0,
+              "p99": 565343310.0,
+              "p995": 565343310.0,
+              "p999": 565343310.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":100000,\"category\":\"NodeIDTypeQS, high uniqueness, identity transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 784432261.0,
+              "max": 1032074448.0,
+              "avg": 911442915.0,
+              "p75": 963674378.0,
+              "p99": 1032074448.0,
+              "p995": 1032074448.0,
+              "p999": 1032074448.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":1000,\"category\":\"NodeIDTypeQS, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 44,
+              "min": 2566409.0,
+              "max": 4743697.0,
+              "avg": 3203299.0,
+              "p75": 3409061.0,
+              "p99": 4743697.0,
+              "p995": 4743697.0,
+              "p999": 4743697.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":5000,\"category\":\"NodeIDTypeQS, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 17,
+              "min": 20166103.0,
+              "max": 31024803.0,
+              "avg": 25652711.0,
+              "p75": 28282544.0,
+              "p99": 31024803.0,
+              "p995": 31024803.0,
+              "p999": 31024803.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":10000,\"category\":\"NodeIDTypeQS, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 13,
+              "min": 73748341.0,
+              "max": 93705615.0,
+              "avg": 78912359.0,
+              "p75": 77530485.0,
+              "p99": 93705615.0,
+              "p995": 93705615.0,
+              "p999": 93705615.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":50000,\"category\":\"NodeIDTypeQS, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 422149219.0,
+              "max": 511024564.0,
+              "avg": 458795822.0,
+              "p75": 488152432.0,
+              "p99": 511024564.0,
+              "p995": 511024564.0,
+              "p999": 511024564.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      },
+      {
+        "origin": "file:///home/rg/Code/tribbledb/benchmark/searchflatmap.bench.ts",
+        "group": "TribbleDB SearchFlatMap (NodeIDTypeQS)",
+        "name": "{\"experiment\":\"SearchFlatMap\",\"sampleSize\":100000,\"category\":\"NodeIDTypeQS, high uniqueness, full transform\",\"parameters\":{\"ID_LENGTH\":20,\"RELATION_LENGTH\":5,\"TYPE_LENGTH\":10,\"NUM_QS\":3,\"KEY_LENGTH\":10,\"VALUE_LENGTH\":10}}",
+        "baseline": false,
+        "results": [
+          {
+            "ok": {
+              "n": 11,
+              "min": 876830326.0,
+              "max": 1016141854.0,
+              "avg": 943367334.0,
+              "p75": 973184957.0,
+              "p99": 1016141854.0,
+              "p995": 1016141854.0,
+              "p999": 1016141854.0,
+              "highPrecision": true,
+              "usedExplicitTimers": true
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
