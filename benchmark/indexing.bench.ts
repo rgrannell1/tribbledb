@@ -131,7 +131,7 @@ for (const samples of SAMPLE_SIZES) {
   });
 }
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   const experiment = {
     experiment: 'Insert Triples',
     sampleSize: samples,
@@ -174,7 +174,7 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
   });
 }
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   const experiment = {
     experiment: 'Insert Triples',
     sampleSize: samples,

@@ -204,41 +204,52 @@ export class TribbleDB {
    * @returns This TribbleDB instance.
    */
   searchFlatmap(search: Search, fn: (triple: Triple) => Triple[]): TribbleDB {
-    const searchResults = this.search(search);
-    const matchingTriples = searchResults.triples();
-    const transformedTriples = matchingTriples.flatMap(fn);
-    const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
+    const parsed = parseSearch(search);
+    validateInput(parsed);
 
-    // Pre-compute hashes once for efficiency
     const originalHashMap = new Map<string, Triple>();
-    for (const triple of matchingTriples) {
-      originalHashMap.set(hashTriple(triple), triple);
+    const transformedHashMap = new Map<string, Triple>();
+    const matchingTriples: Triple[] = [];
+
+    for (
+      const rowIdx of findMatchingRows(
+        parsed,
+        this.index,
+        this.cursorIndices,
+        this.metrics,
+      )
+    ) {
+      const triple = this.index.getTriple(rowIdx);
+      if (triple !== undefined) {
+        originalHashMap.set(hashTriple(triple), triple);
+        matchingTriples.push(triple);
+      }
     }
 
-    const transformedHashMap = new Map<string, Triple>();
-    for (const triple of deduplicatedTransformed) {
+    const transformedTriples = matchingTriples.flatMap(fn);
+
+    for (const triple of transformedTriples) {
       transformedHashMap.set(hashTriple(triple), triple);
     }
 
-    // Find differences efficiently using single pass
+    // allow delete-by-hash
     const triplesToDelete: Triple[] = [];
     const triplesToAdd: Triple[] = [];
 
-    // Find triples to delete (in original but not in transformed)
+    // remove triples no longer present
     for (const [hash, triple] of originalHashMap) {
       if (!transformedHashMap.has(hash)) {
         triplesToDelete.push(triple);
       }
     }
 
-    // Find triples to add (in transformed but not in original)
+    // add triples not previously present
     for (const [hash, triple] of transformedHashMap) {
       if (!originalHashMap.has(hash)) {
         triplesToAdd.push(triple);
       }
     }
 
-    // Apply the changes
     this.delete(triplesToDelete);
     this.add(triplesToAdd);
 

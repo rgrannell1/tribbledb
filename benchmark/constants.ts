@@ -1,2 +1,2 @@
 
-export const SAMPLE_SIZES = [1_000, 5_000, 10_000, 50_000, 100_000];
+export const SAMPLE_SIZES = [5_000, 10_000, 15_000, 20_000, 25_000];

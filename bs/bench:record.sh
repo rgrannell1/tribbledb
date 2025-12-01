@@ -4,7 +4,7 @@ CURRENT_COMMIT_ID="$(git rev-parse HEAD)"
 CURRENT_DATE="$(date -Iseconds)"
 CURRENT_VERSION="$(jq '.version' package.json )"
 
-rs bench --json | jq "{
+deno bench --json --allow-read benchmark/searchflatmap.bench.ts | jq "{
   \"date\": \"$CURRENT_DATE\",
   \"version\": $CURRENT_VERSION,
   \"commit_id\": \"$CURRENT_COMMIT_ID\",

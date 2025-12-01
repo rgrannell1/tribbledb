@@ -7,9 +7,10 @@ import { TribbleDB } from "../src/tribble-db.ts";
 import {
   TriplesNodeIdTypeQS,
 } from "./fuzzers.ts";
+import { SAMPLE_SIZES } from "./constants.ts";
 
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   const experiment = {
     experiment: 'Triples FirstObject',
     sampleSize: samples,
@@ -53,7 +54,7 @@ for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
   });
 }
 
-for (const samples of [1_000, 5_000, 10_000, 50_000, 100_000]) {
+for (const samples of SAMPLE_SIZES) {
   const experiment = {
     experiment: 'Triples Objects',
     sampleSize: samples,

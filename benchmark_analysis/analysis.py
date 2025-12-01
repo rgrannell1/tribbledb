@@ -11,8 +11,14 @@ def read_benchmarks() -> pd.DataFrame:
   all_rows = []
 
   for file_path in benchmark_files:
-    with open(file_path, 'r') as fle:
-      data = json.load(fle)
+    try:
+      with open(file_path, 'r') as fle:
+        data = json.load(fle)
+    except json.JSONDecodeError:
+      continue
+
+    if not data:
+      continue
 
     # Extract metadata
     metadata = {
@@ -71,9 +77,3 @@ def read_benchmarks() -> pd.DataFrame:
       dfr[col] = pd.to_numeric(dfr[col], errors='coerce')
 
   return dfr
-
-# analysis; look at scaling with respect to parameter count
-# for each experiment, different graph
-# bar graphs for groups
-# nice title
-# in future, plot of inter-revision differences
