@@ -975,16 +975,25 @@ var TribbleDB = class _TribbleDB {
    * @returns This TribbleDB instance.
    */
   searchFlatmap(search, fn) {
-    const searchResults = this.search(search);
-    const matchingTriples = searchResults.triples();
-    const transformedTriples = matchingTriples.flatMap(fn);
-    const deduplicatedTransformed = this.deduplicateTriples(transformedTriples);
+    const parsed = parseSearch(search);
+    validateInput(parsed);
     const originalHashMap = /* @__PURE__ */ new Map();
-    for (const triple of matchingTriples) {
-      originalHashMap.set(hashTriple(triple), triple);
-    }
     const transformedHashMap = /* @__PURE__ */ new Map();
-    for (const triple of deduplicatedTransformed) {
+    const matchingTriples = [];
+    for (const rowIdx of findMatchingRows(
+      parsed,
+      this.index,
+      this.cursorIndices,
+      this.metrics
+    )) {
+      const triple = this.index.getTriple(rowIdx);
+      if (triple !== void 0) {
+        originalHashMap.set(hashTriple(triple), triple);
+        matchingTriples.push(triple);
+      }
+    }
+    const transformedTriples = matchingTriples.flatMap(fn);
+    for (const triple of transformedTriples) {
       transformedHashMap.set(hashTriple(triple), triple);
     }
     const triplesToDelete = [];
