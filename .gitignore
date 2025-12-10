@@ -3,3 +3,5 @@ coverage/
 *.lcov
 node_modules/
 __pycache__
+*.png
+*.csv

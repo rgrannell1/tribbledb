@@ -1,6 +1,4 @@
-/*
- *
- */
+/* */
 
 export type BenchmarkConfiguration<T> = {
   // What are we testing? e.g `insert triples`
@@ -9,5 +7,5 @@ export type BenchmarkConfiguration<T> = {
   sampleSize: number;
   // Which subgroup is being tested? E.g `NodeID, high uniqueness`
   category: string;
-  parameters: T
-}
+  parameters: T;
+};

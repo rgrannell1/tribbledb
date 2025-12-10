@@ -36,13 +36,11 @@ import type { ParsedUrn } from "./types.ts";
 export function parseUrn(urn: string): ParsedUrn {
   const delimited = urn.split(":", 4);
   const type = delimited[2];
-  const remainder = delimited[3] ?? '';
+  const remainder = delimited[3] ?? "";
 
   const idx = remainder.indexOf("?");
   const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
-  const id = idx !== -1
-    ? remainder.slice(0, idx)
-    : remainder;
+  const id = idx !== -1 ? remainder.slice(0, idx) : remainder;
 
   const qs = queryString
     ? Object.fromEntries(new URLSearchParams(queryString))
@@ -54,8 +52,6 @@ export function parseUrn(urn: string): ParsedUrn {
     qs,
   };
 }
-
-
 
 /*
  * Converts a string value to a URN.

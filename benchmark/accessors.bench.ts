@@ -4,17 +4,15 @@
 
 import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
 import { TribbleDB } from "../src/tribble-db.ts";
-import {
-  TriplesNodeIdTypeQS,
-} from "./fuzzers.ts";
+import { TriplesNodeIdTypeQS } from "./fuzzers.ts";
 import { SAMPLE_SIZES } from "./constants.ts";
-
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Triples FirstObject',
+    experiment: "Triples FirstObject",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDTypeQS, high uniqueness',
+    category: "NodeIDTypeQS, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
@@ -22,8 +20,8 @@ for (const samples of SAMPLE_SIZES) {
       NUM_QS: 3,
       KEY_LENGTH: 10,
       VALUE_LENGTH: 10,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -56,9 +54,10 @@ for (const samples of SAMPLE_SIZES) {
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Triples Objects',
+    experiment: "Triples Objects",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDTypeQS, high uniqueness',
+    category: "NodeIDTypeQS, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
@@ -66,8 +65,8 @@ for (const samples of SAMPLE_SIZES) {
       NUM_QS: 3,
       KEY_LENGTH: 10,
       VALUE_LENGTH: 10,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),

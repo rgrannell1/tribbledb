@@ -2,12 +2,11 @@ import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
 import { parseUrn, parseUrn2 } from "../src/urn.ts";
 import { NodeIDTypeQS } from "./fuzzers.ts";
 
-
 {
   const experiment = {
-    experiment: 'parseurn',
+    experiment: "parseurn",
     sampleSize: 1,
-    category: 'NodeIDTypeQs',
+    category: "NodeIDTypeQs",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
@@ -15,12 +14,12 @@ import { NodeIDTypeQS } from "./fuzzers.ts";
       NUM_QS: 3,
       KEY_LENGTH: 10,
       VALUE_LENGTH: 10,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
-    group: 'parseurn',
+    group: "parseurn",
     baseline: true,
     fn: (bench) => {
       const ID_LENGTH = experiment.parameters.ID_LENGTH;
@@ -34,7 +33,7 @@ import { NodeIDTypeQS } from "./fuzzers.ts";
         TYPE_LENGTH,
         NUM_QS,
         KEY_LENGTH,
-        VALUE_LENGTH
+        VALUE_LENGTH,
       );
 
       const data = `urn:ró:${unwrap(sampleData)}`;

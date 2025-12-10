@@ -1,19 +1,16 @@
 import type {
+  NodeObjectQuery,
   Parser,
   ReadOpts,
+  Search,
   TargetValidator,
-  TribbleDBMetrics,
   Triple,
   TripleObject,
 } from "./types.ts";
 import { Index } from "./indices/index.ts";
-import { Triples } from "./triples.ts";
-import { TribbleDBPerformanceMetrics } from "./metrics.ts";
-import { asUrn } from "./urn.ts";
-import { findMatchingRows, validateInput } from "./db/search.ts";
-import type { Search } from "./types.ts";
-import { parseSearch } from "./db/inputs.ts";
 import { hashTriple } from "./hash.ts";
+import { asUrn } from "./urn.ts";
+import { parseSearch } from "./db/inputs.ts";
 
 /*
  * A searchable triple database
@@ -22,56 +19,20 @@ import { hashTriple } from "./hash.ts";
  */
 export class TribbleDB {
   index: Index;
-  triplesCount: number;
-  cursorIndices: Set<number>;
-  metrics: TribbleDBPerformanceMetrics;
-  validations: Record<string, TargetValidator>;
+  private validations: Record<string, TargetValidator>;
 
   constructor(
     triples: Triple[],
     validations: Record<string, TargetValidator> = {},
   ) {
     this.index = new Index(triples);
-    this.triplesCount = this.index.length;
-    this.cursorIndices = new Set<number>();
-    this.metrics = new TribbleDBPerformanceMetrics();
     this.validations = validations;
-
-    for (let idx = 0; idx < this.triplesCount; idx++) {
-      this.cursorIndices.add(idx);
-    }
   }
 
-  /*
-   * Clone the database.
-   *
-   * @returns A new TribbleDB instance, constructed with the same data as the original.
-   */
-  clone(): TribbleDB {
-    const clonedDB = new TribbleDB([]);
-
-    clonedDB.index = this.index;
-    clonedDB.triplesCount = this.triplesCount;
-    clonedDB.cursorIndices = this.cursorIndices;
-    clonedDB.metrics = this.metrics;
-
-    return clonedDB;
-  }
-
-  /*
-   * Convert an array of triples to a TribbleDB.
-   */
   static of(triples: Triple[]): TribbleDB {
     return new TribbleDB(triples);
   }
 
-  /*
-   * Convert an array of TripleObject instances to a TribbleDB.
-   *
-   * @param objects - An array of TripleObject instances.
-   *
-   * @returns A TribbleDB instance.
-   */
   static from(objects: TripleObject[]): TribbleDB {
     const triples: Triple[] = [];
 
@@ -95,11 +56,6 @@ export class TribbleDB {
     return new TribbleDB(triples);
   }
 
-  /*
-   * Validate triples against the provided validation functions.
-   *
-   * @param triples - An array of triples to validate.
-   */
   validateTriples(triples: Triple[]): void {
     const messages: string[] = [];
 
@@ -123,67 +79,137 @@ export class TribbleDB {
     }
   }
 
-  /**
-   * Add new triples to the database.
-   *
-   * @param triples - An array of triples to add.
-   */
   add(triples: Triple[]): void {
-    const oldLength = this.index.arrayLength;
     this.validateTriples(triples);
-
     this.index.add(triples);
-    this.triplesCount = this.index.length;
+  }
 
-    for (let idx = oldLength; idx < this.index.arrayLength; idx++) {
-      this.cursorIndices.add(idx);
+  delete(triples: Triple[]): TribbleDB {
+    this.index.delete(triples);
+    return this;
+  }
+
+  triples(): Triple[] {
+    return this.index.triples();
+  }
+
+  sources(): Set<string> {
+    const sources = new Set<string>();
+    const allTriples = this.index.triples();
+    for (const [source] of allTriples) {
+      sources.add(source);
     }
+    return sources;
   }
 
-  /**
-   * Map over the triples in the database.
-   *
-   * @param fn - A mapping function.
-   * @returns A new TribbleDB instance containing the mapped triples.
-   */
-  map(fn: (triple: Triple) => Triple): TribbleDB {
-    return new TribbleDB(this.index.triples().map(fn));
+  relations(): Set<string> {
+    const relations = new Set<string>();
+    const allTriples = this.index.triples();
+    for (const [, relation] of allTriples) {
+      relations.add(relation);
+    }
+    return relations;
   }
 
-  /**
-   * Flatmap over the triples in the database. This can be used to add new triples
-   * to a copy of the database.
-   *
-   * @param fn - A mapping function.
-   * @returns A new TribbleDB instance containing the flat-mapped triples.
-   */
-  flatMap(fn: (triple: Triple) => Triple[]): TribbleDB {
-    const flatMappedTriples = this.index.triples().flatMap(fn) as Triple[];
-
-    // The flatmapped database may benefit from reusing the index structure
-    // of the original database
-    const newDb = new TribbleDB([]);
-    newDb.index = this.index.clone();
-
-    newDb.add(flatMappedTriples);
-
-    return newDb;
+  targets(): Set<string> {
+    const targets = new Set<string>();
+    const allTriples = this.index.triples();
+    for (const [, , target] of allTriples) {
+      targets.add(target);
+    }
+    return targets;
   }
 
-  /*
-   * Deduplicate an array of triples using hash-based comparison.
-   *
-   * @param triples - An array of triples that may contain duplicates.
-   * @returns A new array with duplicate triples removed.
-   */
+  firstTriple(): Triple | undefined {
+    const allTriples = this.triples();
+    return allTriples.length > 0 ? allTriples[0] : undefined;
+  }
+
+  firstSource(): string | undefined {
+    return this.index.getTriple(0)?.[0];
+  }
+
+  firstRelation(): string | undefined {
+    return this.index.getTriple(0)?.[1];
+  }
+
+  firstTarget(): string | undefined {
+    return this.index.getTriple(0)?.[2];
+  }
+
+  firstObject(listOnly: boolean = false): TripleObject | undefined {
+    let firstId: string | undefined = undefined;
+    const obj: TripleObject = {};
+
+    for (const [source, relationName, target] of this.index.triples()) {
+      if (firstId === undefined) {
+        firstId = source;
+        obj.id = source;
+      }
+
+      if (firstId !== source) {
+        continue;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(obj, relationName)) {
+        obj[relationName] = listOnly ? [target] : target;
+      } else if (Array.isArray(obj[relationName])) {
+        if (!(obj[relationName] as string[]).includes(target)) {
+          (obj[relationName] as string[]).push(target);
+        }
+      } else {
+        obj[relationName] = obj[relationName] as string === target
+          ? obj[relationName]
+          : [obj[relationName] as string, target];
+      }
+    }
+
+    return Object.keys(obj).length > 0 ? obj : undefined;
+  }
+
+  objects(listOnly: boolean = false): TripleObject[] {
+    const objs = new Map<string, TripleObject>();
+
+    for (const [source, relationName, target] of this.index.triples()) {
+      let obj = objs.get(source);
+      if (!obj) {
+        obj = { id: source };
+        objs.set(source, obj);
+      }
+
+      const relationRef = obj[relationName];
+      if (!relationRef) {
+        obj[relationName] = listOnly ? [target] : target;
+      } else if (Array.isArray(relationRef)) {
+        if (!relationRef.includes(target)) {
+          relationRef.push(target);
+        }
+      } else {
+        obj[relationName] = relationRef === target
+          ? relationRef
+          : [relationRef as string, target];
+      }
+    }
+
+    return Array.from(objs.values());
+  }
+
+  map(fnc: (triple: Triple) => Triple): TribbleDB {
+    return new TribbleDB(this.triples().map(fnc));
+  }
+
+  flatMap(fnc: (triple: Triple) => Triple[]): TribbleDB {
+    return new TribbleDB(this.triples().flatMap(fnc));
+  }
+
   deduplicateTriples(triples: Triple[]): Triple[] {
     const seen = new Set<string>();
     const result: Triple[] = [];
 
     for (const triple of triples) {
-      const hash = hashTriple(triple);
-      if (!seen.has(hash)) {
-        seen.add(hash);
+      const tripleHash = hashTriple(triple);
+      if (!seen.has(tripleHash)) {
+        seen.add(tripleHash);
         result.push(triple);
       }
     }
@@ -191,290 +217,56 @@ export class TribbleDB {
     return result;
   }
 
-  /*
-   * Perform an in-place flatmap over this database. This works by:
-   * - Searching the database to get a subset of triples
-   * - Flatmapping those triples
-   * - Deleting any triples from the original subset that are no longer present after the flatmap
-   * - Adding all new triples to the database
-   *
-   * @param search - The search parameters to subset the database.
-   * @param fn - A mapping function to apply to each triple in the search result.
-   *
-   * @returns This TribbleDB instance.
-   */
-  searchFlatmap(search: Search, fn: (triple: Triple) => Triple[]): TribbleDB {
-    const parsed = parseSearch(search);
-    validateInput(parsed);
-
-    const originalHashMap = new Map<string, Triple>();
-    const transformedHashMap = new Map<string, Triple>();
-    const matchingTriples: Triple[] = [];
-
-    for (
-      const rowIdx of findMatchingRows(
-        parsed,
-        this.index,
-        this.cursorIndices,
-        this.metrics,
-      )
-    ) {
-      const triple = this.index.getTriple(rowIdx);
-      if (triple !== undefined) {
-        originalHashMap.set(hashTriple(triple), triple);
-        matchingTriples.push(triple);
-      }
-    }
-
-    const transformedTriples = matchingTriples.flatMap(fn);
-
-    for (const triple of transformedTriples) {
-      transformedHashMap.set(hashTriple(triple), triple);
-    }
-
-    // allow delete-by-hash
-    const triplesToDelete: Triple[] = [];
-    const triplesToAdd: Triple[] = [];
-
-    // remove triples no longer present
-    for (const [hash, triple] of originalHashMap) {
-      if (!transformedHashMap.has(hash)) {
-        triplesToDelete.push(triple);
-      }
-    }
-
-    // add triples not previously present
-    for (const [hash, triple] of transformedHashMap) {
-      if (!originalHashMap.has(hash)) {
-        triplesToAdd.push(triple);
-      }
-    }
-
-    this.delete(triplesToDelete);
-    this.add(triplesToAdd);
-
+  merge(other: TribbleDB): TribbleDB {
+    this.add(other.triples());
     return this;
   }
 
-  /**
-   * Get the first triple in the database.
-   *
-   * @returns The first triple, or undefined if there are no triples.
-   */
-  firstTriple(): Triple | undefined {
-    return this.index.length > 0 ? this.index.getTriple(0) : undefined;
+  clone(): TribbleDB {
+    return new TribbleDB(this.triples(), this.validations);
   }
 
-  /*
-   * Get the first source in the database.
-   */
-  firstSource(): string | undefined {
-    const first = this.firstTriple();
-    return first ? Triples.source(first) : undefined;
-  }
+  readThing(
+    urn: string,
+    opts: ReadOpts = { qs: false },
+  ): TripleObject | undefined {
+    const allTriples = this.triples();
+    const matchingTriples: Triple[] = [];
 
-  /**
-   * Get the first relation in the database.
-   */
-  firstRelation(): string | undefined {
-    const first = this.firstTriple();
-    return first ? Triples.relation(first) : undefined;
-  }
-
-  /**
-   * Get the first target in the database.
-   */
-  firstTarget(): string | undefined {
-    const first = this.firstTriple();
-    return first ? Triples.target(first) : undefined;
-  }
-
-  /*
-   * Get the first object in the database.
-   */
-  firstObject(listOnly: boolean = false): TripleObject | undefined {
-    let firstId = undefined;
-    const obj: TripleObject = {};
-
-    for (const [source, relation, target] of this.index.triples()) {
-      if (firstId === undefined) {
-        firstId = source;
-        obj.id = source;
+    if (opts.qs) {
+      const { type, id } = asUrn(urn);
+      for (const triple of allTriples) {
+        const sourceParsed = asUrn(triple[0]);
+        if (sourceParsed.type === type && sourceParsed.id === id) {
+          matchingTriples.push(triple);
+        }
       }
-
-      if (firstId !== source) {
-        // This could be slow, though this method should only be pointed at things with a single object in them
-        // in future, lets raise an error if this is pointed at a datasource with more than one object
-        continue;
+    } else {
+      for (const triple of allTriples) {
+        if (triple[0] === urn) {
+          matchingTriples.push(triple);
+        }
       }
+    }
 
-      if (!obj[relation]) {
-        obj[relation] = listOnly ? [target] : target;
+    if (matchingTriples.length === 0) return undefined;
+
+    const obj: TripleObject = { id: matchingTriples[0][0] };
+    for (const [, relation, target] of matchingTriples) {
+      if (!Object.prototype.hasOwnProperty.call(obj, relation)) {
+        obj[relation] = target;
       } else if (Array.isArray(obj[relation])) {
         if (!(obj[relation] as string[]).includes(target)) {
           (obj[relation] as string[]).push(target);
         }
       } else {
-        obj[relation] = obj[relation] as string === target
-          ? obj[relation]
-          : [obj[relation] as string, target];
+        obj[relation] = [obj[relation] as string, target];
       }
     }
 
-    return Object.keys(obj).length > 0 ? obj : undefined;
+    return obj;
   }
 
-  /*
-   * Get all triples in the database.
-   *
-   * @returns An array of all triples.
-   */
-  triples(): Triple[] {
-    return this.index.triples();
-  }
-
-  /**
-   * Get all unique sources in the database.
-   *
-   * @returns A set of all unique sources.
-   */
-  sources(): Set<string> {
-    return new Set(
-      this.index.triples().map(Triples.source),
-    );
-  }
-
-  /**
-   * Get all unique relations in the database.
-   *
-   * @returns A set of all unique relations.
-   */
-  relations(): Set<string> {
-    return new Set(
-      this.index.triples().map(Triples.relation),
-    );
-  }
-
-  /**
-   * Get all unique targets in the database.
-   *
-   * @returns A set of all unique targets.
-   */
-  targets(): Set<string> {
-    return new Set(
-      this.index.triples().map(Triples.target),
-    );
-  }
-
-  /*
-   * Get all unique objects represented by the triples.
-   *
-   * @returns An array of unique TripleObject instances.
-   */
-  objects(listOnly: boolean = false): TripleObject[] {
-    const output: TripleObject[] = [];
-    for (const [id, obj] of Object.entries(this.#object(listOnly))) {
-      obj.id = id;
-      output.push(obj);
-    }
-
-    return output;
-  }
-
-  /*
-   * Internal function; convert all triples to an object representation.
-   *
-   * @param listOnly - Whether to always represent relation values as lists.
-   */
-  #object(listOnly: boolean = false): Record<string, TripleObject> {
-    const objs: Record<string, TripleObject> = {};
-
-    for (const [source, relation, target] of this.index.triples()) {
-      if (!objs[source]) {
-        objs[source] = { id: source };
-      }
-      const relationRef = objs[source][relation];
-      if (!relationRef) {
-        objs[source][relation] = listOnly ? [target] : target;
-      } else if (Array.isArray(relationRef)) {
-        if (!relationRef.includes(target)) {
-          (relationRef as string[]).push(target);
-        }
-      } else {
-        objs[source][relation] = relationRef === target
-          ? relationRef
-          : [relationRef as string, target];
-      }
-    }
-
-    return objs;
-  }
-
-  /*
-   * Search across all triples in the database. There are two forms of query possible:
-   *
-   * - Object: { source?, relation?, target }
-   * - Array: [ source?, relation?, target? ]
-   *
-   * @param params - The search parameters.
-   * @returns A new TribbleDB instance containing the matching triples.
-   */
-  search(
-    params: Search,
-  ): TribbleDB {
-    const parsed = parseSearch(params);
-    validateInput(parsed);
-
-    const matchingTriples: Triple[] = [];
-
-    for (
-      const rowIdx of findMatchingRows(
-        parsed,
-        this.index,
-        this.cursorIndices,
-        this.metrics,
-      )
-    ) {
-      const triple = this.index.getTriple(rowIdx);
-      if (triple !== undefined) {
-        matchingTriples.push(triple);
-      }
-    }
-
-    return new TribbleDB(matchingTriples);
-  }
-
-  /*
-   * Get performance metrics for the database.
-   */
-  getMetrics(): TribbleDBMetrics {
-    return {
-      index: this.index.metrics,
-      db: this.metrics,
-    };
-  }
-
-  /*
-   * Read a single object from the data by urn. If not a urn, the
-   * value is used as an id and the type is the default type `unknown`. By default,
-   * query-strings are disregarded.
-   */
-  readThing(
-    urn: string,
-    opts: ReadOpts = { qs: false },
-  ): TripleObject | undefined {
-    if (opts.qs) {
-      const { type, id } = asUrn(urn);
-      return this.search({ source: { type, id } }).firstObject();
-    } else {
-      return this.search({ source: urn }).firstObject();
-    }
-  }
-
-  /*
-   * Read a set of URNs, and return any matching results. Ordered but not guaranteed to
-   * return a match for all provided URNs.
-   */
   readThings(
     urns: Set<string> | string[],
     opts: ReadOpts = { qs: false },
@@ -491,25 +283,15 @@ export class TribbleDB {
     return results;
   }
 
-  /*
-   * Read and parse a triple object. On missing data or parse failure return undefined (or throw an exception)
-   */
   parseThing<T>(
     parser: Parser<T>,
     urn: string,
     opts: ReadOpts = { qs: false },
   ): T | undefined {
     const thing = this.readThing(urn, opts);
-    if (thing) {
-      return parser(thing);
-    } else {
-      return undefined;
-    }
+    return thing ? parser(thing) : undefined;
   }
 
-  /*
-   * Read and parse a collection of triple objects. Skip over missing data or parse failures.
-   */
   parseThings<T>(
     parser: Parser<T>,
     urns: Set<string> | string[],
@@ -527,43 +309,418 @@ export class TribbleDB {
     return results;
   }
 
-  /*
-   * Merge another TribbleDB into this one.
-   *
-   * @param other - The other TribbleDB to merge.
-   * @returns This TribbleDB instance.
-   */
-  merge(other: TribbleDB): TribbleDB {
-    // deduplicating the index will prevent double-triple writes.
-    this.add(other.triples());
+  private intersectSets(set1: Set<number>, set2: Set<number>): Set<number> {
+    const result = new Set<number>();
+    for (const item of set1) {
+      if (set2.has(item)) {
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  search(params: Search): TribbleDB {
+    const parsed = parseSearch(params);
+
+    // Get all triples if no constraints
+    if (!parsed.source && !parsed.relation && !parsed.target) {
+      return new TribbleDB(this.triples(), this.validations);
+    }
+
+    // Use index-based search when possible
+    let candidateIndices: Set<number> | null = null;
+
+    // Start with relation constraint if present (usually most selective)
+    if (parsed.relation) {
+      const relationNames = Array.isArray(parsed.relation.relation)
+        ? parsed.relation.relation
+        : [parsed.relation.relation];
+
+      if (relationNames.length > 0) {
+        candidateIndices = new Set<number>();
+        for (const relName of relationNames) {
+          const ids = this.index.getRelationSet(relName);
+          if (ids) {
+            for (const idx of ids) {
+              candidateIndices.add(idx);
+            }
+          }
+        }
+      }
+    }
+
+    // Apply source constraint using indices
+    if (parsed.source) {
+      const sourceIds = this.getTripleIndicesForNodeQueries(
+        parsed.source,
+        "source",
+      );
+      if (candidateIndices === null) {
+        candidateIndices = sourceIds;
+      } else {
+        // Intersect with existing candidates
+        const intersection = new Set<number>();
+        for (const idx of candidateIndices) {
+          if (sourceIds.has(idx)) {
+            intersection.add(idx);
+          }
+        }
+        candidateIndices = intersection;
+      }
+    }
+
+    // Apply target constraint using indices
+    if (parsed.target) {
+      const targetIds = this.getTripleIndicesForNodeQueries(
+        parsed.target,
+        "target",
+      );
+      if (candidateIndices === null) {
+        candidateIndices = targetIds;
+      } else {
+        // Intersect with existing candidates
+        const intersection = new Set<number>();
+        for (const idx of candidateIndices) {
+          if (targetIds.has(idx)) {
+            intersection.add(idx);
+          }
+        }
+        candidateIndices = intersection;
+      }
+    }
+
+    // If no candidates found via indices, return empty
+    if (candidateIndices === null || candidateIndices.size === 0) {
+      return new TribbleDB([], this.validations);
+    }
+
+    // Convert triple indices to triples and apply fine-grained filters
+    const matchingTriples: Triple[] = [];
+    for (const tripleIdx of candidateIndices) {
+      const triple = this.index.getTriple(tripleIdx);
+      if (!triple) continue;
+
+      const [source, relation, target] = triple;
+
+      // Apply predicate filters if present
+      if (parsed.source) {
+        let sourceMatches = false;
+        for (const sourceQuery of parsed.source) {
+          if (sourceQuery.predicate && !sourceQuery.predicate(source)) {
+            continue;
+          }
+          sourceMatches = true;
+          break;
+        }
+        if (!sourceMatches) continue;
+      }
+
+      if (parsed.relation?.predicate && !parsed.relation.predicate(relation)) {
+        continue;
+      }
+
+      if (parsed.target) {
+        let targetMatches = false;
+        for (const targetQuery of parsed.target) {
+          if (targetQuery.predicate && !targetQuery.predicate(target)) {
+            continue;
+          }
+          targetMatches = true;
+          break;
+        }
+        if (!targetMatches) continue;
+      }
+
+      matchingTriples.push(triple);
+    }
+
+    return new TribbleDB(matchingTriples, this.validations);
+  }
+
+  private getTripleIndicesForNodeQueries(
+    queries: NodeObjectQuery[],
+    position: "source" | "target",
+  ): Set<number> {
+    const result = new Set<number>();
+
+    // Union of all query results (OR between queries)
+    for (const query of queries) {
+      const hasIndexableConstraints = query.type !== undefined ||
+        query.id !== undefined ||
+        (query.qs !== undefined && Object.keys(query.qs).length > 0);
+
+      // If only predicate is specified (no indexable constraints), return all indices
+      // The predicate will be applied later
+      if (!hasIndexableConstraints) {
+        // Return all triple indices - predicates will filter these later
+        for (let idx = 0; idx < this.index.arrayLength; idx++) {
+          result.add(idx);
+        }
+        continue;
+      }
+
+      const queryMatches: Set<number>[] = [];
+
+      // Get candidates by type
+      if (query.type !== undefined) {
+        const typeSet = position === "source"
+          ? this.index.getSourceTypeSet(query.type)
+          : this.index.getTargetTypeSet(query.type);
+
+        if (typeSet) {
+          queryMatches.push(typeSet);
+        } else {
+          // No matches for this constraint means this query can't match anything
+          continue;
+        }
+      }
+
+      // Get candidates by id (union within query.id array, intersection with other constraints)
+      if (query.id !== undefined) {
+        const ids = Array.isArray(query.id) ? query.id : [query.id];
+        const idUnion = new Set<number>();
+
+        for (const nodeId of ids) {
+          const idSet = position === "source"
+            ? this.index.getSourceIdSet(nodeId)
+            : this.index.getTargetIdSet(nodeId);
+
+          if (idSet) {
+            for (const idx of idSet) {
+              idUnion.add(idx);
+            }
+          }
+        }
+
+        if (idUnion.size > 0) {
+          queryMatches.push(idUnion);
+        } else {
+          // No matches for this constraint means this query can't match anything
+          continue;
+        }
+      }
+
+      // Get candidates by query string (intersection of all qs pairs)
+      if (query.qs !== undefined) {
+        const qsKeys = Object.keys(query.qs);
+        if (qsKeys.length > 0) {
+          const qsSets: Set<number>[] = [];
+
+          for (const key of qsKeys) {
+            const qsSet = position === "source"
+              ? this.index.getSourceQsSet(key, query.qs[key])
+              : this.index.getTargetQsSet(key, query.qs[key]);
+
+            if (qsSet) {
+              qsSets.push(qsSet);
+            } else {
+              // No matches for this qs pair means this query can't match anything
+              qsSets.length = 0;
+              break;
+            }
+          }
+
+          if (qsSets.length > 0) {
+            // Intersect all qs constraints
+            let qsIntersection = qsSets[0];
+            for (let idx = 1; idx < qsSets.length; idx++) {
+              qsIntersection = this.intersectSets(qsIntersection, qsSets[idx]);
+              if (qsIntersection.size === 0) break;
+            }
+            queryMatches.push(qsIntersection);
+          } else {
+            // Had qs constraints but none matched
+            continue;
+          }
+        }
+      }
+
+      // Intersect all constraints within this query
+      if (queryMatches.length === 0) {
+        // No constraints means match all (but this shouldn't happen in practice)
+        continue;
+      }
+
+      let queryResult = queryMatches[0];
+      for (let idx = 1; idx < queryMatches.length; idx++) {
+        queryResult = this.intersectSets(queryResult, queryMatches[idx]);
+        if (queryResult.size === 0) break;
+      }
+
+      // Union this query's results with overall result
+      for (const idx of queryResult) {
+        result.add(idx);
+      }
+    }
+
+    return result;
+  }
+
+  private searchTriples(params: Search): Triple[] {
+    const parsed = parseSearch(params);
+
+    // Get all triples if no constraints
+    if (!parsed.source && !parsed.relation && !parsed.target) {
+      return this.triples();
+    }
+
+    // Use index-based search
+    let candidateIndices: Set<number> | null = null;
+
+    // Start with relation constraint if present
+    if (parsed.relation) {
+      const relationNames = Array.isArray(parsed.relation.relation)
+        ? parsed.relation.relation
+        : [parsed.relation.relation];
+
+      if (relationNames.length > 0) {
+        candidateIndices = new Set<number>();
+        for (const relName of relationNames) {
+          const ids = this.index.getRelationSet(relName);
+          if (ids) {
+            for (const idx of ids) {
+              candidateIndices.add(idx);
+            }
+          }
+        }
+      }
+    }
+
+    // Apply source constraint
+    if (parsed.source) {
+      const sourceIds = this.getTripleIndicesForNodeQueries(
+        parsed.source,
+        "source",
+      );
+      if (candidateIndices === null) {
+        candidateIndices = sourceIds;
+      } else {
+        const intersection = new Set<number>();
+        for (const idx of candidateIndices) {
+          if (sourceIds.has(idx)) {
+            intersection.add(idx);
+          }
+        }
+        candidateIndices = intersection;
+      }
+    }
+
+    // Apply target constraint
+    if (parsed.target) {
+      const targetIds = this.getTripleIndicesForNodeQueries(
+        parsed.target,
+        "target",
+      );
+      if (candidateIndices === null) {
+        candidateIndices = targetIds;
+      } else {
+        const intersection = new Set<number>();
+        for (const idx of candidateIndices) {
+          if (targetIds.has(idx)) {
+            intersection.add(idx);
+          }
+        }
+        candidateIndices = intersection;
+      }
+    }
+
+    if (candidateIndices === null || candidateIndices.size === 0) {
+      return [];
+    }
+
+    // Convert to triples with predicate filters
+    const matchingTriples: Triple[] = [];
+    for (const tripleIdx of candidateIndices) {
+      const triple = this.index.getTriple(tripleIdx);
+      if (!triple) continue;
+
+      const [source, relation, target] = triple;
+
+      // Apply predicate filters
+      if (parsed.source) {
+        let sourceMatches = false;
+        for (const sourceQuery of parsed.source) {
+          if (sourceQuery.predicate && !sourceQuery.predicate(source)) {
+            continue;
+          }
+          sourceMatches = true;
+          break;
+        }
+        if (!sourceMatches) continue;
+      }
+
+      if (parsed.relation?.predicate && !parsed.relation.predicate(relation)) {
+        continue;
+      }
+
+      if (parsed.target) {
+        let targetMatches = false;
+        for (const targetQuery of parsed.target) {
+          if (targetQuery.predicate && !targetQuery.predicate(target)) {
+            continue;
+          }
+          targetMatches = true;
+          break;
+        }
+        if (!targetMatches) continue;
+      }
+
+      matchingTriples.push(triple);
+    }
+
+    return matchingTriples;
+  }
+
+  searchFlatmap(search: Search, fnc: (triple: Triple) => Triple[]): TribbleDB {
+    // Search for matching triples directly without creating intermediate DB
+    const matchingTriples = this.searchTriples(search);
+
+    // Apply the flatmap function
+    const transformedTriples = matchingTriples.flatMap(fnc);
+
+    // Compute diffs efficiently using Sets
+    const originalHashes = new Set<string>();
+    const transformedHashes = new Set<string>();
+    const transformedByHash = new Map<string, Triple>();
+
+    for (const triple of matchingTriples) {
+      originalHashes.add(hashTriple(triple));
+    }
+
+    for (const triple of transformedTriples) {
+      const hash = hashTriple(triple);
+      transformedHashes.add(hash);
+      transformedByHash.set(hash, triple);
+    }
+
+    // Only delete triples that are no longer present
+    const triplesToDelete: Triple[] = [];
+    for (const triple of matchingTriples) {
+      const hash = hashTriple(triple);
+      if (!transformedHashes.has(hash)) {
+        triplesToDelete.push(triple);
+      }
+    }
+
+    // Only add triples that are new
+    const triplesToAdd: Triple[] = [];
+    for (const hash of transformedHashes) {
+      if (!originalHashes.has(hash)) {
+        triplesToAdd.push(transformedByHash.get(hash)!);
+      }
+    }
+
+    if (triplesToDelete.length > 0) {
+      this.delete(triplesToDelete);
+    }
+    if (triplesToAdd.length > 0) {
+      this.add(triplesToAdd);
+    }
 
     return this;
   }
 
-  /*
-   * Delete triples from the database.
-   *
-   * @param triples - An array of triples to delete.
-   * @returns This TribbleDB instance.
-   */
-  delete(triples: Triple[]): TribbleDB {
-    const indicesToDelete = new Set<number>();
-
-    for (const triple of triples) {
-      const tripleIndex = this.index.getTripleIndex(triple);
-      if (tripleIndex !== undefined) {
-        indicesToDelete.add(tripleIndex);
-      }
-    }
-
-    this.index.delete(triples);
-    this.triplesCount = this.index.length;
-
-    // Update cursorIndices to reflect deleted triples
-    for (const idx of indicesToDelete) {
-      this.cursorIndices.delete(idx);
-    }
-
-    return this;
+  get triplesCount(): number {
+    return this.index.length;
   }
 }

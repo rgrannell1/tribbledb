@@ -13,14 +13,15 @@ import { SAMPLE_SIZES } from "./constants.ts";
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Delete Triples',
+    experiment: "Delete Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeID, high uniqueness',
+    category: "NodeID, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       RELATION_LENGTH: 5,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -39,17 +40,20 @@ for (const samples of SAMPLE_SIZES) {
   });
 }
 
+
+
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Delete Triples',
+    experiment: "Delete Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDType, high uniqueness',
+    category: "NodeIDType, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
       RELATION_LENGTH: 5,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -69,16 +73,19 @@ for (const samples of SAMPLE_SIZES) {
       const tdb = new TribbleDB(data as [string, string, string][]);
 
       bench.start();
-      tdb.delete(data as [string, string, string][]);;
+      tdb.delete(data as [string, string, string][]);
     },
   });
 }
 
+
+
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Delete Triples',
+    experiment: "Delete Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDTypeQs, high uniqueness',
+    category: "NodeIDTypeQs, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
@@ -86,8 +93,8 @@ for (const samples of SAMPLE_SIZES) {
       NUM_QS: 3,
       KEY_LENGTH: 10,
       VALUE_LENGTH: 10,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),

@@ -16,14 +16,15 @@ import { SAMPLE_SIZES } from "./constants.ts";
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Insert Triples',
+    experiment: "Insert Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeID, high uniqueness',
+    category: "NodeID, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       RELATION_LENGTH: 5,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -41,14 +42,15 @@ for (const samples of SAMPLE_SIZES) {
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Insert Triples',
+    experiment: "Insert Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeID, high duplicates',
+    category: "NodeID, high duplicates",
     parameters: {
       ID_LENGTH: 5,
       RELATION_LENGTH: 3,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -67,15 +69,16 @@ for (const samples of SAMPLE_SIZES) {
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Insert Triples',
+    experiment: "Insert Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDType, high uniqueness',
+    category: "NodeIDType, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
       RELATION_LENGTH: 5,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -100,15 +103,16 @@ for (const samples of SAMPLE_SIZES) {
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Insert Triples',
+    experiment: "Insert Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDType, high duplicates',
+    category: "NodeIDType, high duplicates",
     parameters: {
       ID_LENGTH: 5,
       TYPE_LENGTH: 5,
       RELATION_LENGTH: 3,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -133,9 +137,10 @@ for (const samples of SAMPLE_SIZES) {
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Insert Triples',
+    experiment: "Insert Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDTypeQs, high uniqueness',
+    category: "NodeIDTypeQs, high uniqueness",
     parameters: {
       ID_LENGTH: 20,
       TYPE_LENGTH: 20,
@@ -143,8 +148,8 @@ for (const samples of SAMPLE_SIZES) {
       NUM_QS: 3,
       KEY_LENGTH: 10,
       VALUE_LENGTH: 10,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),
@@ -176,9 +181,10 @@ for (const samples of SAMPLE_SIZES) {
 
 for (const samples of SAMPLE_SIZES) {
   const experiment = {
-    experiment: 'Insert Triples',
+    experiment: "Insert Triples",
+    implementation: "current",
     sampleSize: samples,
-    category: 'NodeIDTypeQs, high duplicates',
+    category: "NodeIDTypeQs, high duplicates",
     parameters: {
       ID_LENGTH: 5,
       TYPE_LENGTH: 5,
@@ -186,8 +192,8 @@ for (const samples of SAMPLE_SIZES) {
       NUM_QS: 3,
       KEY_LENGTH: 2,
       VALUE_LENGTH: 2,
-    }
-  }
+    },
+  };
 
   Deno.bench({
     name: JSON.stringify(experiment),

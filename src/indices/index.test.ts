@@ -58,12 +58,16 @@ Deno.test("search with no parameters returns all triples", () => {
   // Verify all original triples are included
   const resultTriples = results.triples();
   for (const originalTriple of testTriples) {
-    const found = resultTriples.some(resultTriple =>
+    const found = resultTriples.some((resultTriple) =>
       resultTriple[0] === originalTriple[0] &&
       resultTriple[1] === originalTriple[1] &&
       resultTriple[2] === originalTriple[2]
     );
-    assertEquals(found, true, `Triple ${JSON.stringify(originalTriple)} should be in results`);
+    assertEquals(
+      found,
+      true,
+      `Triple ${JSON.stringify(originalTriple)} should be in results`,
+    );
   }
 });
 
@@ -1045,7 +1049,9 @@ Deno.test("search with non-existent URN string source returns empty", () => {
 Deno.test("search with all undefined array format returns all triples", () => {
   const database = new TribbleDB(testTriples);
   const results = database.search(
-    [undefined, undefined, undefined] as unknown as Parameters<typeof database.search>[0]
+    [undefined, undefined, undefined] as unknown as Parameters<
+      typeof database.search
+    >[0],
   );
 
   assertEquals(results.triplesCount, testTriples.length);
