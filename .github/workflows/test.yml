@@ -19,5 +19,12 @@ jobs:
       with:
         deno-version: v1.x
 
-    - name: Run tests
-      run: deno task test
+    - name: Run tests with coverage
+      run: deno task coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.lcov
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}

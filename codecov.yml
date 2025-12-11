@@ -1,0 +1,23 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "benchmark/**/*"
+  - "benchmark_analysis/**/*"
+  - "benchmark_results/**/*"
+  - "fuzz/**/*"
+  - "dist/**/*"
+  - "**/*.test.ts"
