@@ -1187,3 +1187,120 @@ Deno.test("TribbleDB searchFlatmap with aggressive modifications stress test", (
     assertEquals(triple[2].length > 0, true);
   }
 });
+
+Deno.test("TribbleDB.of() static constructor creates database", () => {
+  const triples: Triple[] = [
+    ["person:alice", "name", "Alice"],
+    ["person:bob", "name", "Bob"],
+  ];
+  const database = TribbleDB.of(triples);
+  assertEquals(database.triplesCount, 2);
+});
+
+Deno.test("TribbleDB.sources() returns unique source values", () => {
+  const database = new TribbleDB(testTriples);
+  const sources = database.sources();
+  assertEquals(sources instanceof Set, true);
+  assertEquals(sources.has("person:alice"), true);
+  assertEquals(sources.has("person:bob"), true);
+  assertEquals(sources.has("company:acme"), true);
+});
+
+Deno.test("TribbleDB.relations() returns unique relation values", () => {
+  const database = new TribbleDB(testTriples);
+  const relations = database.relations();
+  assertEquals(relations instanceof Set, true);
+  assertEquals(relations.has("name"), true);
+  assertEquals(relations.has("age"), true);
+  assertEquals(relations.has("works_at"), true);
+});
+
+Deno.test("TribbleDB.targets() returns unique target values", () => {
+  const database = new TribbleDB(testTriples);
+  const targets = database.targets();
+  assertEquals(targets instanceof Set, true);
+  assertEquals(targets.has("Alice Smith"), true);
+  assertEquals(targets.has("Bob Jones"), true);
+  assertEquals(targets.has("30"), true);
+  assertEquals(targets.has("company:acme"), true);
+});
+
+Deno.test("TribbleDB.firstSource() returns first triple source", () => {
+  const database = new TribbleDB(testTriples);
+  const firstSource = database.firstSource();
+  assertEquals(typeof firstSource, "string");
+});
+
+Deno.test("TribbleDB.firstRelation() returns first triple relation", () => {
+  const database = new TribbleDB(testTriples);
+  const firstRelation = database.firstRelation();
+  assertEquals(typeof firstRelation, "string");
+});
+
+Deno.test("TribbleDB.firstTarget() returns first triple target", () => {
+  const database = new TribbleDB(testTriples);
+  const firstTarget = database.firstTarget();
+  assertEquals(typeof firstTarget, "string");
+});
+
+Deno.test("TribbleDB.firstSource() returns undefined for empty database", () => {
+  const database = new TribbleDB([]);
+  const firstSource = database.firstSource();
+  assertEquals(firstSource, undefined);
+});
+
+Deno.test("TribbleDB.firstObject() returns first object", () => {
+  const database = new TribbleDB(testTriples);
+  const firstObj = database.firstObject();
+  assertEquals(firstObj !== undefined, true);
+  assertEquals(typeof firstObj!.id, "string");
+});
+
+Deno.test("TribbleDB.firstObject() returns undefined for empty database", () => {
+  const database = new TribbleDB([]);
+  const firstObj = database.firstObject();
+  assertEquals(firstObj, undefined);
+});
+
+Deno.test("TribbleDB.firstObject() with listOnly returns arrays", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+    ["person:alice", "hobby", "reading"],
+  ]);
+  const firstObj = database.firstObject(true);
+  assertEquals(firstObj !== undefined, true);
+  assertEquals(Array.isArray(firstObj!.name), true);
+  assertEquals(Array.isArray(firstObj!.hobby), true);
+});
+
+Deno.test("TribbleDB.map() transforms all triples", () => {
+  const database = new TribbleDB([
+    ["person:alice", "name", "Alice"],
+    ["person:bob", "name", "Bob"],
+  ]);
+  const mapped = database.map(([source, relation, target]) => [
+    source.toUpperCase(),
+    relation,
+    target,
+  ]);
+  assertEquals(mapped.triplesCount, 2);
+  const triples = mapped.triples();
+  assertEquals(triples[0][0].includes("PERSON"), true);
+});
+
+Deno.test("TribbleDB.from() throws error for object without string id", () => {
+  let threwError = false;
+  try {
+    TribbleDB.from([
+      { id: 123 as any, name: "Test" },
+    ]);
+  } catch (err) {
+    threwError = true;
+    assertEquals(err instanceof Error, true);
+    assertEquals(
+      (err as Error).message.includes("must have a string id"),
+      true,
+    );
+  }
+  assertEquals(threwError, true);
+});

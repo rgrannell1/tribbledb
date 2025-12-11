@@ -32,3 +32,17 @@ Deno.test("TribbleStringifier does not duplicate indices for repeated values", (
   assertEquals(result2.includes('3 "Insurance Company"'), true);
   assertEquals(result2.includes("0 2 3"), true);
 });
+
+Deno.test("TribbleStringifier handles null value", () => {
+  const stringifier = new TribbleStringifier();
+  const triple: Triple = ["test", "relation", "null"];
+  const result = stringifier.stringify(triple);
+  assertEquals(result.includes('"null"'), true);
+});
+
+Deno.test("TribbleStringifier handles literal null", () => {
+  const stringifier = new TribbleStringifier();
+  const triple: Triple = ["test", "relation", null as any];
+  const result = stringifier.stringify(triple);
+  assertEquals(result.includes('"null"'), true);
+});

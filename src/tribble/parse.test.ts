@@ -49,3 +49,56 @@ Deno.test("TribbleParser full parse works", () => {
     ["Allianz Insurance", "is", "Insurance Company"],
   ]);
 });
+
+Deno.test("TribbleParser.parseTriple() throws on invalid triple format", () => {
+  const parser = new TribbleParser();
+  parser.parseDeclaration('0 "test"');
+
+  let threwError = false;
+  try {
+    parser.parseTriple("invalid format");
+  } catch (err) {
+    threwError = true;
+    assertEquals(err instanceof SyntaxError, true);
+    assertEquals(
+      (err as SyntaxError).message.includes("Invalid format"),
+      true,
+    );
+  }
+  assertEquals(threwError, true);
+});
+
+Deno.test("TribbleParser.parseTriple() throws on invalid triple reference", () => {
+  const parser = new TribbleParser();
+  parser.parseDeclaration('0 "test"');
+
+  let threwError = false;
+  try {
+    parser.parseTriple("0 999 0");
+  } catch (err) {
+    threwError = true;
+    assertEquals(err instanceof SyntaxError, true);
+    assertEquals(
+      (err as SyntaxError).message.includes("Invalid triple reference"),
+      true,
+    );
+  }
+  assertEquals(threwError, true);
+});
+
+Deno.test("TribbleParser.parseDeclaration() throws on invalid declaration format", () => {
+  const parser = new TribbleParser();
+
+  let threwError = false;
+  try {
+    parser.parseDeclaration("invalid");
+  } catch (err) {
+    threwError = true;
+    assertEquals(err instanceof SyntaxError, true);
+    assertEquals(
+      (err as SyntaxError).message.includes("Invalid format"),
+      true,
+    );
+  }
+  assertEquals(threwError, true);
+});

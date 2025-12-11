@@ -1651,3 +1651,174 @@ Deno.test("parseThings handles mixed existing and non-existent URNs", () => {
   const ids = parsed.map((p) => p.id).sort();
   assertEquals(ids, ["urn:ró:person:alice", "urn:ró:person:bob"]);
 });
+
+Deno.test("Index.difference() returns triples not in index", () => {
+  const database = new TribbleDB(testTriples);
+  const newTriples: Triple[] = [
+    ["urn:ró:person:alice", "name", "Alice Smith"], // exists
+    ["urn:ró:person:charlie", "name", "Charlie"], // new
+    ["urn:ró:person:bob", "age", "25"], // exists
+  ];
+
+  const diff = database.index.difference(newTriples);
+  assertEquals(diff.length, 1);
+  assertEquals(diff[0], ["urn:ró:person:charlie", "name", "Charlie"]);
+});
+
+Deno.test("Index.hasTriple() returns true for existing triple", () => {
+  const database = new TribbleDB(testTriples);
+  const exists = database.index.hasTriple([
+    "urn:ró:person:alice",
+    "name",
+    "Alice Smith",
+  ]);
+  assertEquals(exists, true);
+});
+
+Deno.test("Index.hasTriple() returns false for non-existent triple", () => {
+  const database = new TribbleDB(testTriples);
+  const exists = database.index.hasTriple([
+    "urn:ró:person:nobody",
+    "name",
+    "Nobody",
+  ]);
+  assertEquals(exists, false);
+});
+
+Deno.test("Index.getTripleIndex() returns index for existing triple", () => {
+  const database = new TribbleDB(testTriples);
+  const idx = database.index.getTripleIndex([
+    "urn:ró:person:alice",
+    "name",
+    "Alice Smith",
+  ]);
+  assertEquals(typeof idx, "number");
+  assertEquals(idx! >= 0, true);
+});
+
+Deno.test("Index.getTripleIndex() returns undefined for non-existent triple", () => {
+  const database = new TribbleDB(testTriples);
+  const idx = database.index.getTripleIndex([
+    "urn:ró:person:nobody",
+    "name",
+    "Nobody",
+  ]);
+  assertEquals(idx, undefined);
+});
+
+Deno.test("Index.getTriple() returns undefined for out of bounds index", () => {
+  const database = new TribbleDB(testTriples);
+  const triple = database.index.getTriple(9999);
+  assertEquals(triple, undefined);
+});
+
+Deno.test("Index.getTriple() returns undefined for negative index", () => {
+  const database = new TribbleDB(testTriples);
+  const triple = database.index.getTriple(-1);
+  assertEquals(triple, undefined);
+});
+
+Deno.test("Index.getTripleIndices() returns undefined for out of bounds", () => {
+  const database = new TribbleDB(testTriples);
+  const indices = database.index.getTripleIndices(9999);
+  assertEquals(indices, undefined);
+});
+
+Deno.test("Index.getTripleIndices() returns undefined for negative index", () => {
+  const database = new TribbleDB(testTriples);
+  const indices = database.index.getTripleIndices(-1);
+  assertEquals(indices, undefined);
+});
+
+Deno.test("Index.getTripleIndices() returns tuple for valid index", () => {
+  const database = new TribbleDB(testTriples);
+  const indices = database.index.getTripleIndices(0);
+  assertEquals(indices !== undefined, true);
+  assertEquals(Array.isArray(indices), true);
+  assertEquals(indices!.length, 3);
+});
+
+Deno.test("Index.clone() creates independent copy", () => {
+  const database = new TribbleDB(testTriples);
+  const cloned = database.index.clone();
+
+  assertEquals(cloned.length, database.index.length);
+
+  const newTriple: Triple = ["urn:ró:person:charlie", "name", "Charlie"];
+  cloned.add([newTriple]);
+
+  assertEquals(cloned.length, database.index.length + 1);
+  assertEquals(database.index.hasTriple(newTriple), false);
+  assertEquals(cloned.hasTriple(newTriple), true);
+});
+
+Deno.test("Index.delete() removes triples with query strings", () => {
+  const triplesWithQs: Triple[] = [
+    ["urn:ró:animal:cat?breed=persian", "species", "felis_catus"],
+    ["urn:ró:animal:dog?breed=labrador", "species", "canis_lupus"],
+  ];
+  const database = new TribbleDB(triplesWithQs);
+
+  database.delete([["urn:ró:animal:cat?breed=persian", "species", "felis_catus"]]);
+
+  assertEquals(database.triplesCount, 1);
+  assertEquals(
+    database.index.hasTriple([
+      "urn:ró:animal:cat?breed=persian",
+      "species",
+      "felis_catus",
+    ]),
+    false,
+  );
+  assertEquals(
+    database.index.hasTriple([
+      "urn:ró:animal:dog?breed=labrador",
+      "species",
+      "canis_lupus",
+    ]),
+    true,
+  );
+});
+
+Deno.test("search with no constraints returns all triples", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({});
+
+  assertEquals(results.triplesCount, testTriples.length);
+});
+
+Deno.test("search with relation predicate that fails continues", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    relation: {
+      relation: "name",
+      predicate: (_rel) => false,
+    },
+  });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with source predicate that fails continues", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    source: {
+      type: "person",
+      predicate: (_src) => false,
+    },
+  });
+
+  assertEquals(results.triplesCount, 0);
+});
+
+Deno.test("search with target predicate that fails continues", () => {
+  const database = new TribbleDB(testTriples);
+  const results = database.search({
+    target: {
+      type: "person",
+      predicate: (_tgt) => false,
+    },
+  });
+
+  assertEquals(results.triplesCount, 0);
+});
