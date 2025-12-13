@@ -21,7 +21,7 @@ export declare class Index {
     difference(triples: Triple[]): Triple[];
     hasTriple(triple: Triple): boolean;
     getTripleIndex(triple: Triple): number | undefined;
-    add(triples: Triple[]): void;
+    add(triples: Triple[]): this;
     get length(): number;
     get arrayLength(): number;
     triples(): Triple[];
@@ -34,6 +34,9 @@ export declare class Index {
     getTargetTypeSet(type: string): Set<number> | undefined;
     getTargetIdSet(id: string): Set<number> | undefined;
     getTargetQsSet(key: string, val: string): Set<number> | undefined;
+    getUniqueSources(): Set<string>;
+    getUniqueRelations(): Set<string>;
+    getUniqueTargets(): Set<string>;
     clone(): Index;
 }
 //# sourceMappingURL=index.d.ts.map

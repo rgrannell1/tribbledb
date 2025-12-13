@@ -47,6 +47,9 @@ export type UserSearchArray = [
   NodeSearch | undefined,
 ];
 
+/*
+ * User's can provide a search in object or array format
+ */
 export type Search = UserSearchObject | UserSearchArray;
 
 /*

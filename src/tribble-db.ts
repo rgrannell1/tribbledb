@@ -94,30 +94,15 @@ export class TribbleDB {
   }
 
   sources(): Set<string> {
-    const sources = new Set<string>();
-    const allTriples = this.index.triples();
-    for (const [source] of allTriples) {
-      sources.add(source);
-    }
-    return sources;
+    return this.index.getUniqueSources();
   }
 
   relations(): Set<string> {
-    const relations = new Set<string>();
-    const allTriples = this.index.triples();
-    for (const [, relation] of allTriples) {
-      relations.add(relation);
-    }
-    return relations;
+    return this.index.getUniqueRelations();
   }
 
   targets(): Set<string> {
-    const targets = new Set<string>();
-    const allTriples = this.index.triples();
-    for (const [, , target] of allTriples) {
-      targets.add(target);
-    }
-    return targets;
+    return this.index.getUniqueTargets();
   }
 
   firstTriple(): Triple | undefined {
@@ -671,8 +656,11 @@ export class TribbleDB {
     return matchingTriples;
   }
 
+  /*
+   * Search for triples matching a search-query, and applies a transformation function
+   * to each matching triple in-place.
+   */
   searchFlatmap(search: Search, fnc: (triple: Triple) => Triple[]): TribbleDB {
-    // Search for matching triples directly without creating intermediate DB
     const matchingTriples = this.searchTriples(search);
 
     // Apply the flatmap function

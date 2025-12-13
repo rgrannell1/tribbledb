@@ -385,6 +385,7 @@ var Index = class _Index {
         targetQsIndices
       });
     }
+    return this;
   }
   /*
    * Get the number of triples in the index
@@ -489,6 +490,50 @@ var Index = class _Index {
     }
     this.metrics.mapRead();
     return this.targetQs.get(qsIdx);
+  }
+  /*
+   * Get all unique source strings
+   */
+  getUniqueSources() {
+    const uniqueSourceIndices = /* @__PURE__ */ new Set();
+    for (const triple of this.indexedTriples) {
+      if (triple !== void 0) {
+        uniqueSourceIndices.add(triple[0]);
+      }
+    }
+    const sources = /* @__PURE__ */ new Set();
+    for (const sourceIdx of uniqueSourceIndices) {
+      const sourceStr = this.stringIndex.getValue(sourceIdx);
+      if (sourceStr !== void 0) {
+        sources.add(sourceStr);
+      }
+    }
+    return sources;
+  }
+  /*
+   * Get all unique relation strings
+   */
+  getUniqueRelations() {
+    return new Set(this.relations.keys());
+  }
+  /*
+   * Get all unique target strings
+   */
+  getUniqueTargets() {
+    const uniqueTargetIndices = /* @__PURE__ */ new Set();
+    for (const triple of this.indexedTriples) {
+      if (triple !== void 0) {
+        uniqueTargetIndices.add(triple[2]);
+      }
+    }
+    const targets = /* @__PURE__ */ new Set();
+    for (const targetIdx of uniqueTargetIndices) {
+      const targetStr = this.stringIndex.getValue(targetIdx);
+      if (targetStr !== void 0) {
+        targets.add(targetStr);
+      }
+    }
+    return targets;
   }
   /*
    * Deep-clone the index
@@ -628,28 +673,13 @@ var TribbleDB = class _TribbleDB {
     return this.index.triples();
   }
   sources() {
-    const sources = /* @__PURE__ */ new Set();
-    const allTriples = this.index.triples();
-    for (const [source] of allTriples) {
-      sources.add(source);
-    }
-    return sources;
+    return this.index.getUniqueSources();
   }
   relations() {
-    const relations = /* @__PURE__ */ new Set();
-    const allTriples = this.index.triples();
-    for (const [, relation] of allTriples) {
-      relations.add(relation);
-    }
-    return relations;
+    return this.index.getUniqueRelations();
   }
   targets() {
-    const targets = /* @__PURE__ */ new Set();
-    const allTriples = this.index.triples();
-    for (const [, , target] of allTriples) {
-      targets.add(target);
-    }
-    return targets;
+    return this.index.getUniqueTargets();
   }
   firstTriple() {
     const allTriples = this.triples();
@@ -1056,6 +1086,10 @@ var TribbleDB = class _TribbleDB {
     }
     return matchingTriples;
   }
+  /*
+   * Search for triples matching a search-query, and applies a transformation function
+   * to each matching triple in-place.
+   */
   searchFlatmap(search, fnc) {
     const matchingTriples = this.searchTriples(search);
     const transformedTriples = matchingTriples.flatMap(fnc);

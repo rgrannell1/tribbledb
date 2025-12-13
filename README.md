@@ -303,6 +303,24 @@ TribbleDB uses multi-dimensional indices for efficient lookups:
 - Triple hash-based deduplication
 
 Benchmark results are available in the `benchmark_results/` directory.
+
+## Development
+
+See dev commands with `rs`. For testing,
+
+```sh
+rs bench:record
+rs test
+```
+
+Run
+
+```sh
+rs build
+```
+
+To produce JS artifacts.
+
 ## License
 
 MIT License

@@ -1,4 +1,4 @@
-import { Triple } from "./types.ts";
+import type { Triple } from "./types.ts";
 
 /*
  * Compute a hash of a string

@@ -266,6 +266,8 @@ export class Index {
         targetQsIndices,
       });
     }
+
+    return this;
   }
   /*
    * Get the number of triples in the index
@@ -395,6 +397,59 @@ export class Index {
     }
     this.metrics.mapRead();
     return this.targetQs.get(qsIdx);
+  }
+
+  /*
+   * Get all unique source strings
+   */
+  getUniqueSources(): Set<string> {
+    const uniqueSourceIndices = new Set<number>();
+
+    for (const triple of this.indexedTriples) {
+      if (triple !== undefined) {
+        uniqueSourceIndices.add(triple[0]);
+      }
+    }
+
+    const sources = new Set<string>();
+    for (const sourceIdx of uniqueSourceIndices) {
+      const sourceStr = this.stringIndex.getValue(sourceIdx);
+      if (sourceStr !== undefined) {
+        sources.add(sourceStr);
+      }
+    }
+
+    return sources;
+  }
+
+  /*
+   * Get all unique relation strings
+   */
+  getUniqueRelations(): Set<string> {
+    return new Set(this.relations.keys());
+  }
+
+  /*
+   * Get all unique target strings
+   */
+  getUniqueTargets(): Set<string> {
+    const uniqueTargetIndices = new Set<number>();
+
+    for (const triple of this.indexedTriples) {
+      if (triple !== undefined) {
+        uniqueTargetIndices.add(triple[2]);
+      }
+    }
+
+    const targets = new Set<string>();
+    for (const targetIdx of uniqueTargetIndices) {
+      const targetStr = this.stringIndex.getValue(targetIdx);
+      if (targetStr !== undefined) {
+        targets.add(targetStr);
+      }
+    }
+
+    return targets;
   }
 
   /*

@@ -27,7 +27,8 @@ import type { ParsedUrn } from "./types.ts";
 /*
  * Parses a URN string into its components.
  *
- * Note: this code is a bottleneck, so it's written in a slightly horrible way for performance.
+ * Note: this code is a bottleneck, so it's written in a slightly horrible way for performance. Limited
+ * validations for the same reason.
  *
  * @param urn - The URN string to parse.
  * @param namespace - The namespace to use (default: "ró").
