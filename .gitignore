@@ -6,3 +6,5 @@ __pycache__
 *.png
 *.csv
 cov_profile/
+.npmrc
+venv

@@ -19,8 +19,14 @@ const options = docopt(doc);
  */
 async function readStdinLines(): Promise<string[]> {
   const decoder = new TextDecoder();
-  const input = await Deno.readAll(Deno.stdin);
-  return decoder.decode(input).split(/\r?\n/).filter((line) =>
+  const input = await Array.fromAsync(Deno.stdin.readable);
+  const bytes = new Uint8Array(input.reduce((acc, chunk) => acc + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of input) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return decoder.decode(bytes).split(/\r?\n/).filter((line) =>
     line.trim().length > 0
   );
 }
