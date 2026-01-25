@@ -80,12 +80,12 @@ Deno.test("hash: long string", () => {
   assertEquals(typeof result, "number");
 });
 
-Deno.test("hashTriple: returns consistent string for same triple", () => {
+Deno.test("hashTriple: returns consistent number for same triple", () => {
   const triple: Triple = ["person:alice", "name", "Alice"];
   const hash1 = hashTriple(triple);
   const hash2 = hashTriple(triple);
   assertEquals(hash1, hash2);
-  assertEquals(typeof hash1, "string");
+  assertEquals(typeof hash1, "number");
 });
 
 Deno.test("hashTriple: different triples produce different hashes", () => {
@@ -123,26 +123,26 @@ Deno.test("hashTriple: changing target changes hash", () => {
 Deno.test("hashTriple: handles empty strings in triple", () => {
   const triple: Triple = ["", "", ""];
   const result = hashTriple(triple);
-  assertEquals(typeof result, "string");
-  assertEquals(result, "0");
+  assertEquals(typeof result, "number");
+  assertEquals(result, 0);
 });
 
 Deno.test("hashTriple: handles URN format", () => {
   const triple: Triple = ["urn:ró:amphibian:proteus", "habitat", "caves"];
   const result = hashTriple(triple);
-  assertEquals(typeof result, "string");
+  assertEquals(typeof result, "number");
 });
 
 Deno.test("hashTriple: handles unicode in triple", () => {
   const triple: Triple = ["urn:ró:person", "name", "José"];
   const result = hashTriple(triple);
-  assertEquals(typeof result, "string");
+  assertEquals(typeof result, "number");
 });
 
 Deno.test("hashTriple: handles special characters", () => {
   const triple: Triple = ["subject!@#", "relation$%^", "target&*()"];
   const result = hashTriple(triple);
-  assertEquals(typeof result, "string");
+  assertEquals(typeof result, "number");
 });
 
 Deno.test("hashTriple: order of triple elements matters", () => {
@@ -165,7 +165,7 @@ Deno.test("hashTriple: long strings in triple", () => {
   const longStr = "x".repeat(500);
   const triple: Triple = [longStr, longStr, longStr];
   const result = hashTriple(triple);
-  assertEquals(typeof result, "string");
+  assertEquals(typeof result, "number");
 });
 
 Deno.test("hashTriple: whitespace matters", () => {

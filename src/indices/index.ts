@@ -34,8 +34,8 @@ export class Index {
 
   // String indexing sets for memory efficiency
   stringIndex: IndexedSet;
-  tripleHashes: Set<string>;
-  hashIndices: Map<string, number>;
+  tripleHashes: Set<number>;
+  hashIndices: Map<number, number>;
 
   sourceType: Map<number, Set<number>>;
   sourceId: Map<number, Set<number>>;

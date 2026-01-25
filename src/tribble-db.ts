@@ -188,7 +188,7 @@ export class TribbleDB {
   }
 
   deduplicateTriples(triples: Triple[]): Triple[] {
-    const seen = new Set<string>();
+    const seen = new Set<number>();
     const result: Triple[] = [];
 
     for (const triple of triples) {
@@ -667,9 +667,9 @@ export class TribbleDB {
     const transformedTriples = matchingTriples.flatMap(fnc);
 
     // Compute diffs efficiently using Sets
-    const originalHashes = new Set<string>();
-    const transformedHashes = new Set<string>();
-    const transformedByHash = new Map<string, Triple>();
+    const originalHashes = new Set<number>();
+    const transformedHashes = new Set<number>();
+    const transformedByHash = new Map<number, Triple>();
 
     for (const triple of matchingTriples) {
       originalHashes.add(hashTriple(triple));
