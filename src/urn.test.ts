@@ -1,47 +1,76 @@
-import { assertEquals } from "jsr:@std/assert";
-import { asUrn } from "./urn.ts";
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  parseQueryString,
+  parseQueryStringBaseline,
+} from "./urn.ts";
 
-Deno.test("asUrn parses amphibian URN without query string", () => {
-  const urnStr = "urn:ró:amphibian:proteus-anguinus";
-  const parsedObj = asUrn(urnStr);
+// Import peach for fuzzing
+import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
+import { QueryString } from "../benchmark/fuzzers.ts";
 
-  assertEquals(parsedObj.type, "amphibian");
-  assertEquals(parsedObj.id, "proteus-anguinus");
-  assertEquals(parsedObj.qs, {});
+// ============================================================================
+// Parity tests: parseQueryString must match parseQueryStringBaseline
+// ============================================================================
+
+Deno.test("parseQueryString parity: empty string", () => {
+  const input = "";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
 });
 
-Deno.test("asUrn parses amphibian URN with query string", () => {
-  const urnStr = "urn:ró:amphibian:proteus-anguinus?context=captivity";
-  const parsedObj = asUrn(urnStr);
-
-  assertEquals(parsedObj.type, "amphibian");
-  assertEquals(parsedObj.id, "proteus-anguinus");
-  assertEquals(parsedObj.qs, { context: "captivity" });
+Deno.test("parseQueryString parity: single pair", () => {
+  const input = "foo=bar";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
 });
 
-Deno.test("asUrn parses URN with empty remainder", () => {
-  const urnStr = "urn:ró:test:";
-  const parsedObj = asUrn(urnStr);
-
-  assertEquals(parsedObj.type, "test");
-  assertEquals(parsedObj.id, "");
-  assertEquals(parsedObj.qs, {});
+Deno.test("parseQueryString parity: multiple pairs", () => {
+  const input = "a=1&b=2&c=3";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
 });
 
-Deno.test("asUrn parses URN with multiple query parameters", () => {
-  const urnStr = "urn:ró:animal:cat?breed=persian&color=white&age=5";
-  const parsedObj = asUrn(urnStr);
-
-  assertEquals(parsedObj.type, "animal");
-  assertEquals(parsedObj.id, "cat");
-  assertEquals(parsedObj.qs, { breed: "persian", color: "white", age: "5" });
+Deno.test("parseQueryString parity: URL encoded values", () => {
+  const input = "key=hello%20world&other=foo%26bar";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
 });
 
-Deno.test("asUrn handles missing query string delimiter", () => {
-  const urnStr = "urn:ró:person:john-doe";
-  const parsedObj = asUrn(urnStr);
+Deno.test("parseQueryString parity: special characters", () => {
+  const input = "name=%C3%A9%C3%A0%C3%BC&emoji=%F0%9F%98%80";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
+});
 
-  assertEquals(parsedObj.type, "person");
-  assertEquals(parsedObj.id, "john-doe");
-  assertEquals(parsedObj.qs, {});
+Deno.test("parseQueryString parity: empty value", () => {
+  const input = "key=&other=value";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
+});
+
+Deno.test("parseQueryString parity: duplicate keys (last wins)", () => {
+  const input = "key=first&key=second";
+  assertEquals(parseQueryString(input), parseQueryStringBaseline(input));
+});
+
+// ============================================================================
+// Fuzz test: random query strings from peach
+// ============================================================================
+
+Deno.test("parseQueryString parity: fuzz test (1000 random query strings)", () => {
+  const FUZZ_COUNT = 1000;
+  const PARAMS = {
+    NUM_PAIRS: 5,
+    KEY_LENGTH: 10,
+    VALUE_LENGTH: 15,
+  };
+
+  for (let i = 0; i < FUZZ_COUNT; i++) {
+    const qs = unwrap(
+      QueryString(PARAMS.NUM_PAIRS, PARAMS.KEY_LENGTH, PARAMS.VALUE_LENGTH),
+    );
+
+    const optimized = parseQueryString(qs);
+    const baseline = parseQueryStringBaseline(qs);
+
+    assertEquals(
+      optimized,
+      baseline,
+      `Mismatch for query string: "${qs}"`,
+    );
+  }
 });

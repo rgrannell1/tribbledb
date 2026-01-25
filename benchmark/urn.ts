@@ -1,5 +1,5 @@
 import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
-import { parseUrn, parseUrn2 } from "../src/urn.ts";
+import { parseUrn } from "../src/urn.ts";
 import { NodeIDTypeQS } from "./fuzzers.ts";
 
 {

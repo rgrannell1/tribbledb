@@ -39,6 +39,27 @@ export function QSPair(
 }
 
 /**
+ * Generates a random query string like "key1=value1&key2=value2".
+ */
+export function QueryString(
+  numPairs: Peach.Wrapped<number>,
+  keyLen: Peach.Wrapped<number>,
+  valueLen: Peach.Wrapped<number>,
+): Wrapped<string> {
+  const generator = () => {
+    const pairs: string[] = [];
+    const count = unwrap(numPairs);
+
+    for (let idx = 0; idx < count; idx++) {
+      pairs.push(unwrap(QSPair(keyLen, valueLen)));
+    }
+
+    return pairs.join("&");
+  };
+  return generator;
+}
+
+/**
  * Generates a random node identifier using the ID fuzzer.
  */
 export function NodeID(idLen: Peach.Wrapped<number>): Wrapped<string> {

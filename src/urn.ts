@@ -25,6 +25,37 @@
 import type { ParsedUrn } from "./types.ts";
 
 /*
+ * Baseline query string parser using URLSearchParams.
+ * Used for parity testing against the optimized implementation.
+ */
+export function parseQueryStringBaseline(
+  queryString: string,
+): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(queryString));
+}
+
+/*
+ * Fast query string parser - avoids URLSearchParams overhead.
+ */
+export function parseQueryString(
+  queryString: string,
+): Record<string, string> {
+  if (queryString === "") {
+    return {};
+  }
+
+  const split = queryString.split("&");
+  const result: Record<string, string> = {};
+
+  for (const pair of split) {
+    const [key, value] = pair.split("=");
+    result[key] = value.indexOf("%") !== -1 ? decodeURIComponent(value) : value;
+  }
+
+  return result;
+}
+
+/*
  * Parses a URN string into its components.
  *
  * Note: this code is a bottleneck, so it's written in a slightly horrible way for performance. Limited
@@ -43,9 +74,7 @@ export function parseUrn(urn: string): ParsedUrn {
   const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
   const id = idx !== -1 ? remainder.slice(0, idx) : remainder;
 
-  const qs = queryString
-    ? Object.fromEntries(new URLSearchParams(queryString))
-    : {};
+  const qs = queryString ? parseQueryString(queryString) : {};
 
   return {
     type,
