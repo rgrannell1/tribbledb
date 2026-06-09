@@ -295,9 +295,15 @@ export class TribbleDB {
   }
 
   private intersectSets(set1: Set<number>, set2: Set<number>): Set<number> {
+    // Drive iteration from the smaller set and probe the larger one, so the
+    // cost is bounded by the smaller operand rather than the left operand.
+    const [smaller, larger] = set1.size <= set2.size
+      ? [set1, set2]
+      : [set2, set1];
+
     const result = new Set<number>();
-    for (const item of set1) {
-      if (set2.has(item)) {
+    for (const item of smaller) {
+      if (larger.has(item)) {
         result.add(item);
       }
     }
@@ -343,14 +349,8 @@ export class TribbleDB {
       if (candidateIndices === null) {
         candidateIndices = sourceIds;
       } else {
-        // Intersect with existing candidates
-        const intersection = new Set<number>();
-        for (const idx of candidateIndices) {
-          if (sourceIds.has(idx)) {
-            intersection.add(idx);
-          }
-        }
-        candidateIndices = intersection;
+        // Intersect with existing candidates (smaller set drives iteration)
+        candidateIndices = this.intersectSets(candidateIndices, sourceIds);
       }
     }
 
@@ -363,14 +363,8 @@ export class TribbleDB {
       if (candidateIndices === null) {
         candidateIndices = targetIds;
       } else {
-        // Intersect with existing candidates
-        const intersection = new Set<number>();
-        for (const idx of candidateIndices) {
-          if (targetIds.has(idx)) {
-            intersection.add(idx);
-          }
-        }
-        candidateIndices = intersection;
+        // Intersect with existing candidates (smaller set drives iteration)
+        candidateIndices = this.intersectSets(candidateIndices, targetIds);
       }
     }
 
@@ -580,13 +574,7 @@ export class TribbleDB {
       if (candidateIndices === null) {
         candidateIndices = sourceIds;
       } else {
-        const intersection = new Set<number>();
-        for (const idx of candidateIndices) {
-          if (sourceIds.has(idx)) {
-            intersection.add(idx);
-          }
-        }
-        candidateIndices = intersection;
+        candidateIndices = this.intersectSets(candidateIndices, sourceIds);
       }
     }
 
@@ -599,13 +587,7 @@ export class TribbleDB {
       if (candidateIndices === null) {
         candidateIndices = targetIds;
       } else {
-        const intersection = new Set<number>();
-        for (const idx of candidateIndices) {
-          if (targetIds.has(idx)) {
-            intersection.add(idx);
-          }
-        }
-        candidateIndices = intersection;
+        candidateIndices = this.intersectSets(candidateIndices, targetIds);
       }
     }
 
