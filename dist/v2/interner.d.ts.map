@@ -1,0 +1,1 @@
+{"version":3,"file":"interner.d.ts","sourceRoot":"","sources":["../../src/v2/interner.ts"],"names":[],"mappings":"AAMA,qBAAa,QAAQ;;gBAKP,MAAM,EAAE,MAAM;IAS1B,MAAM,CAAC,KAAK,EAAE,MAAM,GAAG,MAAM;IAmB7B,IAAI,CAAC,KAAK,EAAE,MAAM,GAAG,MAAM,GAAG,SAAS;IAOvC,OAAO,CAAC,EAAE,EAAE,MAAM,GAAG,MAAM;IAI3B,IAAI,IAAI,IAAI,MAAM,CAEjB;CACF"}

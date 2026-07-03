@@ -2,7 +2,7 @@
  * Benchmark Accessor Performance
  */
 
-import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
+import { unwrap } from "peach";
 import { TribbleDB } from "../src/tribble-db.ts";
 import { TriplesNodeIdTypeQS } from "./fuzzers.ts";
 import { SAMPLE_SIZES } from "./constants.ts";

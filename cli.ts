@@ -1,6 +1,6 @@
 #! /usr/bin/env -S deno run --allow-read
 
-import docopt from "https://deno.land/x/docopt/mod.ts";
+import docopt from "docopt";
 import { TribbleParser } from "./src/tribble/parse.ts";
 import { TribbleStringifier } from "./src/tribble/stringify.ts";
 import type { Triple } from "./src/types.ts";

@@ -1,10 +1,10 @@
-import * as P from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
+import * as P from "peach";
 import {
   type Thunk,
   unwrap,
   type Wrapped,
-} from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
-import { Number } from "https://deno.land/x/peach_ts/src/mod.ts";
+} from "peach";
+import { Number } from "peach";
 const U = Number.uniform;
 
 export function URN(

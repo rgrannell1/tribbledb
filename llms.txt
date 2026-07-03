@@ -1,0 +1,88 @@
+# tribbledb
+
+> TribbleDB is a high-performance TypeScript/Deno triple-store database that stores relationships as subject-predicate-object tuples and provides indexed, chainable search operations.
+
+## Stack
+- **TypeScript/Deno** runtime with Node.js dual support (deno.json primary, package.json for npm publishing)
+- **Parser/Stringifier** architecture for tribble data format (parsing triples into JSON, stringifying back)
+- **CLI tool** (cli.ts) with docopt for command-line interface handling parse/stringify operations
+- **Zero production dependencies** — strictly devDeps (TypeScript 5.9.2)
+- **Build toolchain** — Bash build scripts (./bs/) with TypeScript compilation to ESNext targets
+- **Testing infrastructure** — Deno test runner with coverage reporting (LCOV format)
+- **Strict TypeScript** — compiler flags enforce strict mode, no implicit any/returns, no unused locals/parameters
+
+## Purpose
+TribbleDB is a high-performance TypeScript/Deno triple-store database that stores relationships as subject-predicate-object tuples and provides indexed, chainable search operations. It's published to JSR and npm for use in Deno and Node.js projects that need queryable RDF-like data with validation and type parsing. The core problem it solves is enabling efficient, flexible querying over semantic data without requiring a heavyweight database backend.
+
+## Structure
+- **src/** — Main TypeScript source code for tribbledb library
+  - **db/inputs.ts** — Input handling and validation for database operations
+  - **db/search.ts** — Search/query functionality for the database
+  - **tribble-db.ts** — Core database implementation
+  - **tribble/parse.ts** — Parser for tribble (triple) format
+  - **tribble/stringify.ts** — Serializer for tribble format
+  - **indices/index.ts** — Index data structure and operations
+  - **urn.ts** — URN (Uniform Resource Name) handling
+  - **hash.ts** — Hashing utilities
+  - **metrics.ts** — Performance/metrics tracking
+  - **schemas.ts** — Schema definitions and validation
+  - **sets.ts** — Set operations utility
+  - **triples.ts** — Triple data structure core
+  - **types.ts** — TypeScript type definitions
+  - **\*.test.ts** — Unit tests (accessor-methods, hash, indices, metrics, sets, tribble-db-unique, parse, stringify, urn)
+- **dist/** — Compiled JavaScript and TypeScript declaration files (auto-generated)
+- **benchmark/** — Performance benchmarking suite
+  - **\*.bench.ts** — Benchmark tests for accessors, indexing, deletion, search, querystring, URN
+  - **fuzzers.ts** — Fuzzing utilities
+  - **server.ts** — HTTP server for running benchmarks
+  - **index.ts** — Benchmark runner
+  - **index.html** — Web UI for benchmark visualization
+- **benchmark_analysis/** — Analysis scripts for benchmark results
+  - **analysis.py** — Python script for analyzing bench results
+  - **version_comparison.py** — Version-to-version comparison
+  - **\*.ipynb** — Jupyter notebooks for analysis
+  - **requirements.txt** — Python dependencies
+- **benchmark_results/** — Historical benchmark result JSON files
+- **fuzz/** — Fuzzing test suite
+  - **fuzz.test.ts** — Fuzz test implementation
+  - **terms/** — Test data generators (names, person, dataset)
+- **bs/** — Build scripts
+  - **build.sh** — Main build script
+  - **test.sh** — Test runner
+  - **bench.sh** — Benchmark executor
+  - **bench:record.sh** — Record benchmark results
+  - **build-browser.sh** — Browser bundle build
+  - **publish.sh** — Publication/release script
+- **CLAUDE.md** — Project memory (minimal)
+- **README.md** — Project documentation
+- **deno.json** — Deno configuration
+- **package.json** — npm package configuration
+- **tsconfig.json** — TypeScript configuration
+- **codecov.yml** — Code coverage configuration
+- **cli.ts** — Command-line interface entry point
+- **.vscode/** — VS Code workspace settings
+- **.github/** — GitHub Actions/metadata
+- **venv/** — Python virtual environment (for analysis scripts)
+- **logs/** — Application logs
+
+## Data flows
+Based on my analysis of the tribbledb repository, here's the data flow:
+
+Data enters tribbledb as triples (3-tuples: `[source, relation, target]`) or objects; clients construct a TribbleDB instance and call `add()` to populate an in-memory Index with validated triples. The Index builds multi-level indices keyed by source/target type/id/querystring and relation to accelerate search queries. Searches are parsed into a normalized SearchObject, then executed against the indices using set intersection/union operations to find matching triple positions. Triples flow out via search results, raw triple lists, or reconstructed TripleObject format; data is not persisted to disk or external stores—TribbleDB is a volatile in-memory triple store with no migration, serialization, or queue patterns.
+
+## Architecture
+Perfect. Now I have a comprehensive understanding of the architecture. Let me provide the analysis:
+
+TribbleDB is a TypeScript triple store (RDF-like database) with these key architectural elements:
+
+- **Core Data Model**: Triples (source URN, relation string, target URN/value) stored in an `Index` class that maintains multiple inverted indices (source type/id/qs, relation, target type/id/qs) for O(1) lookups; URN parsing extracts type, id, and query-string components for fine-grained filtering.
+
+- **Entry Point & API Surface**: `TribbleDB` class wraps the index and provides both factory methods (`of()`, `from()`) and chainable search/manipulation methods (`search()`, `map()`, `flatMap()`, `merge()`); searches return new `TribbleDB` instances to enable fluent chaining while preserving immutability semantics.
+
+- **Search Semantics**: Queries support flexible constraints on source/relation/target using predicates, URN components, and query-string matching; searches are index-backed with set intersection for multi-constraint queries, falling back to linear scanning only when necessary (e.g., for custom predicates).
+
+- **String Compression & Memory Optimization**: An `IndexedSet` class maps repetitive URN strings and relation names to numeric indices to reduce memory overhead; triples are stored internally as `[number, string, number]` tuples, not full strings.
+
+- **Object Serialization**: Bidirectional conversions between triples and objects: `TripleObject[]` format expands to triples (one triple per relation-target pair), and `objects()` collapses triples back by grouping relations under source IDs, handling multi-valued relations as arrays.
+
+- **Validation & Hashing**: Optional per-relation validators enforce data integrity; duplicate detection via hash-based deduplication for the full `[source, relation, target]` tuple, with fast hash computation optimized for performance-critical paths.

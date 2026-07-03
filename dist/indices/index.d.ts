@@ -5,8 +5,8 @@ export declare class Index {
     private indexedTriples;
     private tripleMetadata;
     stringIndex: IndexedSet;
-    tripleHashes: Set<string>;
-    hashIndices: Map<string, number>;
+    tripleHashes: Set<number>;
+    hashIndices: Map<number, number>;
     sourceType: Map<number, Set<number>>;
     sourceId: Map<number, Set<number>>;
     sourceQs: Map<number, Set<number>>;
@@ -21,7 +21,7 @@ export declare class Index {
     difference(triples: Triple[]): Triple[];
     hasTriple(triple: Triple): boolean;
     getTripleIndex(triple: Triple): number | undefined;
-    add(triples: Triple[]): this;
+    add(triples: Triple[]): Index;
     get length(): number;
     get arrayLength(): number;
     triples(): Triple[];

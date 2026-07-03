@@ -1,5 +1,5 @@
-import * as Peach from "https://deno.land/x/peach_ts/src/mod.ts";
-import type { Wrapped } from "https://deno.land/x/peach_ts/src/mod.ts";
+import * as Peach from "peach";
+import type { Wrapped } from "peach";
 const { uniform: U } = Peach.Number;
 const { unwrap } = Peach;
 

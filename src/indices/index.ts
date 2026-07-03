@@ -141,7 +141,7 @@ export class Index {
   /*
    * Add new triples to the index incrementally
    */
-  add(triples: Triple[]) {
+  add(triples: Triple[]): Index {
     // Index the new triples
     for (let jdx = 0; jdx < triples.length; jdx++) {
       const triple = triples[jdx];
@@ -455,7 +455,7 @@ export class Index {
   /*
    * Deep-clone the index
    */
-  clone() {
+  clone(): Index {
     const newIndex = new Index([]);
     newIndex.indexedTriples = this.indexedTriples.slice();
     newIndex.tripleMetadata = new Map(this.tripleMetadata);

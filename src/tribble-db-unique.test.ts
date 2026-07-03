@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals } from "@std/assert";
 import { TribbleDB } from "./tribble-db.ts";
 import type { Triple, TripleObject } from "./types.ts";
 
@@ -1292,7 +1292,7 @@ Deno.test("TribbleDB.from() throws error for object without string id", () => {
   let threwError = false;
   try {
     TribbleDB.from([
-      { id: 123 as any, name: "Test" },
+      { id: 123 as unknown as string, name: "Test" },
     ]);
   } catch (err) {
     threwError = true;

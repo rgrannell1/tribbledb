@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals } from "@std/assert";
 import { TribbleDB } from "../tribble-db.ts";
 import type { Triple, TripleObject } from "../types.ts";
 import { Triples } from "../triples.ts";

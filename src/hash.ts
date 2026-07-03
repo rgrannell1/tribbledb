@@ -23,10 +23,14 @@ export function hashTriple(triple: Triple): number {
     hashValue = (hashValue << 5) - hashValue + src.charCodeAt(i);
     hashValue |= 0;
   }
+  hashValue = (hashValue << 5) - hashValue + 0;
+  hashValue |= 0;
   for (let i = 0; i < rel.length; i++) {
     hashValue = (hashValue << 5) - hashValue + rel.charCodeAt(i);
     hashValue |= 0;
   }
+  hashValue = (hashValue << 5) - hashValue + 0;
+  hashValue |= 0;
   for (let i = 0; i < tgt.length; i++) {
     hashValue = (hashValue << 5) - hashValue + tgt.charCodeAt(i);
     hashValue |= 0;

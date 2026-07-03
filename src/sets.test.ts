@@ -1,4 +1,4 @@
-import { assertEquals, assertStrictEquals } from "jsr:@std/assert";
+import { assertEquals, assertStrictEquals } from "@std/assert";
 import { IndexedSet, Sets } from "./sets.ts";
 import { TribbleDBPerformanceMetrics } from "./metrics.ts";
 

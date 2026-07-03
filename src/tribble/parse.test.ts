@@ -1,6 +1,6 @@
 import { TribbleParser } from "./parse.ts";
 import type { Triple } from "../types.ts";
-import { assertEquals } from "https://deno.land/std@0.203.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 
 Deno.test("TribbleParser parses declarations and triples", () => {
   const parser = new TribbleParser();

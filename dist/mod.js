@@ -143,6 +143,21 @@ var TribbleStringifier = class {
 };
 
 // src/urn.ts
+function parseQueryStringBaseline(queryString) {
+  return Object.fromEntries(new URLSearchParams(queryString));
+}
+function parseQueryString(queryString) {
+  if (queryString === "") {
+    return {};
+  }
+  const split = queryString.split("&");
+  const result = {};
+  for (const pair of split) {
+    const [key, value] = pair.split("=");
+    result[key] = value.indexOf("%") !== -1 ? decodeURIComponent(value) : value;
+  }
+  return result;
+}
 function parseUrn(urn) {
   const delimited = urn.split(":", 4);
   const type = delimited[2];
@@ -150,7 +165,7 @@ function parseUrn(urn) {
   const idx = remainder.indexOf("?");
   const queryString = idx !== -1 ? remainder.slice(idx + 1) : "";
   const id = idx !== -1 ? remainder.slice(0, idx) : remainder;
-  const qs = queryString ? Object.fromEntries(new URLSearchParams(queryString)) : {};
+  const qs = queryString ? parseQueryString(queryString) : {};
   return {
     type,
     id,
@@ -192,15 +207,19 @@ function hashTriple(triple) {
     hashValue = (hashValue << 5) - hashValue + src.charCodeAt(i);
     hashValue |= 0;
   }
+  hashValue = (hashValue << 5) - hashValue + 0;
+  hashValue |= 0;
   for (let i = 0; i < rel.length; i++) {
     hashValue = (hashValue << 5) - hashValue + rel.charCodeAt(i);
     hashValue |= 0;
   }
+  hashValue = (hashValue << 5) - hashValue + 0;
+  hashValue |= 0;
   for (let i = 0; i < tgt.length; i++) {
     hashValue = (hashValue << 5) - hashValue + tgt.charCodeAt(i);
     hashValue |= 0;
   }
-  return hashValue.toString();
+  return hashValue;
 }
 
 // src/indices/index.ts
@@ -682,8 +701,7 @@ var TribbleDB = class _TribbleDB {
     return this.index.getUniqueTargets();
   }
   firstTriple() {
-    const allTriples = this.triples();
-    return allTriples.length > 0 ? allTriples[0] : void 0;
+    return this.index.getTriple(0);
   }
   firstSource() {
     return this.index.getTriple(0)?.[0];
@@ -1134,5 +1152,7 @@ export {
   TribbleParser,
   TribbleStringifier,
   asUrn,
+  parseQueryString,
+  parseQueryStringBaseline,
   parseUrn
 };

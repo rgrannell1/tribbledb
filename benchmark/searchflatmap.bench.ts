@@ -2,7 +2,7 @@
  * Benchmark TribbleDB searchmap performance
  */
 
-import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
+import { unwrap } from "peach";
 import { TribbleDB } from "../src/tribble-db.ts";
 import {
   TriplesNodeId,
@@ -34,7 +34,7 @@ for (const samples of SAMPLE_SIZES) {
       const data = unwrap(sampleData);
       const db = new TribbleDB(data as [string, string, string][]);
       bench.start();
-      db.searchFlatmap({}, (x: any) => [x]);
+      db.searchFlatmap({}, (triple: [string, string, string]) => [triple]);
     },
   });
 }
@@ -64,7 +64,8 @@ for (const samples of SAMPLE_SIZES) {
       bench.start();
       db.searchFlatmap(
         {},
-        (x: any) => [x.reverse() as [string, string, string]],
+        (triple: [string, string, string]) =>
+          [triple.reverse() as [string, string, string]],
       );
     },
   });
@@ -100,7 +101,7 @@ for (const samples of SAMPLE_SIZES) {
       const data = unwrap(sampleData);
       const db = new TribbleDB(data as [string, string, string][]);
       bench.start();
-      db.searchFlatmap({}, (x: any) => [x]);
+      db.searchFlatmap({}, (triple: [string, string, string]) => [triple]);
     },
   });
 }
@@ -137,7 +138,8 @@ for (const samples of SAMPLE_SIZES) {
       bench.start();
       db.searchFlatmap(
         {},
-        (x: any) => [x.reverse() as [string, string, string]],
+        (triple: [string, string, string]) =>
+          [triple.reverse() as [string, string, string]],
       );
     },
   });
@@ -182,7 +184,7 @@ for (const samples of SAMPLE_SIZES) {
       const data = unwrap(sampleData);
       const db = new TribbleDB(data as [string, string, string][]);
       bench.start();
-      db.searchFlatmap({}, (x: any) => [x]);
+      db.searchFlatmap({}, (triple: [string, string, string]) => [triple]);
     },
   });
 }
@@ -228,7 +230,8 @@ for (const samples of SAMPLE_SIZES) {
       bench.start();
       db.searchFlatmap(
         {},
-        (x: any) => [x.reverse() as [string, string, string]],
+        (triple: [string, string, string]) =>
+          [triple.reverse() as [string, string, string]],
       );
     },
   });

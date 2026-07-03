@@ -13,7 +13,7 @@ export class IndexPerformanceMetrics {
     this.mapReadCount++;
   }
 
-  clone() {
+  clone(): IndexPerformanceMetrics {
     const clone = new IndexPerformanceMetrics();
     clone.mapReadCount = this.mapReadCount;
     return clone;
@@ -31,7 +31,7 @@ export class TribbleDBPerformanceMetrics {
     this.setCheckCount++;
   }
 
-  clone() {
+  clone(): TribbleDBPerformanceMetrics {
     const clone = new TribbleDBPerformanceMetrics();
     clone.setCheckCount = this.setCheckCount;
     return clone;

@@ -1,4 +1,4 @@
-import { assertEquals, assertNotEquals } from "jsr:@std/assert";
+import { assertEquals, assertNotEquals } from "@std/assert";
 import { hash, hashTriple } from "./hash.ts";
 import type { Triple } from "./types.ts";
 

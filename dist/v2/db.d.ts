@@ -1,0 +1,48 @@
+import type { Parser, Search, TargetValidator, Triple, TripleObject } from "../types.ts";
+import { NodeView, PathView } from "./traverse.ts";
+import type { AddReport, NodeSelector, ObjectOpts, ReadOpts } from "./types.ts";
+export declare class TribbleDB {
+    private store;
+    private rows;
+    private validations;
+    constructor(triples: Triple[], validations?: Record<string, TargetValidator>);
+    static of(triples: Triple[]): TribbleDB;
+    static from(objects: TripleObject[]): TribbleDB;
+    static fromTribbleLines(lines: Iterable<string>, validations?: Record<string, TargetValidator>): TribbleDB;
+    private static view;
+    private visibility;
+    private visibleRows;
+    private ensureOwned;
+    validateTriples(triples: Triple[]): void;
+    add(triples: Triple[]): AddReport;
+    delete(triples: Triple[]): TribbleDB;
+    triples(): Triple[];
+    private uniqueTerms;
+    sources(): Set<string>;
+    relations(): Set<string>;
+    targets(): Set<string>;
+    firstTriple(): Triple | undefined;
+    firstSource(): string | undefined;
+    firstRelation(): string | undefined;
+    firstTarget(): string | undefined;
+    firstObject(opts?: boolean | ObjectOpts): TripleObject | undefined;
+    objects(opts?: boolean | ObjectOpts): TripleObject[];
+    map(fnc: (triple: Triple) => Triple): TribbleDB;
+    flatMap(fnc: (triple: Triple) => Triple[]): TribbleDB;
+    deduplicateTriples(triples: Triple[]): Triple[];
+    merge(other: TribbleDB): TribbleDB;
+    mergedWith(other: TribbleDB): TribbleDB;
+    clone(): TribbleDB;
+    private rowsForUrn;
+    readThing(urn: string, opts?: ReadOpts): TripleObject | undefined;
+    readThings(urns: Set<string> | string[], opts?: ReadOpts): TripleObject[];
+    parseThing<Parsed>(parser: Parser<Parsed>, urn: string, opts?: ReadOpts): Parsed | undefined;
+    parseThings<Parsed>(parser: Parser<Parsed>, urns: Set<string> | string[], opts?: ReadOpts): Parsed[];
+    search(params: Search): TribbleDB;
+    searchFlatmap(search: Search, fnc: (triple: Triple) => Triple[]): TribbleDB;
+    nodes(selector: NodeSelector): NodeView;
+    paths(selector: NodeSelector): PathView;
+    compact(): TribbleDB;
+    get triplesCount(): number;
+}
+//# sourceMappingURL=db.d.ts.map

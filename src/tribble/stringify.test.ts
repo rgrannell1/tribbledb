@@ -1,6 +1,6 @@
 import { TribbleStringifier } from "./stringify.ts";
 import type { Triple } from "../types.ts";
-import { assertEquals } from "https://deno.land/std@0.203.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 
 Deno.test("TribbleStringifier stringifies triples and assigns indices", () => {
   const stringifier = new TribbleStringifier();
@@ -42,7 +42,7 @@ Deno.test("TribbleStringifier handles null value", () => {
 
 Deno.test("TribbleStringifier handles literal null", () => {
   const stringifier = new TribbleStringifier();
-  const triple: Triple = ["test", "relation", null as any];
+  const triple: Triple = ["test", "relation", null as unknown as string];
   const result = stringifier.stringify(triple);
   assertEquals(result.includes('"null"'), true);
 });

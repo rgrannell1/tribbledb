@@ -106,8 +106,7 @@ export class TribbleDB {
   }
 
   firstTriple(): Triple | undefined {
-    const allTriples = this.triples();
-    return allTriples.length > 0 ? allTriples[0] : undefined;
+    return this.index.getTriple(0);
   }
 
   firstSource(): string | undefined {

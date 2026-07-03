@@ -1,0 +1,4 @@
+#! /usr/bin/env zsh
+# v1-vs-v2 scaling comparison benchmark
+
+deno run benchmark/v2-compare.ts

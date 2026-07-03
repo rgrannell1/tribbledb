@@ -1,11 +1,11 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 import {
   parseQueryString,
   parseQueryStringBaseline,
 } from "./urn.ts";
 
 // Import peach for fuzzing
-import { unwrap } from "https://deno.land/x/peach_ts@0.4.2/src/mod.ts";
+import { unwrap } from "peach";
 import { QueryString } from "../benchmark/fuzzers.ts";
 
 // ============================================================================
